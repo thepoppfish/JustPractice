@@ -1,3 +1,6 @@
+import { MSG } from '../lib/messages';
+import type { ExtensionMessage } from '../lib/messages';
+
 /** 1s UI tick while practice intervals are active (counting adds seconds only when rules pass). */
 export const PRACTICE_COUNT_INTERVAL_MS = 1000;
 
@@ -26,6 +29,32 @@ export function shouldCountPracticeTime(p: ShouldCountPracticeTimeParams): boole
   if (p.visibilityState !== 'visible') return false;
   if (p.pauseWhenUnfocused && !p.documentHasFocus) return false;
   return true;
+}
+
+export interface FlushPendingPracticeSecondsParams {
+  videoId: string | null;
+  getPendingSeconds: () => number;
+  setPendingSeconds: (next: number) => void;
+  sendFireAndForget: (msg: ExtensionMessage) => void;
+}
+
+/**
+ * If there is a bound video and positive pending seconds, clears pending and sends `PRACTICE_TICK`.
+ * Same guards and payload shape as the legacy `flushPractice` in `youtube.ts`.
+ */
+export function flushPendingPracticeSeconds(p: FlushPendingPracticeSecondsParams): void {
+  if (!p.videoId) return;
+  const pending = p.getPendingSeconds();
+  if (pending <= 0) return;
+  p.setPendingSeconds(0);
+  p.sendFireAndForget({
+    type: MSG.PRACTICE_TICK,
+    payload: {
+      videoId: p.videoId,
+      deltaSeconds: pending,
+      endedAtMs: Date.now(),
+    },
+  });
 }
 
 export interface PracticeIntervalControllerOptions {
@@ -68,4 +97,18 @@ export function createPracticeIntervalController(
   }
 
   return { reset };
+}
+
+/** Tab hide / blur / unload → flush pending practice (same hooks as legacy `youtube.ts`). */
+export function attachPracticePageFlushListeners(opts: {
+  getPauseWhenUnfocused: () => boolean;
+  flush: () => void;
+}): void {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') opts.flush();
+  });
+  window.addEventListener('blur', () => {
+    if (opts.getPauseWhenUnfocused()) opts.flush();
+  });
+  window.addEventListener('beforeunload', () => opts.flush());
 }

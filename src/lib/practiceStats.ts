@@ -89,8 +89,9 @@ export function chartDayTier(seconds: number, dailyGoalSec: number | null): Char
 }
 
 /**
- * Consecutive local calendar days ending today with at least {@link MIN_DAY_PRACTICE_CREDIT_SECONDS} logged.
- * A day below that breaks the streak (including today).
+ * Consecutive local calendar days with at least {@link MIN_DAY_PRACTICE_CREDIT_SECONDS} logged,
+ * counting backward from the last “closed” day: **today** is ignored when it has no credit yet
+ * (the day is still in progress). Any **earlier** day without credit breaks the streak.
  */
 export function practiceStreakDays(
   dailySeconds: Record<string, number>,
@@ -99,6 +100,7 @@ export function practiceStreakDays(
 ): number {
   if (missStartKey === null) return 0;
   const maxDays = 10000;
+  const todayKey = dateKeyFromTimestamp(nowMs);
   let streak = 0;
   for (let dayOffset = 0; dayOffset < maxDays; dayOffset++) {
     const d = new Date(nowMs);
@@ -107,7 +109,10 @@ export function practiceStreakDays(
     const key = dateKeyFromTimestamp(d.getTime());
     if (key < missStartKey) break;
     const sec = dailySeconds[key] ?? 0;
-    if (!dayCountsAsPracticedForCalendar(sec)) break;
+    if (!dayCountsAsPracticedForCalendar(sec)) {
+      if (key === todayKey) continue;
+      break;
+    }
     streak++;
   }
   return streak;

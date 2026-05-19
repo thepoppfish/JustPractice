@@ -117,7 +117,7 @@ describe('practiceStreakDays', () => {
     ).toBe(3);
   });
 
-  it('returns zero when today has no practice', () => {
+  it('does not break streak on in-progress today with no minutes yet (counts from yesterday)', () => {
     expect(
       practiceStreakDays(
         {
@@ -125,6 +125,18 @@ describe('practiceStreakDays', () => {
         },
         may14noon,
         '2026-05-13',
+      ),
+    ).toBe(1);
+  });
+
+  it('returns zero when the last completed day had no practice', () => {
+    expect(
+      practiceStreakDays(
+        {
+          '2026-05-12': 3600,
+        },
+        may14noon,
+        '2026-05-12',
       ),
     ).toBe(0);
   });
