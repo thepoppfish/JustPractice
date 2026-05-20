@@ -1,4 +1,3 @@
-import { APP_NAME } from '../lib/branding';
 import { MSG } from '../lib/messages';
 import type { ExtensionResponse, PracticeTickOkResponse } from '../lib/messages';
 import {
@@ -19,26 +18,20 @@ import {
 import {
   attachPracticePageFlushListeners,
   createPracticeIntervalController,
-  flushPendingPracticeSeconds,
   shouldCountPracticeTime,
 } from './youtubePracticeTimer';
 import { fireAsyncWatch, sendMsg, sendMsgFireAndForget } from './youtubeMessaging';
 import {
   attachHomeFeedPointerPick,
-  attachVideoCompletionPromptListener,
   attachYoutubeNavHooks,
   attachYoutubePlayerDomHooks,
   getVideoElement,
-  shouldTriggerCompletionPrompt,
 } from './youtubePlayerHooks';
 import {
   applyWatchPanelCollapsed as applyWatchPanelCollapsedUi,
   calendarViewIncludesToday as calendarViewIncludesTodayUi,
   paintCalStreak as paintCalStreakUi,
   renderWatchPanelCalendar,
-  setWatchPanelEndedPromptVisible,
-  syncWatchPanelCompletionUi,
-  syncWatchPanelEndedPromptLabels,
   syncWatchPanelLabels as syncWatchPanelLabelsUi,
   updateDailyGoalRing as updateDailyGoalRingUi,
   updatePlayerXpBar as updatePlayerXpBarUi,
@@ -49,7 +42,6 @@ import {
   flashWatchPanelXpTick,
   refreshWatchPanelLibraryUiFromRemoteState,
   saveWatchPanelVideoToLibrary,
-  setWatchPanelLibraryCompletion,
 } from './youtubeLibraryPanel';
 import {
   applyNoVideoHomePanelLayout,
@@ -65,9 +57,10 @@ import { createTranslator, resolveLocale, type ResolvedLocale } from '../i18n';
 import {
   refreshWatchPanelCalendarSnapshot,
   runWatchPanelAfterJpPracticeStorageChange,
-  runWatchPanelOnVideoChanged,
 } from './youtubeWatchLifecycle';
 import { createJpWatchPanelDebugStrip, jpWatchDebugEnabled, jpWatchLog } from './youtubeDebug';
+import { createWatchPanelCompletionController } from './youtubeWatchPanelCompletion';
+import { runWatchPanelVideoChangedFlow } from './youtubeWatchPanelVideoFlow';
 
 const PANEL_HOST_ID = 'jp-practice-yt-panel-host';
 
@@ -97,12 +90,6 @@ let panelLocale: ResolvedLocale = resolveLocale(undefined);
 let panelT = createTranslator(panelLocale);
 let inLibrary = false;
 let libraryItemForCurrentVideo: LibraryItem | null = null;
-let detachCompletionPromptListener: (() => void) | null = null;
-let endedPromptVisible = false;
-/** Video id for which the completion prompt was triggered (persists until navigation). */
-let completionPromptShownForVideoId: string | null = null;
-/** Video id where the user chose "Not now" — suppress until they leave that video. */
-let completionPromptDismissedForVideoId: string | null = null;
 
 let lastDailySnapshot: Record<string, number> = {};
 let cachedPlayerTotalXp = 0;
@@ -111,6 +98,23 @@ let extensionInstallDateKey = dateKeyFromTimestamp(Date.now());
 
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
+
+const completion = createWatchPanelCompletionController({
+  getShadowRoot: () => shadowRoot,
+  getPanelT: () => panelT,
+  getLibraryItemForCurrentVideo: () => libraryItemForCurrentVideo,
+  getCurrentVideoId: () => currentVideoId,
+  getVideoIdFromUrl,
+  readTitle,
+  readChannel,
+  getUi: () => ui,
+  afterCompletionPersist: async (videoId) => {
+    await refreshState(videoId);
+    updateHint();
+    resetTimers();
+  },
+  syncWatchPanelLabels,
+});
 
 function getTodayPracticeSeconds(): number {
   const key = dateKeyFromTimestamp(Date.now());
@@ -138,116 +142,8 @@ function syncWatchPanelLabels(): void {
     inLibrary,
     panelT,
     onAfter: () => {
-      syncWatchPanelCompletionUi({
-        shadowRoot,
-        item: libraryItemForCurrentVideo,
-        panelT,
-      });
-      syncWatchPanelEndedPromptLabels({ shadowRoot, panelT });
-      if (libraryItemForCurrentVideo?.completedAt != null) {
-        endedPromptVisible = false;
-      }
-      setWatchPanelEndedPromptVisible({
-        shadowRoot,
-        visible: endedPromptVisible && libraryItemForCurrentVideo?.completedAt == null,
-      });
+      completion.syncCompletionUiOnLabelsRefresh();
       jpWatchPanelDebugStrip.sync();
-    },
-  });
-}
-
-function hideEndedPrompt(): void {
-  endedPromptVisible = false;
-  setWatchPanelEndedPromptVisible({ shadowRoot, visible: false });
-}
-
-function showEndedPrompt(): void {
-  if (libraryItemForCurrentVideo?.completedAt != null) return;
-  if (document.hidden) return;
-  endedPromptVisible = true;
-  syncWatchPanelEndedPromptLabels({ shadowRoot, panelT });
-  setWatchPanelEndedPromptVisible({ shadowRoot, visible: true });
-}
-
-function clearCompletionPromptState(): void {
-  completionPromptShownForVideoId = null;
-  completionPromptDismissedForVideoId = null;
-  hideEndedPrompt();
-}
-
-function dismissCompletionPromptForCurrentVideo(): void {
-  if (currentVideoId) {
-    completionPromptDismissedForVideoId = currentVideoId;
-  }
-  hideEndedPrompt();
-}
-
-function maybeShowCompletionPrompt(): void {
-  if (!currentVideoId) return;
-  if (libraryItemForCurrentVideo?.completedAt != null) return;
-  if (completionPromptDismissedForVideoId === currentVideoId) return;
-  completionPromptShownForVideoId = currentVideoId;
-  showEndedPrompt();
-}
-
-function onCompletionThresholdReached(): void {
-  if (!currentVideoId) return;
-  if (completionPromptShownForVideoId === currentVideoId) return;
-  if (completionPromptDismissedForVideoId === currentVideoId) return;
-  maybeShowCompletionPrompt();
-}
-
-function onDocumentVisibilityChange(): void {
-  if (document.hidden) {
-    hideEndedPrompt();
-    return;
-  }
-  if (
-    currentVideoId &&
-    completionPromptShownForVideoId === currentVideoId &&
-    completionPromptDismissedForVideoId !== currentVideoId &&
-    libraryItemForCurrentVideo?.completedAt == null
-  ) {
-    showEndedPrompt();
-  }
-}
-
-function rebindCompletionPromptListener(): void {
-  if (detachCompletionPromptListener) {
-    detachCompletionPromptListener();
-    detachCompletionPromptListener = null;
-  }
-  if (!currentVideoId) return;
-  if (completionPromptDismissedForVideoId === currentVideoId) return;
-  const video = getVideoElement();
-  if (!video) return;
-
-  if (
-    completionPromptShownForVideoId === currentVideoId ||
-    shouldTriggerCompletionPrompt(video.currentTime, video.duration)
-  ) {
-    maybeShowCompletionPrompt();
-  }
-
-  detachCompletionPromptListener = attachVideoCompletionPromptListener(
-    video,
-    onCompletionThresholdReached,
-  );
-}
-
-async function toggleWatchPanelCompletion(complete: boolean): Promise<void> {
-  hideEndedPrompt();
-  await setWatchPanelLibraryCompletion({
-    complete,
-    getVideoId: getVideoIdFromUrl,
-    readTitle,
-    readChannel,
-    panelT,
-    getUi: () => ui,
-    afterPersist: async (videoId) => {
-      await refreshState(videoId);
-      updateHint();
-      resetTimers();
     },
   });
 }
@@ -389,7 +285,7 @@ function ensurePanel(): void {
       onCompleteClick: () =>
         fireAsyncWatch(toggleWatchPanelCompletion(libraryItemForCurrentVideo?.completedAt == null)),
       onCompletePromptYes: () => fireAsyncWatch(toggleWatchPanelCompletion(true)),
-      onCompletePromptNo: () => dismissCompletionPromptForCurrentVideo(),
+      onCompletePromptNo: () => completion.dismissCompletionPromptForCurrentVideo(),
       onDifficultyChange: (value) => fireAsyncWatch(onDifficultyChange(value)),
       onPracticeToggleChange: (checked) => {
         practiceEnabled = checked;
@@ -661,8 +557,13 @@ function updateHomeFeedAttentionStrip(): void {
   });
 }
 
+async function toggleWatchPanelCompletion(complete: boolean): Promise<void> {
+  await completion.toggleWatchPanelCompletion(complete);
+}
+
 export async function onWatchPanelVideoChanged(): Promise<void> {
-  await runWatchPanelOnVideoChanged({
+  await runWatchPanelVideoChangedFlow({
+    panelHostId: PANEL_HOST_ID,
     getVideoIdFromUrl,
     flushPractice: flushWatchPanelPractice,
     resetPracticeToggleAndPending: () => {
@@ -672,56 +573,28 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
       }
       pendingSeconds = 0;
     },
-    commitVideoBinding: (nextId) => {
+    clearCompletionPromptState: () => completion.clearCompletionPromptState(),
+    detachCompletionListenerOnNoVideo: () => completion.detachCompletionListenerOnNoVideo(),
+    getShadowRoot: () => shadowRoot,
+    setCurrentVideoId: (nextId) => {
       const previousVideoId = currentVideoId;
       currentVideoId = nextId;
-      clearCompletionPromptState();
       return previousVideoId;
     },
-    clearLibraryBannerIfVideoChanged: (previousId, nextId) => {
-      if (previousId !== nextId) {
-        clearLibraryBanner('video-change');
-      }
-    },
-    runNoVideoFlow: async () => {
-      resetTimers();
-      clearLibraryBanner('no-video');
-      clearCompletionPromptState();
-      if (detachCompletionPromptListener) {
-        detachCompletionPromptListener();
-        detachCompletionPromptListener = null;
-      }
-      ensurePanel();
-      applyPanelHostPosition();
-      applyWatchPanelCollapsed();
-      const titleEl = shadowRoot?.querySelector('[part="title"]') as HTMLElement | null;
-      if (titleEl) titleEl.textContent = APP_NAME;
-      updateHomeFeedAttentionStrip();
-      updateHint();
-      fireAsyncWatch(refreshCalendarOnly());
-
-      const host = document.getElementById(PANEL_HOST_ID) as HTMLElement | null;
-      if (needsHomeFeedPanelAttention(getVideoIdFromUrl)) {
-        if (host) (host as HTMLElement).style.display = '';
-      } else {
-        applyNoVideoHomePanelLayout(shadowRoot, false);
-        if (host) (host as HTMLElement).style.display = 'none';
-      }
-    },
-    runHasVideoFlow: async (videoId) => {
-      ensurePanel();
-      if (shadowRoot?.host) (shadowRoot.host as HTMLElement).style.display = '';
-      updateHomeFeedAttentionStrip();
-      const titleEl = shadowRoot?.querySelector('[part="title"]') as HTMLElement | undefined;
-      if (titleEl) {
-        const t = readTitle();
-        titleEl.textContent = t.length > 90 ? `${t.slice(0, 90)}…` : t;
-      }
-      await refreshState(videoId);
-      updateHint();
-      resetTimers();
-      rebindCompletionPromptListener();
-    },
+    clearLibraryBanner,
+    resetTimers,
+    ensurePanel,
+    applyPanelHostPosition,
+    applyWatchPanelCollapsed,
+    updateHomeFeedAttentionStrip,
+    updateHint,
+    refreshCalendarOnly,
+    needsHomeFeedPanelAttention,
+    applyNoVideoHomePanelLayout,
+    readTitle,
+    refreshState,
+    rebindCompletionPromptListener: () => completion.rebindCompletionPromptListener(),
+    fireAsyncWatch,
   });
 }
 
@@ -771,7 +644,7 @@ export function attachWatchPanelRuntimeHooks(): void {
   attachYoutubeNavHooks(() => fireAsyncWatch(onWatchPanelVideoChanged()));
   attachYoutubePlayerDomHooks(() => {
     fireAsyncWatch(onWatchPanelVideoChanged());
-    rebindCompletionPromptListener();
+    completion.rebindCompletionPromptListener();
   });
   attachHomeFeedPointerPick({
     elementInOurUiShell: elementInWatchPanelUiShell,
@@ -787,7 +660,7 @@ export function attachWatchPanelRuntimeHooks(): void {
     getPauseWhenUnfocused: getWatchPanelPauseWhenUnfocused,
     flush: flushWatchPanelPractice,
   });
-  document.addEventListener('visibilitychange', onDocumentVisibilityChange);
+  document.addEventListener('visibilitychange', () => completion.onDocumentVisibilityChange());
 }
 
 export async function refreshWatchPanelCalendarOnVisible(): Promise<void> {

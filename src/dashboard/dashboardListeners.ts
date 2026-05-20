@@ -17,10 +17,62 @@ export interface AttachDashboardListenersInput {
   vm: DashboardViewModel;
   send: <T>(msg: ExtensionMessage) => Promise<T>;
   render: () => void;
+  refreshLibraryPanels: () => void;
+  afterLibraryDataChange: () => void;
+  onSearchBlur?: () => void;
   setActiveView: (v: DashView) => void;
   setSearchQuery: (q: string) => void;
   setLibraryLevelFilter: (f: '' | 'unset' | 'legacy' | LevelTag) => void;
   setYearHeatmapYear: (y: number) => void;
+}
+
+export interface AttachLibraryPanelListenersInput {
+  root: HTMLElement;
+  vm: DashboardViewModel;
+  send: <T>(msg: ExtensionMessage) => Promise<T>;
+  render: () => void;
+  refreshLibraryPanels: () => void;
+  afterLibraryDataChange: () => void;
+  setLibraryLevelFilter: (f: '' | 'unset' | 'legacy' | LevelTag) => void;
+}
+
+export function attachLibraryPanelListeners(input: AttachLibraryPanelListenersInput): void {
+  const { root, vm, send, afterLibraryDataChange, refreshLibraryPanels, setLibraryLevelFilter } =
+    input;
+
+  root.querySelectorAll<HTMLButtonElement>('[data-level-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const raw = btn.getAttribute('data-level-filter');
+      if (raw === 'all' || raw === null) setLibraryLevelFilter('');
+      else if (raw === 'unset') setLibraryLevelFilter('unset');
+      else if (raw === 'legacy') setLibraryLevelFilter('legacy');
+      else setLibraryLevelFilter(raw as LevelTag);
+      refreshLibraryPanels();
+    });
+  });
+
+  root.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((btn) => {
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const id = btn.getAttribute('data-remove');
+      if (!id) return;
+      await send({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
+      afterLibraryDataChange();
+    });
+  });
+
+  root.querySelectorAll<HTMLButtonElement>('[data-undo-complete]').forEach((btn) => {
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const id = btn.getAttribute('data-undo-complete');
+      if (!id) return;
+      await send({
+        type: MSG.SET_LIBRARY_COMPLETION,
+        payload: { videoId: id, complete: false },
+      });
+      afterLibraryDataChange();
+    });
+  });
 }
 
 export function attachDashboardListeners(input: AttachDashboardListenersInput): void {
@@ -29,6 +81,9 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     vm,
     send,
     render,
+    refreshLibraryPanels,
+    afterLibraryDataChange,
+    onSearchBlur,
     setActiveView,
     setSearchQuery,
     setLibraryLevelFilter,
@@ -46,18 +101,20 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
 
   root.querySelector('#dash-search')?.addEventListener('input', (e) => {
     setSearchQuery((e.target as HTMLInputElement).value);
-    render();
+    refreshLibraryPanels();
+  });
+  root.querySelector('#dash-search')?.addEventListener('blur', () => {
+    onSearchBlur?.();
   });
 
-  root.querySelectorAll<HTMLButtonElement>('[data-level-filter]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const raw = btn.getAttribute('data-level-filter');
-      if (raw === 'all' || raw === null) setLibraryLevelFilter('');
-      else if (raw === 'unset') setLibraryLevelFilter('unset');
-      else if (raw === 'legacy') setLibraryLevelFilter('legacy');
-      else setLibraryLevelFilter(raw as LevelTag);
-      render();
-    });
+  attachLibraryPanelListeners({
+    root,
+    vm,
+    send,
+    render,
+    refreshLibraryPanels,
+    afterLibraryDataChange,
+    setLibraryLevelFilter,
   });
 
   root.querySelector('#setting-level-framework')?.addEventListener('change', async (e) => {
@@ -209,29 +266,6 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     if (!ok) return;
     await send({ type: MSG.CLEAR_ALL_EXTENSION_DATA });
     render();
-  });
-
-  root.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((btn) => {
-    btn.addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      const id = btn.getAttribute('data-remove');
-      if (!id) return;
-      await send({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
-      render();
-    });
-  });
-
-  root.querySelectorAll<HTMLButtonElement>('[data-undo-complete]').forEach((btn) => {
-    btn.addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      const id = btn.getAttribute('data-undo-complete');
-      if (!id) return;
-      await send({
-        type: MSG.SET_LIBRARY_COMPLETION,
-        payload: { videoId: id, complete: false },
-      });
-      render();
-    });
   });
 
   const pauseEl = root.querySelector<HTMLInputElement>('#pause-unfocused');

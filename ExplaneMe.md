@@ -8,35 +8,56 @@ This document describes **JustPractice**, a Chrome MV3 extension: what each sour
 
 ## How the extension fits together
 
-- **Single source of truth:** `chrome.storage.local` under the key `jpPractice` (`STORAGE_KEY` in `src/lib/storage.ts`). Shape = `PersistedData` (library, daily/video practice seconds, settings, schema version).
+- **Single source of truth:** `chrome.storage.local` under the key `jpPractice` (`STORAGE_KEY` in `src/lib/storage.ts`). Shape = `PersistedData` (library, daily/video practice seconds, settings, `playerProgress`, schema version).
 - **Who writes storage:** almost always the **background service worker** (`src/background/index.ts`) after validating messages. Content scripts and pages send `chrome.runtime.sendMessage` payloads typed in `src/lib/messages.ts`.
-- **Who reads storage for UI:** popup and dashboard call `GET_STATE` via messaging; the YouTube **content script** also uses `GET_STATE` (library refresh in `youtubeLibraryPanel.ts`, calendar snapshot in `youtubeWatchLifecycle.ts`) and listens to `chrome.storage.onChanged` for the storage key to refresh UI without spamming the background.
-- **YouTube surface area:** one content script entry (`src/content/youtube.ts`) loads on YouTube; it pulls in feed thumbnail UI from `src/content/feedCards.ts`, **first-time panel host + wiring** from `src/content/youtubePanelMount.ts`, **watch-panel library GET_STATE / save / difficulty** flows from `src/content/youtubeLibraryPanel.ts`, **SPA navigation + storage resync orchestration** from `src/content/youtubeWatchLifecycle.ts`, panel markup from `src/content/youtubePanelHtml.ts`, **shadow-root panel render/update helpers** from `src/content/youtubePanelUi.ts`, **watch-page `chrome.runtime.sendMessage` helpers** from `src/content/youtubeMessaging.ts`, **optional panel debug logging** from `src/content/youtubeDebug.ts`, **SPA / player DOM hooks** from `src/content/youtubePlayerHooks.ts`, and **practice interval / flush helpers** from `src/content/youtubePracticeTimer.ts`.
+- **Who reads storage for UI:** popup and dashboard call `GET_STATE` via messaging; the YouTube **content script** uses `GET_STATE` (library refresh, calendar snapshot) and listens to `chrome.storage.onChanged` for `STORAGE_KEY` to refresh UI without spamming the background.
+- **YouTube entry:** `src/content/youtube.ts` (~36 lines) is **boot-only** — debug log, `attachWatchPanelRuntimeHooks()`, visibility debounce for calendar refresh, `storage.onChanged` → `onJpPracticeStorageChanged`, initial `onWatchPanelVideoChanged`, `initFeedCards`.
+- **YouTube orchestrator:** `src/content/youtubeWatchPanelRuntime.ts` (~627 lines) owns watch-panel state, practice intervals, library save/complete, calendar/XP wiring; delegates completion prompt to `youtubeWatchPanelCompletion.ts`, video/SPA binding to `youtubeWatchPanelVideoFlow.ts`, paint to `youtubePanelUi.ts` / `youtubePanelCalendarUi.ts`, mount to `youtubePanelMount.ts`, lifecycle glue to `youtubeWatchLifecycle.ts`.
 
-```text
-youtube.com tab
-  └─ content script: youtube.ts ──► feedCards.ts (feed strip / popover)
-        │                    ├────► youtubePanelMount.ts (ensure panel host, banners, home-feed strip)
-        │                    ├────► youtubeLibraryPanel.ts (GET_STATE refresh, save, difficulty, flash)
-        │                    ├────► youtubeWatchLifecycle.ts (onVideoChanged glue, calendar GET_STATE, storage.onChanged body)
-        │                    ├────► youtubePanelHtml.ts (shadow DOM template)
-        │                    ├────► youtubePanelUi.ts (calendar, goal ring, labels, drag)
-        │                    ├────► youtubeMessaging.ts (sendMsg / fire-and-forget / async void guard)
-        │                    ├────► youtubeDebug.ts (jpPracticeDebug strip + console log helpers)
-        │                    ├────► youtubePlayerHooks.ts (nav events, player MutationObserver, feed-card tap pick)
-        │                    └────► youtubePracticeTimer.ts (count/flush intervals + PRACTICE_TICK flush + page listeners)
-        │
-        └─ chrome.runtime.sendMessage ──► background/index.ts
-                                              ├─ read/write storage.ts
-                                              ├─ contextMenus (save from right-click)
-                                              └─ goalNotifications.ts (alarms + optional notifications)
+**Architecture (mermaid)**
 
-toolbar / options
-  └─ popup/main.ts  ──► messaging ──► background
-  └─ dashboard/main.ts ──► dashboardViewModel.ts + dashboardTemplates.ts + dashboardListeners.ts
-        │                └─► messaging ──► background
+```mermaid
+flowchart TB
+  subgraph Content["YouTube tab"]
+    YT[youtube.ts boot]
+    RT[youtubeWatchPanelRuntime.ts]
+    LC[youtubeWatchLifecycle.ts]
+    UI[youtubePanelUi.ts + Html + Mount]
+    FC[feedCards.ts]
+    YT --> RT
+    RT --> LC
+    RT --> UI
+    YT --> FC
+  end
 
-Shared everywhere: messages.ts, storage types, i18n/, levelTags, practiceStats, etc.
+  subgraph BG["Service worker"]
+    BI[background/index.ts]
+    PE[playerProgressEvents.ts]
+    BI --> PE
+  end
+
+  subgraph Pages["Extension pages"]
+    POP[popup/main.ts]
+    DASH[dashboard/main.ts]
+    DASH --> VM[dashboardViewModel]
+    DASH --> TPL[dashboardTemplates]
+    DASH --> LIS[dashboardListeners]
+  end
+
+  subgraph Heatmap["Year heatmap lib"]
+    YHC[yearHeatmapCalendar]
+    YHH[yearHeatmapHtml]
+    YHI[yearHeatmapInteractive]
+    YHM[yearHeatmapMonth]
+    YHC --> YHH --> YHI --> YHM
+  end
+
+  RT -->|sendMessage| BI
+  POP -->|sendMessage| BI
+  LIS -->|sendMessage| BI
+  UI --> Heatmap
+  TPL --> Heatmap
+  BI --> ST[(chrome.storage.local jpPractice)]
 ```
 
 ---
@@ -79,57 +100,75 @@ Shared everywhere: messages.ts, storage types, i18n/, levelTags, practiceStats, 
 | `package.json` | Scripts: `dev`, `build` (tsc + vite), `test`, `lint`. | Tooling | 2 | 1 | No |
 | `README.md` | Human-oriented product + dev instructions. | — | 1 | 1 | No |
 
+**Manifest permissions** (`manifest.config.ts`): `storage`, `contextMenus`, `alarms`, `notifications`; host `https://www.youtube.com/*`, `https://m.youtube.com/*`. Entry: SW `src/background/index.ts`, content `src/content/youtube.ts`, popup `src/popup/index.html`, options `src/dashboard/index.html`.
+
 ---
 
-## `src/` — library (`src/lib/`)
+## `src/lib/`
 
-| File | Purpose | Connects to | Imp. | Cplx. | Split? |
-|------|---------|-------------|------|-------|--------|
-| `storage.ts` (~405 lines) | **`PersistedData`** shape, `STORAGE_KEY`, normalization, migrations, `readPersisted` / `writePersisted`, goal + settings defaults. **Schema version** lives here. | Imported by background, dashboard, popup, content scripts; `UiLocale` used by `i18n/` | 5 | 4 | **Maybe** — types/constants vs migration vs I/O helpers |
-| `messages.ts` | **`MSG`** string constants + TypeScript message/response types for `chrome.runtime.sendMessage`. | Background switch; every caller of `sendMessage` | 5 | 3 | No — keep protocol in one place |
-| `extensionMessaging.ts` | Detects “benign” extension errors (invalidated context, missing receiver) for UI error handling. | `youtubeMessaging.ts`, `feedCards.ts` | 3 | 1 | No |
-| `levelTags.ts` | JLPT/CEFR/custom tag lists, legacy detection, `tagsForFramework`, context-menu parsing helpers. | Background menus, all UIs that show levels | 4 | 3 | No |
-| `practiceStats.ts` | Aggregations: streaks, calendar visuals, duration formatting, buckets for stats views. | `youtube.ts`, `youtubePanelUi.ts`, `dashboard/dashboardViewModel.ts` + `dashboardTemplates.ts`, `popup/main.ts`, `goalNotifications.ts` | 4 | 4 | **Maybe** — pure “date math” vs “presentation strings” |
-| `goalFormat.ts` | SVG ring / goal progress line formatting shared between watch panel and dashboard. | `youtubePanelUi.ts`, `dashboard/dashboardFormatters.ts` | 3 | 2 | No |
-| `goalNotifications.ts` | `chrome.alarms` scheduling + optional `chrome.notifications` for daily goal / nudge; daily-goal XP bonus sync; uses Vite `?url` import for notify icon. | `background/index.ts`, `playerProgress.ts` | 4 | 3 | No |
-| `playerProgress.ts` | Account **rank** curve (cap 120/cycle), cycle vs lifetime XP, **prestige** (`canPrestige` / `applyPrestige`, +5%/level practice XP cap +50%), weekend 2×, bonus helpers, backfill cap. | `playerProgressEvents.ts`, dashboard/popup/panel UI | 4 | 3 | No |
-| `playerProgressEvents.ts` | Background orchestration: award XP on tick/complete/goal, run `evaluateAchievements`, return `XpEventResult`. | `background/index.ts` | 4 | 3 | No |
-| `achievements.ts` | Static catalog (~36 badges incl. prestige), `evaluateAchievements`, UI sort helpers. | `playerProgressEvents.ts`, Progress tab | 3 | 2 | No |
-| `xpNotifications.ts` | Optional browser toasts for level-up and achievement unlock (`xpNotificationsEnabled`). | `background/index.ts` | 3 | 2 | No |
-| `youtubeIds.ts` | Parse video IDs from URLs and DOM; **`resolveYoutubeVideoIdFromPage`** and related helpers (high YouTube churn). | `youtube.ts`, `feedCards.ts`, background | 4 | 4 | **Maybe** — URL parsing vs DOM scraping modules |
-| `youtubeMeta.ts` | Thumbnail URL helper from `videoId`. | Popup + `dashboard/dashboardTemplates.ts` (library cards) | 2 | 1 | No |
-| `htmlEscape.ts` | Safe string escaping for injected HTML. | Any file building HTML strings | 3 | 1 | No |
-| `branding.ts` | `APP_NAME` constant. | Menus, UI chrome | 2 | 1 | No |
-| `vite-env.d.ts` | Vite client type refs. | Build | 1 | 1 | No |
-| `*.test.ts` | Unit tests: `youtubeIds`, `storage`, `levelTags`, `practiceStats`, **`playerProgress`**, **`achievements`** (under `src/lib/`); **`youtubePracticeTimer`** eligibility + flush (`src/content/youtubePracticeTimer.test.ts`). | Matching modules above | 3 | 2 | N/A |
+| File | Lines (approx.) | Purpose | Connects to | Imp. | Cplx. | Split? |
+|------|-----------------|---------|-------------|------|-------|--------|
+| `storage.ts` | ~25 | Re-exports `storageTypes` + `storageMigrate`; **`readPersisted`** / **`writePersisted`** only. | All importers of `./storage` | 5 | 2 | No |
+| `storageTypes.ts` | ~396 | **`PersistedData`**, types, defaults, `dateKeyFromTimestamp`, goal/settings normalization, compaction helpers. | `storageMigrate`, re-exported via `storage.ts` | 5 | 4 | No |
+| `storageMigrate.ts` | ~111 | `migrate`, `normalizeImportedPersisted`, library item normalization, completion list helpers. | `storage.ts` I/O path | 4 | 3 | No |
+| `messages.ts` | ~122 | **`MSG`** (11 types) + TypeScript message/response types; **`XpAwardFields`** on mutating responses. | Background switch; all `sendMessage` callers | 5 | 3 | No |
+| `playerProgress.ts` | ~196 | Account **rank** (levels 1–120/cycle), `totalXp` vs `lifetimeXp`, **prestige** (0–10, +5%/level practice XP cap +50%), weekend 2×, XP from seconds, first-complete/daily-goal/streak bonuses, `canPrestige` / `applyPrestige`. | `playerProgressEvents`, dashboard/popup/panel UI | 4 | 3 | No |
+| `playerProgressEvents.ts` | ~104 | Background orchestration: `processPracticeTickXpEvent`, `processFirstCompleteXpEvent`, `processPrestigeEvent`, achievement scan; returns `XpEventResult`. | `background/index.ts` | 4 | 3 | No |
+| `achievements.ts` | ~173 | Static catalog (**40** badges), categories (`library` … `meta`), `evaluateAchievements`, `groupedAchievementsForUi`. | `playerProgressEvents`, Progress tab | 3 | 2 | No |
+| `xpNotifications.ts` | ~75 | Optional browser toasts for level-up, achievement unlock, prestige (`xpNotificationsEnabled`). | `background/index.ts` | 3 | 2 | No |
+| `practiceStats.ts` | ~171 | Aggregations: streaks, calendar visuals, duration formatting, stats buckets. | Panel, dashboard VM/templates, popup, `goalNotifications`, heatmap | 4 | 4 | **Maybe** — date math vs presentation |
+| `goalFormat.ts` | ~38 | SVG ring / goal progress line formatting (watch panel + dashboard). | `youtubePanelUi.ts`, `dashboardFormatters.ts` | 3 | 2 | No |
+| `goalNotifications.ts` | ~142 | `chrome.alarms` + optional notifications for daily goal / nudge; daily-goal XP bonus sync. | `background/index.ts`, `playerProgress` | 4 | 3 | No |
+| `levelTags.ts` | ~72 | JLPT/CEFR/custom tag lists, legacy detection, `tagsForFramework`, context-menu parsing. | Background menus, all level pickers | 4 | 3 | No |
+| `youtubeIds.ts` | ~85 | Parse video IDs from URLs and DOM; **`resolveYoutubeVideoIdFromPage`** (high churn). | Content scripts, background | 4 | 4 | **Maybe** — URL vs DOM modules |
+| `youtubePageTitle.ts` | ~13 | Strip YouTube suffix from `document.title`; placeholder title detection for library writes. | `youtubeWatchPanelRuntime`, background completion handler | 3 | 1 | No |
+| `youtubeMeta.ts` | ~4 | Thumbnail URL from `videoId`. | Popup, `dashboardTemplates` | 2 | 1 | No |
+| `yearHeatmapCalendar.ts` | ~151 | Build **year grid** (`YearHeatmapGrid`), slot colors (active/goal/blank), month labels, column-major flattening. | `yearHeatmapHtml`, `yearHeatmapMonth` | 4 | 3 | No |
+| `yearHeatmapHtml.ts` | ~198 | Year heatmap **HTML** (cells, nav, weekday row, legend hooks). | `youtubePanelUi`, `dashboardTemplates`, `yearHeatmapInteractive` | 3 | 3 | **Maybe** — CSS strings if file grows |
+| `yearHeatmapMonth.ts` | ~136 | **Month drill-down** grid (`MonthDetailGrid`) from daily seconds + goals. | `yearHeatmapInteractive`, `yearHeatmapMonthHtml` | 4 | 3 | No |
+| `yearHeatmapMonthHtml.ts` | ~54 | Month layer markup for drill-down overlay. | `yearHeatmapInteractive` | 2 | 2 | No |
+| `yearHeatmapInteractive.ts` | ~137 | Click month → drill-down; back to year; wires DOM listeners (panel + dashboard). | `youtubePanelUi`, `dashboardListeners` | 4 | 3 | No |
+| `extensionMessaging.ts` | ~17 | Benign extension error detection (invalidated context, missing receiver). | `youtubeMessaging.ts`, `feedCardsState` | 3 | 1 | No |
+| `htmlEscape.ts` | ~10 | Safe string escaping for injected HTML. | Dashboard, templates, panel | 3 | 1 | No |
+| `branding.ts` | ~2 | `APP_NAME` constant. | Menus, UI chrome | 2 | 1 | No |
+| `vite-env.d.ts` | ~1 | Vite client type refs. | Build | 1 | 1 | No |
 
 ---
 
 ## `src/i18n/`
 
-| File | Purpose | Connects to | Imp. | Cplx. | Split? |
-|------|---------|-------------|------|-------|--------|
-| `index.ts` | `createTranslator`, `resolveLocale`, merges locale JSON with English fallback. `MessageKey` derived from `en.json`. | Every UI surface + background for menu labels | 4 | 3 | No |
-| `localeMeta.ts` | Supported locale list, dropdown metadata, `formatLocaleOptionLabel`. | `index.ts`, `dashboard/dashboardTemplates.ts` | 3 | 2 | No |
-| `locales/en.json` … `de.json` | UI strings; **English is the key set of record**; others overlay missing keys via merge in `index.ts`. | `index.ts` | 3 | 1 | No — keep JSON per language |
+| File | Lines (approx.) | Purpose | Connects to | Imp. | Cplx. | Split? |
+|------|-----------------|---------|-------------|------|-------|--------|
+| `index.ts` | ~52 | `createTranslator`, `resolveLocale`, merges locale JSON with English fallback. `MessageKey` from `en.json`. | Every UI + background menu labels | 4 | 3 | No |
+| `localeMeta.ts` | ~40 | Supported locale list, dropdown metadata, `formatLocaleOptionLabel`. | `index.ts`, `dashboardTemplates` | 3 | 2 | No |
+| `locales/en.json` | ~299 | UI strings; **English is the key set of record**. | `index.ts` | 3 | 1 | No |
+| `locales/fr.json`, `ja.json`, `he.json`, `es.json`, `de.json` | ~194–195 each | Translations; missing keys fall back via merge in `index.ts`. | `index.ts` | 3 | 1 | No |
 
 ---
 
-## `src/content/` (injected into YouTube pages)
+## `src/content/` (injected into YouTube)
 
 | File | Lines (approx.) | Purpose | Connects to | Imp. | Cplx. | Split? |
 |------|-----------------|---------|-------------|------|-------|--------|
-| `youtube.ts` | ~594 | Main content script: boot, practice intervals; delegates **`onVideoChanged`**, calendar **`GET_STATE` refresh**, and **`chrome.storage.onChanged`** bodies to `youtubeWatchLifecycle.ts`. **Panel mount** → `youtubePanelMount.ts`; **library panel messaging** (`GET_STATE` refresh, save, difficulty, post-write flash) → `youtubeLibraryPanel.ts`; **panel paint** → `youtubePanelUi.ts`. **Debug** → `youtubeDebug.ts`; **practice ticks** → `youtubePracticeTimer.ts` + `youtubeMessaging.ts`; **SPA/player/feed pick** → `youtubePlayerHooks.ts`. Calls `initFeedCards`. | `feedCards.ts`, `youtubePanelMount.ts`, `youtubeLibraryPanel.ts`, `youtubeWatchLifecycle.ts`, `youtubePanelHtml.ts`, `youtubePanelUi.ts`, `youtubePracticeTimer.ts`, `youtubeMessaging.ts`, `youtubeDebug.ts`, `youtubePlayerHooks.ts`, most of `lib/` + `i18n/` | 5 | 5 | **Yes** — remaining: **`boot()`** wiring / one-shot init vs domain handlers if `youtube.ts` still feels crowded |
-| `youtubeWatchLifecycle.ts` | ~67 | **`runWatchPanelOnVideoChanged`** (flush + rebind + no-video vs has-video flows), **`refreshWatchPanelCalendarSnapshot`** (`GET_STATE` → daily snapshot callback), **`runWatchPanelAfterJpPracticeStorageChange`** (settings fast-path + post-resync pipeline). Injected step implementations live in `youtube.ts`. | `youtube.ts`, `messages`, `storage` types, `youtubeMessaging.ts` (`sendMsg`) | 4 | 3 | No — keep orchestration thin; grow `youtube.ts` boot split instead |
-| `youtubeLibraryPanel.ts` | ~224 | `refreshWatchPanelLibraryUiFromRemoteState`, `saveWatchPanelVideoToLibrary`, `applyWatchPanelDifficultyChange`, `flashWatchPanelAfterLibraryWrite`; uses `sendMsg` from `youtubeMessaging.ts`. | `youtube.ts`, `youtubePanelMount.ts`, `youtubePanelUi.ts`, `messages`, `storage`, `i18n` | 4 | 3 | **Maybe** — pure message helpers vs DOM if it grows |
-| `youtubePanelMount.ts` | ~256 | `ensureWatchPanelIfAbsent` (host + shadow + listeners), `updateWatchPanelHint`, `setWatchPanelStatusFlash`, library banner show/clear + timer, `needsHomeFeedPanelAttention`, `updateHomeFeedAttentionStrip`, `applyNoVideoHomePanelLayout`. | `youtube.ts`, `youtubePanelHtml.ts`, `youtubePanelUi.ts`, `storage` types | 4 | 3 | **Maybe** — split banners vs mount if it grows |
-| `youtubeDebug.ts` | ~59 | `JP_PRACTICE_DEBUG_LS_KEY`, `jpWatchDebugEnabled`, `jpWatchLog`, `createJpWatchPanelDebugStrip` (shadow `[part="jp-debug-strip"]`). | Imported by `youtube.ts` only | 2 | 2 | No |
-| `youtubeMessaging.ts` | ~30 | `sendMsg`, `sendMsgFireAndForget`, `fireAsyncWatch` for the watch content script (benign-extension error handling). | `youtube.ts`, `youtubeLibraryPanel.ts`, `youtubeWatchLifecycle.ts` | 3 | 2 | No |
-| `youtubePlayerHooks.ts` | ~103 | `getVideoElement`, `attachYoutubeNavHooks`, `attachYoutubePlayerDomHooks`, `attachHomeFeedPointerPick` (uses `pickFeedCardFromInteractionTarget`). | `youtube.ts`, `feedCards.ts` | 4 | 4 | **Maybe** — split nav vs observer vs pointer pick if it grows |
-| `youtubePracticeTimer.ts` | ~114 | `shouldCountPracticeTime`, `flushPendingPracticeSeconds`, `createPracticeIntervalController`, `attachPracticePageFlushListeners`; constants `PRACTICE_*_INTERVAL_MS`. Unit-tested eligibility + flush. | Imported by `youtube.ts` only | 4 | 3 | **Maybe** — split pure math vs DOM listeners only if file grows |
-| `feedCards.ts` | ~738 | Home/subscriptions/search **thumbnail strip**: hover UI, level picker, save/remove via messaging; coordinates “picked” video meta with watch panel when URL has no id. | `youtube.ts`, `youtubePlayerHooks.ts`, `messages`, `storage` types, `youtubeIds`, `extensionMessaging` | 4 | 5 | **Maybe** — DOM scan/mount vs popover UI vs messaging |
-| `youtubePanelHtml.ts` | ~377 | Inner HTML/CSS for the shadow-root panel (markup + styles in one module). | Imported by `youtubePanelMount.ts` (and indirectly `youtube.ts`) | 3 | 2 | **Maybe** — could separate **CSS** vs **HTML** if the string keeps growing |
-| `youtubePanelUi.ts` | ~347 | `renderWatchPanelCalendar`, `paintCalStreak`, `updateDailyGoalRing`, `syncWatchPanelLabels`, `applyWatchPanelCollapsed`, `attachPanelDrag`, level-select HTML helpers; takes `shadowRoot` + state via parameters. | `youtube.ts`, `youtubePanelMount.ts`, `youtubeLibraryPanel.ts`; `levelTags`, `practiceStats`, `goalFormat`, `storage`, `htmlEscape`, `i18n` types | 4 | 4 | **Maybe** — calendar vs ring vs labels if it grows |
+| `youtube.ts` | ~36 | **Boot only:** `attachWatchPanelRuntimeHooks`, debounced visible-tab calendar refresh, `storage.onChanged` → runtime, initial video change, `initFeedCards`. | `youtubeWatchPanelRuntime`, `feedCards`, `youtubeDebug` | 4 | 1 | No |
+| `youtubeWatchPanelRuntime.ts` | ~627 | **Main orchestrator:** shadow panel state, `currentVideoId`, home pick meta, practice `pendingSeconds` + intervals, library/complete handlers, calendar/XP bar updates, hooks registration. | Most content modules + `lib/` + `i18n` | 5 | 4 | No — split into completion + video flow modules |
+| `youtubeWatchPanelCompletion.ts` | ~171 | Ended/completion prompt state, visibility, `toggleWatchPanelCompletion`, video `timeupdate` rebind. | Runtime, `youtubePlayerHooks`, `youtubePanelUi` | 4 | 3 | No |
+| `youtubeWatchPanelVideoFlow.ts` | ~79 | `runWatchPanelVideoChangedFlow` — no-video vs has-video panel steps (delegates to lifecycle). | Runtime, `youtubeWatchLifecycle`, mount | 4 | 3 | No |
+| `youtubeWatchLifecycle.ts` | ~62 | `refreshWatchPanelCalendarSnapshot`, `runWatchPanelAfterJpPracticeStorageChange`, `runWatchPanelOnVideoChanged` (injected steps from runtime). | `youtubeWatchPanelRuntime`, `youtubeMessaging` | 4 | 3 | No |
+| `youtubeLibraryPanel.ts` | ~265 | Remote state refresh, save, difficulty, **`setWatchPanelLibraryCompletion`**, XP tick flash after messages. | Runtime, mount, panel UI, `messages` | 4 | 3 | **Maybe** — messaging vs DOM |
+| `youtubePanelMount.ts` | ~243 | `ensureWatchPanelIfAbsent`, hints, library banners, home-feed attention strip, no-video layout. | Runtime, `youtubePanelHtml`, `youtubePanelUi` | 4 | 3 | **Maybe** — banners vs mount |
+| `youtubePanelHtml.ts` | ~121 | Shadow-root **markup** for watch panel. | `youtubePanelMount`, `youtubePanelCss` | 3 | 2 | No |
+| `youtubePanelCss.ts` | ~465 | Shadow-root **styles** (`watchPanelShadowCss`). | `youtubePanelHtml` | 3 | 2 | No |
+| `youtubePanelUi.ts` | ~224 | Goal ring, XP bar, completion/ended-prompt UI, labels, drag, level-select HTML. | Runtime, mount, library panel | 4 | 3 | No |
+| `youtubePanelCalendarUi.ts` | ~271 | Calendar (**year heatmap** + month grid), streak caption, `renderWatchPanelCalendar`. | Runtime via `youtubePanelUi` re-exports; heatmap stack | 4 | 4 | No |
+| `youtubeMessaging.ts` | ~27 | `sendMsg`, `sendMsgFireAndForget`, `fireAsyncWatch`. | Runtime, library panel, lifecycle | 3 | 2 | No |
+| `youtubePlayerHooks.ts` | ~137 | Nav hooks, player `MutationObserver`, home feed pointer pick, **completion prompt** `timeupdate` listener + threshold math. | Runtime, `feedCards` | 4 | 4 | **Maybe** — nav vs observer vs completion |
+| `youtubePracticeTimer.ts` | ~101 | `shouldCountPracticeTime`, flush, interval controller, page flush listeners. | Runtime only | 4 | 3 | No |
+| `youtubeDebug.ts` | ~54 | `jpPracticeDebug` localStorage flag, console helpers, optional debug strip in shadow DOM. | Runtime | 2 | 2 | No |
+| `feedCards.ts` | ~48 | Boot: `initFeedCards`, `pickFeedCardFromInteractionTarget`; re-exports `VideoMeta`. | `youtube.ts`, `youtubePlayerHooks` | 4 | 2 | No |
+| `feedCardsDom.ts` | ~338 | Deep DOM scan, card meta extraction, hover-strip mount. | `feedCards`, `feedCardsPopover` | 4 | 4 | No |
+| `feedCardsPopover.ts` | ~250 | Level-picker popover host, save/update via messaging. | `feedCardsDom`, `feedCardsState` | 4 | 3 | No |
+| `feedCardsState.ts` | ~85 | Shared feed state, `sendFeedMsg`, library id cache sync. | Dom + popover + `feedCards` | 3 | 2 | No |
 
 ---
 
@@ -137,32 +176,59 @@ Shared everywhere: messages.ts, storage types, i18n/, levelTags, practiceStats, 
 
 | File | Lines (approx.) | Purpose | Connects to | Imp. | Cplx. | Split? |
 |------|-----------------|---------|-------------|------|-------|--------|
-| `index.ts` | ~327 | `chrome.runtime.onMessage` router: library CRUD, settings, practice ticks, export/restore, `GET_STATE`; **context menus** for YouTube save; wires **goal** alarm listener. | `messages`, `storage`, `levelTags`, `youtubeIds`, `goalNotifications`, `i18n` | 5 | 4 | **Maybe** — `onMessage` handlers vs `contextMenus` builder vs alarm hooks |
+| `index.ts` | ~36 | Service worker entry: message listener, goal alarm, wires context menus. | `backgroundMessageHandlers`, `backgroundContextMenus`, `goalNotifications` | 4 | 1 | No |
+| `backgroundMessageHandlers.ts` | ~244 | `handleBackgroundMessage` — all **11** `MSG` types (library, practice, settings, prestige, restore). | `messages`, `storage`, `playerProgressEvents`, `backgroundOEmbed`, `backgroundContextMenus` | 5 | 4 | No |
+| `backgroundContextMenus.ts` | ~107 | YouTube context menu rebuild + click → `ADD_OR_UPDATE_LIBRARY`. | `levelTags`, `backgroundMessageHandlers` | 4 | 3 | No |
+| `backgroundOEmbed.ts` | ~38 | oEmbed title/channel enrich after library writes. | `backgroundMessageHandlers` | 3 | 2 | No |
 
 ---
 
 ## `src/popup/` and `src/dashboard/`
 
-| File | Purpose | Connects to | Imp. | Cplx. | Split? |
-|------|---------|-------------|------|-------|--------|
-| `popup/index.html` + `popup/main.ts` (~317) + `popup.css` | Toolbar popup: compact library list, filters, open dashboard link. | Messaging + same libs as dashboard (subset) | 4 | 3 | **Maybe** — render functions vs data loading |
-| `dashboard/index.html` + `dashboard.css` | Options tab shell: `#app` mount + full-page styles. | `dashboard/main.ts` | 2 | 1 | No |
-| `dashboard/main.ts` (~93) | Thin entry: `GET_STATE`, `buildDashboardViewModel`, fire-and-forget `ENRICH_LIBRARY_META` for unknown rows, `dashboardShellHtml`, **`attachDashboardListeners`**, debounced `storage.onChanged` → re-render. | `dashboardViewModel`, `dashboardTemplates`, `dashboardListeners`, messaging, `i18n` (load error only), `storage` (`STORAGE_KEY`) | 4 | 2 | No |
-| `dashboard/dashboardViewModel.ts` | **`buildDashboardViewModel`** + **`DashView`**: sanitized level filter, practice aggregates, library rows, prebuilt filter-chip HTML, `navItemClass` / `viewPanelClass`. | `storage`, `practiceStats`, `levelTags`, `i18n`, `dashboardFormatters` | 4 | 3 | No |
-| `dashboard/dashboardTemplates.ts` | **`dashboardShellHtml`** + section builders (sidebar, topbar, library, stats, goals, settings). | `dashboardViewModel`, `dashboardIcons`, `dashboardFormatters`, `practiceStats`, `youtubeMeta`, `i18n`, `branding` | 3 | 3 | **Maybe** — only if one section outgrows the file |
-| `dashboard/dashboardListeners.ts` | **`attachDashboardListeners`** after each paint: nav, search, filters, settings/goals saves, export/restore/clear, remove, pause-unfocused. | `messages`, `storage` (types + helpers), `i18n`, `dashboardViewModel` (`vm.t`), `dashboardFormatters` (parsers) | 4 | 3 | No |
-| `dashboard/dashboardFormatters.ts` | Pure helpers: level/search matching, welcome block, streak/goal strings, **`goalRingCardHtml`**, input parsers used by listeners. | `storage`, `levelTags`, `goalFormat`, `htmlEscape` | 3 | 2 | No |
-| `dashboard/dashboardIcons.ts` | Inline SVG snippets for sidebar + topbar. | `dashboardTemplates` only | 2 | 1 | No |
+| File | Lines (approx.) | Purpose | Connects to | Imp. | Cplx. | Split? |
+|------|-----------------|---------|-------------|------|-------|--------|
+| `popup/index.html` | ~13 | Toolbar popup shell. | `popup/main.ts` | 1 | 1 | No |
+| `popup/main.ts` | ~315 | Compact library, filters, account XP summary, open dashboard. | Messaging, `practiceStats`, `playerProgress`, `i18n` | 4 | 3 | **Maybe** — render vs load |
+| `popup/popup.css` | ~332 | Popup styles. | `popup/index.html` | 2 | 1 | No |
+| `dashboard/index.html` | ~13 | Options tab shell (`#app`). | `dashboard/main.ts` | 1 | 1 | No |
+| `dashboard/main.ts` | ~210 | Entry: `GET_STATE`, cached data, full shell render vs **partial patches** (topbar metrics + library/completed) when search is focused or on search/filter input; debounced `storage.onChanged`; `yearHeatmapYear` module state. | VM, templates, listeners, `dashboardDomUpdate`, messaging | 4 | 2 | No |
+| `dashboard/dashboardDomUpdate.ts` | ~25 | **`patchTopbarMetrics`**, **`patchLibraryAndCompletedPanels`**, **`isDashSearchFocused`** — DOM partial updates without replacing `#dash-search`. | `dashboardTemplates` | 3 | 1 | No |
+| `dashboard/dashboardViewModel.ts` | ~250 | **`buildDashboardViewModel`** + **`DashView`**: `library` \| `completed` \| `stats` \| `progress` \| `goals` \| `settings`; library vs completed row splits; account XP/prestige/achievements; filter chips; heatmap year. | `storage`, `practiceStats`, `playerProgress`, `achievements`, `dashboardFormatters` | 4 | 3 | No |
+| `dashboard/dashboardTemplates.ts` | ~641 | **`dashboardShellHtml`** + section builders (sidebar, library, **Completed**, stats + year heatmap, **Progress** XP/achievements/prestige, goals, settings). | VM, icons, formatters, heatmap HTML | 3 | 3 | **Maybe** — if one section outgrows file |
+| `dashboard/dashboardListeners.ts` | ~290 | Nav, search (partial library refresh), **`attachLibraryPanelListeners`** (filters/remove/undo), complete/uncomplete, **prestige**, settings/goals, export/restore/clear, heatmap year nav + **`attachYearHeatmapInteractive`**. | `messages`, VM, formatters | 4 | 3 | No |
+| `dashboard/dashboardFormatters.ts` | ~181 | Level/search matching, welcome block, streak/goal strings, **`goalRingCardHtml`**, **`yearHeatmapStatusLabel`**, input parsers. | `storage`, `levelTags`, `goalFormat`, heatmap types | 3 | 2 | No |
+| `dashboard/dashboardIcons.ts` | ~70 | Inline SVG for sidebar + topbar. | `dashboardTemplates` only | 2 | 1 | No |
+| `dashboard/dashboard.css` | ~1936 | Full-page dashboard styles (including heatmap, progress, completed tab). | `index.html` | 2 | 2 | N/A |
 
-> **Dashboard import graph (not drawn above):** `main.ts` imports only `dashboardViewModel`, `dashboardTemplates`, and `dashboardListeners`. **`dashboardFormatters.ts`** and **`dashboardIcons.ts`** are pulled in by those three modules (not by `main.ts` directly).
+> **Dashboard import graph:** `main.ts` → `dashboardViewModel`, `dashboardTemplates`, `dashboardListeners`, `dashboardDomUpdate`. **`dashboardFormatters`** and **`dashboardIcons`** are pulled in by templates/VM/listeners (not by `main.ts` directly).
 
 ---
 
-## Assets
+## `src/assets/`
 
 | Path | Purpose | Imp. | Cplx. | Split? |
 |------|---------|------|-------|--------|
-| `src/assets/notify.png` (import in `goalNotifications.ts`) | Notification icon URL via Vite `?url`. The repo layout should include this path so the build can resolve the asset. | 2 | 1 | N/A |
+| `src/assets/notify.png` | Notification icon via Vite `?url` in `goalNotifications.ts`. | 2 | 1 | N/A |
+
+---
+
+## Test files (all 11)
+
+| Test file | Module under test |
+|-----------|-------------------|
+| `src/lib/storage.test.ts` | `storage.ts` (migrations, normalization, library completion helpers) |
+| `src/lib/practiceStats.test.ts` | `practiceStats.ts` |
+| `src/lib/levelTags.test.ts` | `levelTags.ts` |
+| `src/lib/youtubeIds.test.ts` | `youtubeIds.ts` |
+| `src/lib/youtubePageTitle.test.ts` | `youtubePageTitle.ts` |
+| `src/lib/playerProgress.test.ts` | `playerProgress.ts` (rank, prestige, XP multipliers) |
+| `src/lib/achievements.test.ts` | `achievements.ts` |
+| `src/lib/yearHeatmapCalendar.test.ts` | `yearHeatmapCalendar.ts` |
+| `src/lib/yearHeatmapMonth.test.ts` | `yearHeatmapMonth.ts` + calendar helpers |
+| `src/content/youtubePracticeTimer.test.ts` | `youtubePracticeTimer.ts` (eligibility + flush payload) |
+| `src/content/youtubePlayerHooks.test.ts` | `youtubePlayerHooks.ts` (completion prompt thresholds) |
+
+Run: `npm test`. Note: `tsconfig.json` excludes `*.test.ts` from `tsc`; Vitest still typechecks tests at run time.
 
 ---
 
@@ -170,17 +236,23 @@ Shared everywhere: messages.ts, storage types, i18n/, levelTags, practiceStats, 
 
 | Goal | Start here |
 |------|------------|
-| New message type between UI and background | `src/lib/messages.ts` + handler in `src/background/index.ts` + callers |
-| Persisted field / migration | `src/lib/storage.ts` (+ bump `SCHEMA_VERSION` if needed) |
-| YouTube page DOM / panel behavior | `src/content/youtube.ts` (+ `youtubePanelMount.ts`, `youtubeLibraryPanel.ts`, `youtubeWatchLifecycle.ts` for SPA/storage/calendar orchestration, `youtubePanelHtml.ts`, `youtubePanelUi.ts`, `youtubeIds.ts`, `youtubePlayerHooks.ts` for player surface + SPA hooks, `youtubePracticeTimer.ts` for practice timing) |
+| New message type between UI and background | `src/lib/messages.ts` + handler in `src/background/backgroundMessageHandlers.ts` + callers |
+| Persisted field / migration | `src/lib/storageTypes.ts` / `storageMigrate.ts` (+ bump `SCHEMA_VERSION` if needed); I/O in `storage.ts` |
+| YouTube watch-panel behavior (practice, complete, SPA) | `src/content/youtubeWatchPanelRuntime.ts` (+ `youtubeWatchLifecycle.ts`, `youtubePlayerHooks.ts`, `youtubePracticeTimer.ts`) |
+| YouTube content script entry / boot only | `src/content/youtube.ts` |
+| Panel markup / styles | `src/content/youtubePanelHtml.ts` |
+| Panel paint (calendar, ring, XP, completion prompt UI) | `src/content/youtubePanelUi.ts` |
+| Year heatmap grid math / colors | `src/lib/yearHeatmapCalendar.ts` |
+| Year heatmap HTML or month drill-down | `src/lib/yearHeatmapHtml.ts`, `yearHeatmapMonth.ts`, `yearHeatmapInteractive.ts` |
 | Feed thumbnail strip | `src/content/feedCards.ts` |
-| Right-click save menus | `src/background/index.ts` (context menu section) + `levelTags.ts` |
+| Account XP / prestige / achievements logic | `src/lib/playerProgress.ts`, `playerProgressEvents.ts`, `achievements.ts` |
+| XP / prestige browser toasts | `src/lib/xpNotifications.ts` |
+| Right-click save menus | `src/background/backgroundContextMenus.ts` + `levelTags.ts` |
 | Stats math / streaks | `src/lib/practiceStats.ts` |
 | Goal reminder notifications | `src/lib/goalNotifications.ts` + background alarm wiring |
+| Mark complete / Completed tab | `SET_LIBRARY_COMPLETION` in background; `youtubeLibraryPanel.ts`; dashboard listeners + VM `completed` view |
+| Dashboard Progress tab (rank, prestige, badges) | `dashboardViewModel.ts` + `dashboardTemplates.ts` + `dashboardListeners.ts` |
 | New UI string | `src/i18n/locales/en.json` first, then other locales |
-| Dashboard options **markup** (library / stats / goals / settings HTML) | `src/dashboard/dashboardTemplates.ts` (+ `index.html` / `dashboard.css` for shell) |
-| Dashboard **events** after each render | `src/dashboard/dashboardListeners.ts` |
-| Dashboard **derived numbers** / filter chip HTML / nav active classes | `src/dashboard/dashboardViewModel.ts` |
 | Build / permissions / entrypoints | `manifest.config.ts`, `vite.config.ts` |
 
 ---
@@ -195,49 +267,96 @@ All of this lives in `src/lib/storage.ts`. The background is the normal writer; 
 
 | Field | Role |
 |-------|------|
-| `schemaVersion` | Bumped when migrations run (`SCHEMA_VERSION`). |
-| `library` | `LibraryItem[]` — `videoId`, `title`, `channel`, `addedAt`, `difficulty`, `completedAt` (Unix ms or null). |
-| `extensionInstalledDateKey` | `yyyy-mm-dd` anchor for “missed practice” / streak semantics. |
-| `dailySeconds` | Map `dateKey → seconds` for the practice timer (not watch history). |
+| `schemaVersion` | Current **`9`**. Migrations run in `normalizeImportedPersisted` / read path when version differs. |
+| `library` | `LibraryItem[]` — `videoId`, `title`, `channel`, `addedAt`, `difficulty`, **`completedAt`** (Unix ms or `null`). |
+| `extensionInstalledDateKey` | `yyyy-mm-dd` anchor for missed-practice / streak semantics. |
+| `dailySeconds` | Map `dateKey → seconds` for practice timer. |
 | `videoSeconds` | Map `videoId → seconds` (same metric as daily). |
-| `settings` | `AppSettings` — goals, framework, custom levels, `uiLocale`, panel position/collapse, `pauseWhenUnfocused`, goal + **XP notification** prefs, etc. |
-| `playerProgress` | **Schema v9** — `totalXp` (cycle rank XP, resets on prestige), `lifetimeXp` (never decreases), `prestigeLevel` (0–10), `achievements`, bonus dedupe date keys, `completeXpAwarded`. Rank is derived from `totalXp` only. |
+| `settings` | `AppSettings` — goals, framework, custom levels, `uiLocale`, panel position/collapse, `pauseWhenUnfocused`, goal + **XP notification** prefs, calendar prefs (below). |
+| `playerProgress` | **Schema v9** — see below. |
 
-**Settings worth remembering for AI debugging**
+**`PlayerProgress` (account layer — not video `LevelTag`)**
 
-- **`pauseWhenUnfocused`** — when true, practice seconds do not accrue unless the document has focus (see practice rules below).
-- **`levelFramework` / `customLevels`** — drive every level picker and context menu rebuild after `SET_SETTINGS`. These are **video difficulty** tags (JLPT/CEFR/custom), not account practice level.
-- **`xpNotificationsEnabled`** (default true) — browser toasts for practice level-up and achievement unlocks.
-- **Historical XP backfill** — on first migration to v8, `totalXp` is seeded once from summed `dailySeconds` (1 XP/min, cap 50k). v9 adds `lifetimeXp` (= existing `totalXp` on upgrade) and `prestigeLevel` (0).
-- **Prestige** — voluntary at rank 120 via Progress tab `PRESTIGE` message; resets cycle XP/rank, keeps lifetime XP and all other data; +5% practice XP per prestige (max 10).
+| Field | Role |
+|-------|------|
+| `totalXp` | XP in the **current prestige cycle**; drives rank (levels 1–120). **Resets to 0 on prestige.** |
+| `lifetimeXp` | All XP ever earned; **never decreases**. |
+| `prestigeLevel` | 0–10; +5% practice XP per level (max +50% at 10). |
+| `achievements` | `achievementId → unlockedAt` (Unix ms). |
+| `lastDailyGoalXpDateKey` / `lastStreakXpDateKey` | Dedupe keys for bonus XP. |
+| `completeXpAwarded` | `videoId → true` for videos that already received first-complete **+15 XP**. |
+
+**Library completion helpers**
+
+- `isLibraryItemCompleted(item)` — `completedAt !== null`.
+- `inProgressLibraryItems(library)` — saved videos **without** `completedAt` (shown on **Library** tab).
+- `completedLibraryItems(library)` — videos with `completedAt` set (shown on **Completed** tab).
+
+**Settings worth remembering**
+
+| Setting | Role |
+|---------|------|
+| `pauseWhenUnfocused` | Practice seconds only accrue when the tab has focus (if true). |
+| `calendarShowPracticeTime` | Tooltips / month cells show logged duration when true (default false). |
+| `yearHeatmapCalendar` | Legacy flag (default **true**); year heatmap is always used on the watch panel; no UI toggle. |
+| `xpNotificationsEnabled` | Browser toasts for level-up / achievements (default true). |
+| `levelFramework` / `customLevels` | Video difficulty tags (JLPT/CEFR/custom), not account rank. |
+
+**Migration notes**
+
+- **v8:** `totalXp` backfilled once from summed `dailySeconds` (1 XP/min, cap 50k).
+- **v9:** adds `lifetimeXp` (= existing `totalXp` on upgrade), `prestigeLevel` (0), migrates `completeXpAwarded` from legacy `completeXpAwardedVideoIds` if present.
 
 ---
 
-### Message protocol (`MSG.*`)
+### Background XP pipeline (`playerProgressEvents.ts`)
 
-Defined in `src/lib/messages.ts`; dispatched in `src/background/index.ts` inside `handleMessage`. Responses are always `ExtensionResponse` (`ok: true` variants or `{ ok: false, error }`).
+Called from `background/index.ts` after storage reads; mutates `data.playerProgress` in place, then `writePersisted`.
+
+| Function | Trigger | Awards |
+|----------|---------|--------|
+| `processPracticeTickXpEvent` | `PRACTICE_TICK` | Practice XP from seconds; optional streak-day + daily-goal bonuses; achievements |
+| `processFirstCompleteXpEvent` | `SET_LIBRARY_COMPLETION` (first time) | +15 XP if not in `completeXpAwarded`; achievements |
+| `processAchievementScan` | Completion toggle without first-complete XP | Achievements only |
+| `processPrestigeEvent` | `PRESTIGE` | `applyPrestige`; prestige achievements |
+
+After each event, background may call `xpNotifications.ts` when `xpNotificationsEnabled` is true.
+
+---
+
+### Message protocol (`MSG.*` — 11 types)
+
+Defined in `src/lib/messages.ts`; dispatched in `src/background/index.ts` → `handleMessage`. Responses use `ExtensionResponse` (`ok: true` variants or `{ ok: false, error }`).
+
+**Constants (exact strings)**
+
+`GET_STATE` · `ADD_OR_UPDATE_LIBRARY` · `REMOVE_LIBRARY` · `SET_DIFFICULTY` · `SET_LIBRARY_COMPLETION` · `PRACTICE_TICK` · `SET_SETTINGS` · `ENRICH_LIBRARY_META` · `CLEAR_ALL_EXTENSION_DATA` · `RESTORE_EXTENSION_STORAGE` · `PRESTIGE`
+
+**Shared XP fields** (`XpAwardFields` on mutating handlers): `xpGained`, `newAchievements`, `levelUp`, `newLevel`.
+
+**Response variants beyond plain `OkResponse`:** `GetStateResponse`, `LibraryWriteOkResponse`, `PracticeTickOkResponse`, `SetLibraryCompletionOkResponse`, `PrestigeOkResponse` (adds `prestigeUp`, `prestigeLevel`).
 
 | Message | Typical senders | Payload (summary) | Handler effect / response |
 |---------|-----------------|-------------------|---------------------------|
-| `GET_STATE` | Popup, dashboard, `youtube.ts` / `youtubeLibraryPanel.ts` / `youtubeWatchLifecycle.ts`, `feedCards.ts` | none | `{ ok: true, data: PersistedData }` — read normalized storage. |
-| `ADD_OR_UPDATE_LIBRARY` | Panel, feed strip, context menu click | `videoId`, `title`, `channel`, optional `difficulty` | Upsert library row; async oEmbed enrich (`fill-unknown`); returns **`LibraryWriteOkResponse`** (`libraryAction`, final title/channel/difficulty). |
-| `REMOVE_LIBRARY` | UIs removing a save | `videoId` | Filter library; `{ ok: true }`. |
-| `SET_DIFFICULTY` | Panel / library UIs | `videoId`, `difficulty` | Patch existing row only; `{ ok: true }`. |
-| `SET_LIBRARY_COMPLETION` | Watch panel, Completed tab | `videoId`, `complete`, optional `title`/`channel` | Sets or clears `completedAt`; first-time complete awards +15 XP; evaluates achievements; returns **`SetLibraryCompletionOkResponse`** (`xpGained`, `levelUp`, `newLevel`, `newAchievements`). |
-| `PRACTICE_TICK` | Watch script flush (`youtubeWatchPanelRuntime.ts` → `sendMsg`) | `videoId`, `deltaSeconds`, `endedAtMs` | Clamps delta to 120s; updates practice maps; awards practice XP (weekend 2×), streak/goal bonuses; evaluates achievements; returns **`PracticeTickOkResponse`** (`xpGained`, `levelUp`, `newLevel`, `newAchievements`). |
-| `SET_SETTINGS` | Dashboard (and any caller) | `Partial<AppSettings>` | Merges with `ensureSettingsShape`; deep-merge `goals`; **rebuilds context menus**; `{ ok: true }`. |
-| `ENRICH_LIBRARY_META` | UI that wants title/channel refresh | `videoId` | oEmbed **`overwrite`** mode; `{ ok: true }`. |
-| `CLEAR_ALL_EXTENSION_DATA` | Dashboard reset | none | `emptyPersisted()` + re-arm goal alarm; `{ ok: true }`. |
-| `RESTORE_EXTENSION_STORAGE` | Dashboard import | full `chrome.storage.local` object | Validates shape; `storage.local.clear()` then `set()`; normalizes `jpPractice` key; `{ ok: true }` or error. |
-| `PRESTIGE` | Dashboard Progress tab | none | At rank 120 and prestige &lt; 10: increments `prestigeLevel`, resets `totalXp` to 0, evaluates prestige achievements; returns **`PrestigeOkResponse`** (`prestigeUp`, `prestigeLevel`, `newAchievements`). |
+| `GET_STATE` | Popup, dashboard, watch runtime, library panel, lifecycle, feed cards | none | `{ ok: true, data: PersistedData }` |
+| `ADD_OR_UPDATE_LIBRARY` | Panel, feed strip, context menu | `videoId`, `title`, `channel`, optional `difficulty` | Upsert; async oEmbed enrich; **`LibraryWriteOkResponse`** (`libraryAction`, title, channel, difficulty) |
+| `REMOVE_LIBRARY` | UIs | `videoId` | Filter library; `{ ok: true }` |
+| `SET_DIFFICULTY` | Panel / library | `videoId`, `difficulty` | Patch row; `{ ok: true }` |
+| `SET_LIBRARY_COMPLETION` | Watch panel, Completed tab | `videoId`, `complete`, optional `title`/`channel` | Sets/clears `completedAt`; first complete → +15 XP + achievements; **`SetLibraryCompletionOkResponse`** (+ `XpAwardFields`) |
+| `PRACTICE_TICK` | Watch runtime flush (`youtubeWatchPanelRuntime.ts` → `sendMsg` / fire-and-forget) | `videoId`, `deltaSeconds`, `endedAtMs` | Clamps to 120s; updates practice maps; practice XP (weekend 2×, prestige mult), streak/goal bonuses; **`PracticeTickOkResponse`** (+ `XpAwardFields`) |
+| `SET_SETTINGS` | Dashboard | `Partial<AppSettings>` | Merge + rebuild context menus; `{ ok: true }` |
+| `ENRICH_LIBRARY_META` | Dashboard boot | `videoId` | oEmbed overwrite; `{ ok: true }` |
+| `CLEAR_ALL_EXTENSION_DATA` | Dashboard reset | none | `emptyPersisted()` + re-arm goal alarm; `{ ok: true }` |
+| `RESTORE_EXTENSION_STORAGE` | Dashboard import | full `chrome.storage.local` object | Validate, clear, set, normalize `jpPractice`; `{ ok: true }` or error |
+| `PRESTIGE` | Dashboard Progress tab | none | At rank 120 and prestige &lt; 10: increment prestige, reset `totalXp`; **`PrestigeOkResponse`** (`prestigeUp`, `prestigeLevel`, + `XpAwardFields` — usually `xpGained: 0`) |
 
-**OEmbed enrichment** (`background/index.ts`): after library writes from unknown title/channel (e.g. context menu), the background fetches YouTube oEmbed to fill in metadata when still placeholder or empty.
+**OEmbed enrichment:** after library writes with placeholder metadata, background fetches YouTube oEmbed (`fill-unknown` or `overwrite`).
 
 ---
 
 ### Sequence diagrams (mermaid)
 
-**Read path (any UI → background → storage)**
+**Read path**
 
 ```mermaid
 sequenceDiagram
@@ -246,66 +365,161 @@ sequenceDiagram
   participant ST as chrome.storage.local
 
   UI->>BG: sendMessage(GET_STATE)
-  BG->>ST: read (via readPersisted)
+  BG->>ST: readPersisted
   ST-->>BG: raw blob
   BG-->>UI: { ok: true, data: PersistedData }
+```
+
+**Practice tick (client accumulates, background persists + XP)**
+
+```mermaid
+sequenceDiagram
+  participant RT as youtubeWatchPanelRuntime.ts
+  participant TM as youtubePracticeTimer.ts
+  participant BG as background/index.ts
+  participant ST as chrome.storage.local
+  participant XP as playerProgressEvents.ts
+
+  loop every 1s while shouldCountPracticeTime
+    RT->>RT: pendingSeconds += 1
+  end
+  loop flush every 15s or visibility/focus loss
+    RT->>TM: flushPendingPracticeSeconds
+    RT->>BG: PRACTICE_TICK
+    BG->>ST: merge dailySeconds + videoSeconds
+    BG->>XP: processPracticeTickXpEvent
+    BG->>ST: writePersisted
+  end
 ```
 
 **Library save (happy path)**
 
 ```mermaid
 sequenceDiagram
-  participant YT as youtube.ts or feedCards.ts
+  participant RT as youtubeWatchPanelRuntime / feedCards
   participant BG as background/index.ts
   participant ST as chrome.storage.local
   participant OE as oEmbed (network)
 
-  YT->>BG: ADD_OR_UPDATE_LIBRARY(payload)
+  RT->>BG: ADD_OR_UPDATE_LIBRARY(payload)
   BG->>ST: readPersisted / writePersisted
-  BG-->>YT: LibraryWriteOkResponse
+  BG-->>RT: LibraryWriteOkResponse
   BG->>OE: fetch (async, fill-unknown)
   OE-->>BG: title / author_name
   BG->>ST: optional second write
 ```
 
-**Practice tick (client accumulates, background persists)**
+---
 
-```mermaid
-sequenceDiagram
-  participant CS as youtube.ts
-  participant BG as background/index.ts
-  participant ST as chrome.storage.local
-  participant GN as goalNotifications
+### Watch panel modules — internal responsibilities
 
-  loop every 1s while rules hold
-    CS->>CS: pendingSeconds += 1
-  end
-  loop flush every 15s or on visibility/focus loss
-    CS->>CS: flushPendingPracticeSeconds → sendMsgFireAndForget
-    CS->>BG: PRACTICE_TICK (sendMessage, may omit await)
-    BG->>ST: merge dailySeconds + videoSeconds
-    BG->>GN: maybeNotifyDailyGoalMet
-  end
-```
+**`youtubeWatchPanelRuntime.ts`** — orchestration, practice intervals, library handlers, hooks.
+
+**`youtubeWatchPanelCompletion.ts`** — completion/ended prompt state (`completionPromptShownForVideoId`, dismiss, visibility).
+
+**`youtubeWatchPanelVideoFlow.ts`** — SPA/video binding steps for `onWatchPanelVideoChanged`.
+
+Runtime still owns: panel host + shadow root; URL vs `homePickMeta` binding; practice intervals → `PRACTICE_TICK`; library save/complete (via `youtubeLibraryPanel.ts`); calendar/XP wiring; `onJpPracticeStorageChanged` resync; hook registration (nav, player DOM, feed pick). **`youtube.ts` does not call `sendMessage`** — only runtime → `youtubeMessaging.ts`.
 
 ---
 
-### Feature: practice time counting (watch / Shorts panel)
+### Dashboard views (`DashView`)
 
-**Where the rules live:** Eligibility in **`src/content/youtubePracticeTimer.ts`** (`shouldCountPracticeTime`). **`youtube.ts`** owns `pendingSeconds`, `tickSecond` (invokes **`updateDailyGoalRing`** / calendar render from **`youtubePanelUi.ts`** when the UI should refresh), a thin **`flushPractice`** that delegates to **`flushPendingPracticeSeconds`**, and wires **`createPracticeIntervalController`** + **`attachPracticePageFlushListeners`**. Actual `sendMessage` calls use **`src/content/youtubeMessaging.ts`**.
+Built in `dashboardViewModel.ts`; HTML in `dashboardTemplates.ts`; events in `dashboardListeners.ts`.
 
-**User-facing toggle:** “Count practice time” in the panel drives `practiceEnabled` (local variable synced from checkbox / state).
+| View | ID | Primary content |
+|------|-----|-----------------|
+| Library | `library` | In-progress saves (`inProgressLibraryItems`), search + level filter chips |
+| Completed | `completed` | `completedLibraryItems` sorted by `completedAt`; mark incomplete |
+| Stats | `stats` | Aggregates, 7-day buckets, **year heatmap** with year navigation |
+| Progress | `progress` | Account level/XP bar, prestige button, achievements by category |
+| Goals | `goals` | Daily/weekly/monthly targets, notification toggles |
+| Settings | `settings` | Framework, custom levels, locale, export/import/clear, panel prefs |
 
-**When a second counts** (`shouldCountPracticeTime`):
+Module state in `dashboard/main.ts`: `libraryLevelFilter`, `searchQuery`, `activeView`, `yearHeatmapYear` (persists across re-renders until reload).
+
+---
+
+### Feature: year heatmap + month drill-down
+
+**Stack:** `yearHeatmapCalendar.ts` (grid + display colors from `practiceStats` visuals) → `yearHeatmapHtml.ts` (section markup) → `yearHeatmapInteractive.ts` (click month → `yearHeatmapMonth.ts` + `yearHeatmapMonthHtml.ts` overlay; “Back to year”).
+
+**Surfaces**
+
+- **Watch panel:** `youtubePanelUi.ts` → `renderWatchPanelCalendar` (current calendar year; respects `calendarShowPracticeTime`).
+- **Dashboard Stats tab:** `dashboardTemplates.ts` builds section; `dashboardListeners.ts` attaches interactivity and year prev/next (`yearHeatmapYear` in `dashboard/main.ts`).
+
+**Colors:** active (practiced), goal (daily target met), blank (padding/future/before tracking). Month view shows per-day cells with optional duration in tooltips when `calendarShowPracticeTime` is on.
+
+---
+
+### Feature: mark complete / Library vs Completed
+
+- **Library tab** (`DashView: library`): `inProgressLibraryItems` — `completedAt === null`.
+- **Completed tab** (`DashView: completed`): `completedLibraryItems`, sorted by `completedAt` desc.
+- **Watch panel:** completion checkbox + **ended prompt** (see below) call `SET_LIBRARY_COMPLETION` via `youtubeLibraryPanel.ts` → `setWatchPanelLibraryCompletion`.
+- **First complete only:** +15 XP once per `videoId` (`completeXpAwarded`); achievements re-evaluated; optional XP toast.
+
+---
+
+### Feature: account XP, rank, prestige (COD-style cycle)
+
+- **Rank:** derived from **`totalXp`** only (`levelFromTotalXp`, max level **120** per cycle).
+- **Curve:** XP to reach level L uses triangular formula in `playerProgress.ts` (`totalXpForLevel`).
+- **Practice XP:** 1 XP per minute watched (while counting), weekend **2×**, prestige multiplier up to **+50%**.
+- **Bonuses:** daily goal +25, streak day +10, first video complete +15 (deduped).
+- **Prestige:** at level 120, user can prestige (max 10); **`totalXp` resets**, **`lifetimeXp` kept**, prestige achievements unlock; Progress tab button sends `PRESTIGE`.
+
+**UI:** watch panel XP bar (`updatePlayerXpBar` in `youtubePanelUi.ts`); popup summary; dashboard **Progress** tab (`dashboardViewModel` exposes `accountLevel`, `canPrestige`, `achievementSections`).
+
+---
+
+### Feature: achievements catalog
+
+**Module:** `src/lib/achievements.ts` — **40** definitions in **`ACHIEVEMENT_CATALOG`**.
+
+| Category | Examples |
+|----------|----------|
+| `library` | 1, 5, 10, 25, 50, 100 saved videos |
+| `completed` | 1 … 100 completions |
+| `watch` | 1h … 500h total practice seconds |
+| `streak` | 3 … 100 day streak |
+| `level` | account levels 5 … 120 |
+| `prestige` | prestige 1, 5, 10, `prestige_master` |
+| `meta` | first practice day, first completion, well-rounded, momentum |
+
+**Evaluation:** `evaluateAchievements` on XP events in background (`playerProgressEvents.ts`). **Display:** `groupedAchievementsForUi` on dashboard Progress tab.
+
+Achievement **ids** match the table above (e.g. `lib_25`, `watch_100h`, `level_120`); see `ACHIEVEMENTS` in `achievements.ts` for the canonical list.
+
+---
+
+### Feature: completion prompt on watch panel
+
+**When:** Near end of playback — default **30 s** before end (`COMPLETION_PROMPT_LEAD_SEC`); short videos use **50%** of duration (`youtubePlayerHooks.ts`).
+
+**How:** `attachVideoCompletionPromptListener` on `<video>` `timeupdate` (throttled) → runtime shows ended/completion UI (`setWatchPanelEndedPromptVisible`, `syncWatchPanelEndedPromptLabels` in `youtubePanelUi.ts`). User can mark complete or dismiss; state tracked per `videoId` in `youtubeWatchPanelRuntime.ts` (`completionPromptShownForVideoId`, `completionPromptDismissedForVideoId`).
+
+---
+
+### Feature: practice time counting
+
+**Eligibility:** `youtubePracticeTimer.ts` → `shouldCountPracticeTime` (toggle on, `currentVideoId`, video playing, visible, optional focus).
+
+**Orchestration:** `youtubeWatchPanelRuntime.ts` — `pendingSeconds`, `createPracticeIntervalController`, `flushPendingPracticeSeconds` → `PRACTICE_TICK`.
+
+**Intervals:** count **1000 ms** (`PRACTICE_COUNT_INTERVAL_MS`); flush **15 s** (`PRACTICE_FLUSH_INTERVAL_MS`) + `visibilitychange` / `blur` / `beforeunload`. Background clamps each tick to **120 s** max (`MAX_TICK_SECONDS`).
+
+**When a second counts** (all must hold):
 
 1. Practice toggle on and `currentVideoId` set.
-2. A `<video>` element exists and is **playing** (not `paused`, not `ended`).
+2. `<video>` exists and is playing (not paused/ended).
 3. `document.visibilityState === 'visible'`.
-4. If `settings.pauseWhenUnfocused` is true, `document.hasFocus()` must be true.
+4. If `settings.pauseWhenUnfocused`, `document.hasFocus()` must be true.
 
-**Transport:** Seconds accrue into `pendingSeconds` every **1000 ms** (`PRACTICE_COUNT_INTERVAL_MS`). They are sent to the background via **`flushPendingPracticeSeconds`** (invoked from **`flushPractice`**), on a **15 s** interval (`PRACTICE_FLUSH_INTERVAL_MS`), when the tab hides, or when focus policy causes a flush (`attachPracticePageFlushListeners`: `visibilitychange` / `blur` / `beforeunload`). Background clamps each tick to **120 s** max (`MAX_TICK_SECONDS` in background).
+**UI feedback:** Each counted second may refresh the daily goal ring and calendar when the visible month includes today (`calendarViewIncludesToday` in panel UI). XP flashes use `flashWatchPanelXpTick` after tick responses with `xpGained > 0`.
 
-**Why this matters for AI:** Bugs here are “time drift”, “double counting”, or “ticks after unload” — always check **`createPracticeIntervalController.reset()`** paths and page flush listeners when changing practice behavior.
+**AI debugging:** Bugs = time drift, double count, ticks after unload — check `createPracticeIntervalController.reset()` on video change and page flush listeners.
 
 ---
 
@@ -313,48 +527,49 @@ sequenceDiagram
 
 **Writers**
 
-- **Floating panel** (`youtube.ts` + `youtubeLibraryPanel.ts`): save, remove, difficulty change; uses real title/channel from DOM when available.
-- **Feed cards** (`feedCards.ts`): save from thumbnail strip; messaging same as panel.
-- **Context menu** (`background/index.ts` `onClicked`): resolves `videoId` from `linkUrl` or tab URL; starts with Unknown title/channel then oEmbed fills.
+- **Watch panel** (`youtubeWatchPanelRuntime.ts` + `youtubeLibraryPanel.ts`): save, remove, difficulty; title/channel from DOM + `youtubePageTitle` helpers.
+- **Feed cards** (`feedCards.ts`): thumbnail-strip save; same `ADD_OR_UPDATE_LIBRARY` message.
+- **Context menu** (`background/index.ts` `onClicked`): `videoId` from `linkUrl` or tab URL; Unknown title/channel until oEmbed.
 
 **Readers**
 
-- Popup and dashboard render `GET_STATE` → `library`.
-- Content scripts keep a **Set of videoIds** (feed) or full state (panel) updated via `GET_STATE` + `chrome.storage.onChanged` on `STORAGE_KEY`.
+- Popup: `GET_STATE` → in-progress library rows.
+- Dashboard: VM splits library vs completed; enriches unknown meta via `ENRICH_LIBRARY_META` on load.
+- Content: `GET_STATE` + `storage.onChanged` on `STORAGE_KEY`.
 
-**`LibraryWriteOkResponse`:** UI uses `libraryAction === 'inserted' | 'updated'` to decide whether to flash “saved” vs stay quiet on pure updates (`flashWatchPanelAfterLibraryWrite` in `youtubeLibraryPanel.ts`, thin wrapper in `youtube.ts`).
+**`LibraryWriteOkResponse`:** `libraryAction === 'inserted' | 'updated'` → `flashWatchPanelAfterLibraryWrite` in library panel.
 
 ---
 
 ### Feature: goals and notifications
 
-**Settings:** `AppSettings.goals` (daily / weekly / monthly targets in **seconds**), `goalNotificationsEnabled`, `goalNudgeHourLocal`, `lastNotifiedGoalMetDate`, `lastNotifiedGoalNudgeDate`.
+**Settings:** `AppSettings.goals` (daily / weekly / monthly targets in **seconds**), `goalNotificationsEnabled`, `goalNudgeHourLocal`, dedupe date keys for met/nudge notifications.
 
-**Alarm:** `src/lib/goalNotifications.ts` — `ensureGoalCheckAlarm` creates a repeating alarm; `background/index.ts` listens with `chrome.alarms.onAlarm` and runs `runPeriodicGoalChecks`.
+**Alarm:** `goalNotifications.ts` — `ensureGoalCheckAlarm`; `background/index.ts` → `chrome.alarms.onAlarm` → `runPeriodicGoalChecks`.
 
-**After practice write:** `PRACTICE_TICK` merges deltas into an in-memory `PersistedData`, `writePersisted(p)`, then `maybeNotifyDailyGoalMet(p)` so the check sees **today’s** totals including this tick (see `background/index.ts` and `goalNotifications.ts`).
+**After practice write:** `PRACTICE_TICK` updates storage, then `maybeNotifyDailyGoalMet(p)` so notifications see the tick just written.
 
-**Permissions:** `notifications` in manifest; code defensively checks `chrome.permissions.contains`.
-
----
-
-### Feature: context menus (right‑click save)
-
-**Registration:** `rebuildContextMenusFromStorage` in `background/index.ts` — serialized chain to avoid Chrome duplicate-id races.
-
-**Data:** Reads persisted framework + custom levels, uses `createTranslator(resolveLocale(uiLocale))` for the “Unrated” label, builds one root + children per level.
-
-**Click path:** `chrome.contextMenus.onClicked` → `parseContextMenuDifficulty` (`levelTags.ts`) → `handleMessage(ADD_OR_UPDATE_LIBRARY)` with placeholder title/channel.
+**XP tie-in:** meeting daily goal can award +25 XP once per day (`lastDailyGoalXpDateKey` on `PlayerProgress`).
 
 ---
 
-### Feature: feed thumbnail strip + “home pick” binding
+### Feature: context menus (right-click save)
 
-**Module:** `src/content/feedCards.ts`, bootstrapped from `youtube.ts` via `initFeedCards`.
+**Registration:** `rebuildContextMenusFromStorage` in `background/index.ts` (serialized to avoid duplicate Chrome menu IDs).
 
-**Problem it solves:** On pages **without** a watch URL `v=` id, the floating panel still needs a **bound video** for save/practice. Tapping a feed card sets internal meta via **`attachHomeFeedPointerPick`** in `youtubePlayerHooks.ts` (which calls `pickFeedCardFromInteractionTarget`); `youtube.ts` holds `homePickMeta` and coordinates with `VideoMeta`.
+**Data:** Persisted framework + custom levels; `createTranslator(resolveLocale(uiLocale))` for “Unrated” label.
 
-**Fragility:** YouTube DOM changes often — scan debounce, mount attributes, and shadow DOM for the popover are all high-churn code.
+**Click:** `parseContextMenuDifficulty` (`levelTags.ts`) → `handleMessage(ADD_OR_UPDATE_LIBRARY)` with placeholder metadata → async oEmbed.
+
+---
+
+### Feature: feed thumbnail strip + home pick
+
+**Module:** `feedCards.ts`, started from `youtube.ts` via `initFeedCards`.
+
+**Problem:** Pages without `v=` in the URL still need a bound video for save/practice. **`attachHomeFeedPointerPick`** (`youtubePlayerHooks.ts`) sets `homePickMeta` in the runtime when the user taps a card.
+
+**Fragility:** YouTube DOM churn — debounced scans, mount attributes, shadow popover.
 
 ---
 
@@ -362,10 +577,11 @@ sequenceDiagram
 
 | Symptom | Likely cause | Code direction |
 |---------|--------------|----------------|
-| `Extension context invalidated` | Extension reload while tab open | `extensionMessaging.ts` treats as benign; UI should no-op or soft-fail. |
-| No response / port closed | Background asleep or message invalid | Ensure `return true` in `onMessage` async path (already used). |
-| `tsc` passes but tests fail | `*.test.ts` excluded from `tsconfig.json` include | Run `npm test`; fix tests separately from `tsc`. |
-| Stale UI after storage change | Missing `storage.onChanged` listener | Panel listens for `STORAGE_KEY`; new UIs should follow the same pattern. |
+| `Extension context invalidated` | Extension reload while tab open | `extensionMessaging.ts`; soft-fail in UI |
+| No response / port closed | Background asleep or bad message | `return true` on async `onMessage` (already used) |
+| `tsc` passes but tests fail | `*.test.ts` excluded from `tsconfig` | Run `npm test` |
+| Stale UI after storage change | Missing listener | Panel: `youtube.ts` → `onJpPracticeStorageChanged`; dashboard: `storage.onChanged` in `main.ts` |
+| Practice ticks wrong file | Old mental model | **`youtubeWatchPanelRuntime.ts`**, not `youtube.ts` |
 
 ---
 
@@ -373,4 +589,12 @@ sequenceDiagram
 
 When you complete a large refactor, update **Part 1** table rows (Imp. / Cplx. / Split) and **Part 2** diagrams or message tables if behavior changes.
 
-Optional later: a small script or test that asserts every `MSG.*` value has a `handleMessage` branch (guards against drift between `messages.ts` and `background/index.ts`).
+**Checklist after feature work**
+
+1. Bump `SCHEMA_VERSION` + migration in `storage.ts` if persisted shape changes.
+2. Add `MSG` type + `handleMessage` case + response interface if new cross-context API.
+3. Add `en.json` keys (other locales can lag).
+4. Update this file’s architecture diagram if entrypoints or orchestrator files move.
+5. Run `npm test` and `npm run build`.
+
+Optional later: a test that asserts every `MSG.*` value has a `handleMessage` branch (guards drift between `messages.ts` and `background/index.ts`).

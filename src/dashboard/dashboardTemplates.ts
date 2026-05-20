@@ -1,4 +1,4 @@
-import { APP_NAME } from '../lib/branding';
+﻿import { APP_NAME } from '../lib/branding';
 import {
   dayCountsAsPracticedForCalendar,
   formatDuration,
@@ -85,9 +85,8 @@ export function dashboardSidebarHtml(vm: DashboardViewModel): string {
       </aside>`;
 }
 
-export function dashboardTopbarHtml(vm: DashboardViewModel, searchQuery: string): string {
+export function dashboardTopbarMetricsHtml(vm: DashboardViewModel): string {
   return `
-        <header class="topbar">
           <div class="topbar-progress${vm.libraryCount === 0 ? ' is-soft' : ''}">
             <span class="progress-lead">${escapeHtml(vm.t('dash.progressLead'))}</span>
             <div class="progress-metrics">
@@ -112,7 +111,13 @@ export function dashboardTopbarHtml(vm: DashboardViewModel, searchQuery: string)
                 : ''
               }
             </div>
-          </div>
+          </div>`;
+}
+
+export function dashboardTopbarHtml(vm: DashboardViewModel, searchQuery: string): string {
+  return `
+        <header class="topbar">
+${dashboardTopbarMetricsHtml(vm)}
           <div class="topbar-search">
             <span class="search-ico" aria-hidden="true">${icoSearch()}</span>
             <input type="search" id="dash-search" class="search-pill" placeholder="${escapeAttr(
@@ -244,7 +249,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
                   <div class="chart-bar-wrap">
                     <div class="chart-bar chart-bar--${barTier}" style="height:${pct}%"></div>
                   </div>
-                  <span class="chart-val ${valClass}">${dayCountsAsPracticedForCalendar(d.seconds) ? formatDuration(d.seconds) : '—'}</span>
+                  <span class="chart-val ${valClass}">${dayCountsAsPracticedForCalendar(d.seconds) ? formatDuration(d.seconds) : 'â€”'}</span>
                   <span class="chart-label${isToday ? ' chart-label--today' : ''}" title="${escapeAttr(d.dateKey)}">${escapeHtml(d.weekdayShort)}</span>
                   ${isToday ? `<span class="chart-today-caption">${escapeHtml(vm.t('dash.chartToday'))}</span>` : ''}
                 </div>`;
@@ -314,7 +319,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
             <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('dash.statsLast7'))}</h2>
             <div class="chart-week-wrap">
               <div class="chart-streak" dir="ltr" role="status" aria-label="${escapeAttr(streakAriaLabel(vm.t, vm.streak))}">
-                <span class="chart-streak-flame" aria-hidden="true">🔥</span>
+                <span class="chart-streak-flame" aria-hidden="true">ðŸ”¥</span>
                 <span class="chart-streak-num">${vm.streak}</span>
                 <span class="chart-streak-cap">${escapeHtml(streakCaption(vm.t, vm.streak))}</span>
               </div>
@@ -428,7 +433,7 @@ export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
   const streakValue =
     vm.streak > 0
       ? `<span class="progress-momentum-stat__flame" aria-hidden="true">${icoFlame()}</span><span>${vm.streak}</span>`
-      : '—';
+      : 'â€”';
 
   return `
           <section class="${vm.viewPanelClass('progress')}" data-view-panel="progress" aria-label="${escapeHtml(vm.t('nav.progress'))}">
@@ -587,8 +592,8 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
             <div class="settings-block">
               <label for="setting-level-framework">${escapeHtml(vm.t('settings.levelFramework'))}</label>
               <select id="setting-level-framework">
-                <option value="jlpt" ${vm.fw === 'jlpt' ? 'selected' : ''}>${escapeHtml(vm.t('framework.jlpt'))} (N5–N1)</option>
-                <option value="cefr" ${vm.fw === 'cefr' ? 'selected' : ''}>${escapeHtml(vm.t('framework.cefr'))} (A1–C2)</option>
+                <option value="jlpt" ${vm.fw === 'jlpt' ? 'selected' : ''}>${escapeHtml(vm.t('framework.jlpt'))} (N5â€“N1)</option>
+                <option value="cefr" ${vm.fw === 'cefr' ? 'selected' : ''}>${escapeHtml(vm.t('framework.cefr'))} (A1â€“C2)</option>
                 <option value="custom" ${vm.fw === 'custom' ? 'selected' : ''}>${escapeHtml(vm.t('framework.custom'))}</option>
               </select>
             </div>
