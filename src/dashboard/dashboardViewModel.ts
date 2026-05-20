@@ -45,6 +45,7 @@ import {
   type ResolvedLocale,
   type Translator,
 } from '../i18n';
+import { dailyMotivationForToday } from '../lib/dailyMotivation';
 import {
   matchesLevel,
   matchesLibrarySearch,
@@ -100,6 +101,8 @@ export interface DashboardViewModel {
   weekendXpActive: boolean;
   achievementSections: AchievementUiSection[];
   achievementCategories: AchievementCategory[];
+  displayName: string;
+  dailyMotivationMessage: string | null;
 
   navItemClass: (view: DashView) => string;
   viewPanelClass: (view: DashView) => string;
@@ -214,6 +217,12 @@ export function buildDashboardViewModel(input: {
   const viewPanelClass = (v: DashView) =>
     activeView === v ? 'view view--active' : 'view view--hidden';
 
+  const displayName = st.displayName ?? '';
+  const dailyMotivationMessage =
+    st.dailyMotivationEnabled !== false
+      ? dailyMotivationForToday(st.customDailyMessages ?? [], t)
+      : null;
+
   return {
     data,
     st,
@@ -257,6 +266,8 @@ export function buildDashboardViewModel(input: {
     achievementSections,
     achievementCategories,
     filterChipsInner,
+    displayName,
+    dailyMotivationMessage,
     navItemClass,
     viewPanelClass,
   };

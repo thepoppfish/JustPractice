@@ -21,6 +21,7 @@ export function monthDetailLayerHtml(
     .map((w) => `<span class="month-hm-dow">${escapeHtml(w)}</span>`)
     .join('');
   const goldenClass = detail.isGoldenMonth ? ' year-hm-month-detail--golden' : '';
+  const diamondClass = detail.isDiamondMonth ? ' year-hm-month-detail--diamond' : '';
 
   const cellsHtml = detail.cells
     .map((cell) => {
@@ -44,7 +45,7 @@ export function monthDetailLayerHtml(
       : '';
 
   return `
-    <div class="year-hm-month-detail${goldenClass}" data-month-detail>
+    <div class="year-hm-month-detail${goldenClass}${diamondClass}" data-month-detail>
       <div class="year-hm-month-toolbar">
         <div class="year-hm-month-heading">
           <span class="year-hm-month-title">${escapeHtml(detail.label)}</span>

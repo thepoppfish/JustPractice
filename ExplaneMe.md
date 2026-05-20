@@ -585,6 +585,14 @@ Achievement **ids** match the table above (e.g. `lib_25`, `watch_100h`, `level_1
 
 ---
 
+### Profile, daily motivation, and stats UI (schema v10)
+
+**Settings → Profile:** `displayName`, `dailyMotivationEnabled`, and **Daily messages** (add/remove list, max 10). Greeting uses `dash.hello` / `dash.helloName`; quote from `dailyMotivation.ts` (built-in `motivation.msg*` + custom lines, one per local day).
+
+**Stats tab:** Three goal rings (today / week / month), centered section copy, SVG streak flame, under-minute chart label `·`, year heatmap **perfect year** (gold frame) and **perfect month** (diamond month labels / cells) when every eligible day is practiced.
+
+---
+
 ### Maintenance
 
 When you complete a large refactor, update **Part 1** table rows (Imp. / Cplx. / Split) and **Part 2** diagrams or message tables if behavior changes.

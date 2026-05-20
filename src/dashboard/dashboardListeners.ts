@@ -179,6 +179,58 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     render();
   });
 
+  root.querySelector('#setting-display-name')?.addEventListener('change', async (e) => {
+    const value = (e.target as HTMLInputElement).value;
+    await send({
+      type: MSG.SET_SETTINGS,
+      payload: { displayName: value },
+    });
+    render();
+  });
+
+  root.querySelector('#daily-motivation-enabled')?.addEventListener('change', async (e) => {
+    const checked = (e.target as HTMLInputElement).checked;
+    await send({
+      type: MSG.SET_SETTINGS,
+      payload: { dailyMotivationEnabled: checked },
+    });
+    render();
+  });
+
+  const customMessageInput = root.querySelector<HTMLInputElement>('#custom-daily-message-input');
+  const addCustomMessage = async () => {
+    if (!customMessageInput) return;
+    const line = customMessageInput.value.trim();
+    if (!line) return;
+    const next = [...(vm.st.customDailyMessages ?? []), line];
+    await send({
+      type: MSG.SET_SETTINGS,
+      payload: { customDailyMessages: next },
+    });
+    render();
+  };
+  root.querySelector('#custom-daily-message-add')?.addEventListener('click', () => {
+    void addCustomMessage();
+  });
+  customMessageInput?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    void addCustomMessage();
+  });
+  root.querySelectorAll<HTMLButtonElement>('[data-custom-message-index]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const raw = btn.getAttribute('data-custom-message-index');
+      const index = raw == null ? -1 : Number(raw);
+      if (!Number.isFinite(index) || index < 0) return;
+      const next = (vm.st.customDailyMessages ?? []).filter((_, i) => i !== index);
+      await send({
+        type: MSG.SET_SETTINGS,
+        payload: { customDailyMessages: next },
+      });
+      render();
+    });
+  });
+
   root.querySelector('#xp-notifications')?.addEventListener('change', async (e) => {
     const checked = (e.target as HTMLInputElement).checked;
     await send({

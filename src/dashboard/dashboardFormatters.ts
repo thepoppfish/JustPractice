@@ -44,6 +44,26 @@ export function matchesLibrarySearch(item: LibraryItem, searchQuery: string): bo
   );
 }
 
+export function dashWelcomeHtml(
+  t: DashTranslate,
+  displayName: string,
+  dailyMotivationMessage: string | null,
+): string {
+  const greeting =
+    displayName.trim().length > 0
+      ? t('dash.helloName', { name: displayName.trim() })
+      : t('dash.hello');
+  const motivation =
+    dailyMotivationMessage
+      ? `<p class="dash-welcome-motivation">${escapeHtml(dailyMotivationMessage)}</p>`
+      : '';
+  return `
+    <section class="dash-welcome" aria-label="${escapeHtml(t('dash.welcomeAria'))}">
+      <h2 class="dash-welcome-greeting">${escapeHtml(greeting)}</h2>
+      ${motivation}
+    </section>`;
+}
+
 export function libraryWelcomeHtml(t: DashTranslate): string {
   return `
     <div class="library-welcome" aria-live="polite">
@@ -118,7 +138,10 @@ export function yearHeatmapStatusLabel(
 }
 
 export function yearHeatmapKeysHtml(t: DashTranslate, showGoalKey: boolean): string {
-  return defaultYearHeatmapKeysHtml((key, params) => t(key, params), showGoalKey);
+  const base = defaultYearHeatmapKeysHtml((key, params) => t(key, params), showGoalKey);
+  const diamond = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--diamond"></span>${escapeHtml(t('dash.chartKeyDiamondMonth'))}</span>`;
+  const allGreen = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--all-green"></span>${escapeHtml(t('dash.chartKeyAllGreenYear'))}</span>`;
+  return `${base}${diamond}${allGreen}`;
 }
 
 /** Weekly = daily×7; monthly = daily×days in this local calendar month (matches month progress sum). */

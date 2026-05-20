@@ -2,7 +2,7 @@ import {
   practiceCalendarDayVisual,
   type PracticeCalendarVisual,
 } from './practiceStats';
-import { dateKeyFromTimestamp } from './storage';
+import { dateKeyFromTimestamp, missTrackingStartDateKey } from './storage';
 
 /** Colored cells only: red / green / gold. Blank = no fill (padding, future, or before tracking). */
 export type YearHeatmapDisplayColor = 'none' | 'active' | 'goal' | 'blank';
@@ -16,6 +16,10 @@ export interface YearHeatmapGrid {
   weekCount: number;
   /** [weekday 0=Sun … 6=Sat][weekColumn] */
   slots: YearHeatmapSlot[][];
+  /** Every eligible day in the viewed year (through today) is green (active or goal). */
+  isAllGreenYear: boolean;
+  /** yyyy-mm month keys where every eligible day in that month is green. */
+  diamondMonthKeys: ReadonlySet<string>;
 }
 
 const YMD = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -85,7 +89,66 @@ export function trimTrailingPaddingWeeks(grid: YearHeatmapGrid): YearHeatmapGrid
   }
   if (weeks === grid.weekCount) return grid;
   const slots = grid.slots.map((row) => row.slice(0, weeks));
-  return { year: grid.year, weekCount: weeks, slots };
+  return { ...grid, weekCount: weeks, slots };
+}
+
+function isGreenDisplay(display: YearHeatmapDisplayColor): boolean {
+  return display === 'active' || display === 'goal';
+}
+
+function slotForDateKey(grid: YearHeatmapGrid, dateKey: string): YearHeatmapSlot | null {
+  for (const row of grid.slots) {
+    for (const slot of row) {
+      if (slot.kind === 'day' && slot.dateKey === dateKey) return slot;
+    }
+  }
+  return null;
+}
+
+export function computeYearHeatmapTiers(p: {
+  year: number;
+  grid: YearHeatmapGrid;
+  dailySeconds: Record<string, number>;
+  extensionInstalledDateKey: string;
+  nowMs?: number;
+}): { isAllGreenYear: boolean; diamondMonthKeys: Set<string> } {
+  const nowMs = p.nowMs ?? Date.now();
+  const todayKey = dateKeyFromTimestamp(nowMs);
+  const missStart = missTrackingStartDateKey(p.extensionInstalledDateKey, p.dailySeconds);
+  if (!missStart) return { isAllGreenYear: false, diamondMonthKeys: new Set() };
+
+  const eligible: string[] = [];
+  for (const row of p.grid.slots) {
+    for (const slot of row) {
+      if (slot.kind !== 'day') continue;
+      const { dateKey } = slot;
+      if (!dateKey.startsWith(`${p.year}-`)) continue;
+      if (dateKey < missStart || dateKey > todayKey) continue;
+      eligible.push(dateKey);
+    }
+  }
+  if (eligible.length === 0) return { isAllGreenYear: false, diamondMonthKeys: new Set() };
+
+  const isAllGreenYear = eligible.every((k) => {
+    const slot = slotForDateKey(p.grid, k);
+    return slot?.kind === 'day' && isGreenDisplay(slot.display);
+  });
+
+  const diamondMonthKeys = new Set<string>();
+  for (let month = 0; month < 12; month++) {
+    const ym = yearMonthKey(p.year, month);
+    const monthKeys = allDateKeysInMonth(p.year, month).filter(
+      (k) => k >= missStart && k <= todayKey,
+    );
+    if (monthKeys.length === 0) continue;
+    const allGreen = monthKeys.every((k) => {
+      const slot = slotForDateKey(p.grid, k);
+      return slot?.kind === 'day' && isGreenDisplay(slot.display);
+    });
+    if (allGreen) diamondMonthKeys.add(ym);
+  }
+
+  return { isAllGreenYear, diamondMonthKeys };
 }
 
 export function buildYearHeatmapGrid(p: {
@@ -130,7 +193,19 @@ export function buildYearHeatmapGrid(p: {
     };
   }
 
-  return trimTrailingPaddingWeeks({ year: p.year, weekCount, slots });
+  const trimmed = trimTrailingPaddingWeeks({ year: p.year, weekCount, slots, isAllGreenYear: false, diamondMonthKeys: new Set() });
+  const tiers = computeYearHeatmapTiers({
+    year: p.year,
+    grid: trimmed,
+    dailySeconds: p.dailySeconds,
+    extensionInstalledDateKey: p.extensionInstalledDateKey,
+    nowMs,
+  });
+  return {
+    ...trimmed,
+    isAllGreenYear: tiers.isAllGreenYear,
+    diamondMonthKeys: tiers.diamondMonthKeys,
+  };
 }
 
 export interface YearHeatmapMonthLabel {

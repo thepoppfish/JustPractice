@@ -1,6 +1,8 @@
 import { practiceCalendarDayVisual, type PracticeCalendarVisual } from './practiceStats';
 import {
   allDateKeysInMonth,
+  buildYearHeatmapGrid,
+  yearMonthKey,
   type YearHeatmapDisplayColor,
   yearHeatmapDisplayColor,
 } from './yearHeatmapCalendar';
@@ -28,6 +30,8 @@ export interface MonthDetailGrid {
   monthTotalSec: number;
   /** True only when the full calendar month has ended and monthly goal was met. */
   isGoldenMonth: boolean;
+  /** True when every eligible day in the month is practiced (green/gold). */
+  isDiamondMonth: boolean;
   isMonthComplete: boolean;
 }
 
@@ -106,6 +110,14 @@ export function buildMonthDetailGrid(p: {
     p.monthlyGoalSec,
     todayKey,
   );
+  const yearGrid = buildYearHeatmapGrid({
+    year: p.year,
+    dailySeconds: p.dailySeconds,
+    extensionInstalledDateKey: p.extensionInstalledDateKey,
+    dailyGoalSec: p.dailyGoalSec,
+    nowMs,
+  });
+  const diamond = yearGrid.diamondMonthKeys.has(yearMonthKey(p.year, p.monthIndex));
 
   const cells: MonthDetailCell[] = [];
   for (let i = 0; i < startPad; i++) cells.push({ kind: 'pad' });
@@ -141,6 +153,7 @@ export function buildMonthDetailGrid(p: {
     cells,
     monthTotalSec,
     isGoldenMonth: golden,
+    isDiamondMonth: diamond,
     isMonthComplete: monthComplete,
   };
 }

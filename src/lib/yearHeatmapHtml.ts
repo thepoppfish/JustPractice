@@ -48,12 +48,18 @@ export function defaultYearHeatmapStatusLabel(
   }
 }
 
-export function yearHeatmapCellClass(slot: YearHeatmapSlot): string {
+export function yearHeatmapCellClass(
+  slot: YearHeatmapSlot,
+  diamondMonthKeys?: ReadonlySet<string>,
+): string {
   if (slot.kind === 'padding') return 'year-hm-cell year-hm-cell--empty';
   const parts = ['year-hm-cell'];
   if (slot.display === 'blank') parts.push('year-hm-cell--blank');
   else parts.push(`year-hm-cell--${slot.display}`);
   if (slot.isToday) parts.push('year-hm-cell--today');
+  if (diamondMonthKeys?.has(dateKeyToYearMonth(slot.dateKey))) {
+    parts.push('year-hm-cell--diamond-month');
+  }
   return parts.join(' ');
 }
 
@@ -83,6 +89,7 @@ export function yearHeatmapCellMarkup(
   slot: YearHeatmapSlot,
   statusLabel: YearHeatmapStatusLabelFn,
   showTime: boolean,
+  diamondMonthKeys?: ReadonlySet<string>,
 ): string {
   const title = yearHeatmapCellTitle(
     slot,
@@ -90,7 +97,7 @@ export function yearHeatmapCellMarkup(
     slot.kind === 'day' ? slot.seconds : 0,
     showTime,
   );
-  const cls = yearHeatmapCellClass(slot);
+  const cls = yearHeatmapCellClass(slot, diamondMonthKeys);
   if (slot.kind === 'padding') {
     return `<span class="${cls}" aria-hidden="true"></span>`;
   }
@@ -172,7 +179,9 @@ export function yearHeatmapSectionHtml(opts: YearHeatmapHtmlOptions): string {
     .join('');
   const showTime = opts.showPracticeTime === true;
   const cellsHtml = cells
-    .map((slot) => yearHeatmapCellMarkup(slot, opts.statusLabel, showTime))
+    .map((slot) =>
+      yearHeatmapCellMarkup(slot, opts.statusLabel, showTime, opts.grid.diamondMonthKeys),
+    )
     .join('');
 
   const weekCount = opts.grid.weekCount;
@@ -183,19 +192,21 @@ export function yearHeatmapSectionHtml(opts: YearHeatmapHtmlOptions): string {
       <div class="year-hm-months" aria-hidden="true">
         <span class="year-hm-months-corner"></span>
         ${labels
-          .map(
-            (m) =>
-              `<span class="year-hm-month" style="grid-column:${m.weekCol + 2};grid-row:1">${escapeHtml(m.label)}</span>`,
-          )
+          .map((m, monthIndex) => {
+            const ym = `${opts.grid.year}-${String(monthIndex + 1).padStart(2, '0')}`;
+            const diamond = opts.grid.diamondMonthKeys.has(ym) ? ' year-hm-month--diamond' : '';
+            return `<span class="year-hm-month${diamond}" style="grid-column:${m.weekCol + 2};grid-row:1">${escapeHtml(m.label)}</span>`;
+          })
           .join('')}
       </div>`;
   }
 
   const variantClass = opts.variant === 'panel' ? 'year-hm--panel' : 'year-hm--dashboard';
+  const allGreenClass = opts.grid.isAllGreenYear ? ' year-hm--all-green-year' : '';
   const navHtml = opts.hideYearNav ? '' : yearHeatmapNavHtml(opts);
 
   return `
-    <div class="year-hm ${variantClass}" data-year-hm-root aria-label="${escapeAttr(opts.ariaLabel)}">
+    <div class="year-hm ${variantClass}${allGreenClass}" data-year-hm-root aria-label="${escapeAttr(opts.ariaLabel)}">
       ${navHtml}
       <div class="year-hm-stage" data-year-hm-stage>
         <div class="year-hm-year-layer" data-year-hm-year-layer>

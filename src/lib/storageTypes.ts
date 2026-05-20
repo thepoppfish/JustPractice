@@ -1,7 +1,11 @@
 /** Types, defaults, and date/goal helpers for persisted storage. */
 /** Persisted shape in chrome.storage.local */
 
-export const SCHEMA_VERSION = 9 as const;
+export const SCHEMA_VERSION = 10 as const;
+
+export const MAX_DISPLAY_NAME_LEN = 40 as const;
+export const MAX_CUSTOM_DAILY_MESSAGES = 10 as const;
+export const MAX_CUSTOM_DAILY_MESSAGE_LEN = 200 as const;
 
 const HISTORICAL_XP_BACKFILL_CAP = 50_000;
 
@@ -84,6 +88,12 @@ export interface AppSettings {
    * Phase 2+ UI may expose this toggle.
    */
   xpNotificationsEnabled?: boolean;
+  /** Shown in dashboard greeting (Hello, {name}). */
+  displayName?: string;
+  /** User-authored lines mixed into daily motivation rotation. */
+  customDailyMessages?: string[];
+  /** When false, hide the daily quote under the greeting. */
+  dailyMotivationEnabled?: boolean;
 }
 
 /** Account-level XP / achievements (not video difficulty / LevelTag). */
@@ -168,6 +178,26 @@ function normalizeUiLocale(x: unknown): UiLocale {
   return 'auto';
 }
 
+export function normalizeDisplayName(x: unknown): string {
+  if (typeof x !== 'string') return '';
+  return x.trim().slice(0, MAX_DISPLAY_NAME_LEN);
+}
+
+export function normalizeCustomDailyMessages(x: unknown): string[] {
+  if (!Array.isArray(x)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of x) {
+    if (typeof item !== 'string') continue;
+    const line = item.trim().slice(0, MAX_CUSTOM_DAILY_MESSAGE_LEN);
+    if (!line || seen.has(line)) continue;
+    seen.add(line);
+    out.push(line);
+    if (out.length >= MAX_CUSTOM_DAILY_MESSAGES) break;
+  }
+  return out;
+}
+
 function normalizeNudgeHour(x: unknown): number | null {
   if (x === null || x === undefined) return null;
   if (typeof x !== 'number' || !Number.isFinite(x)) return null;
@@ -216,6 +246,10 @@ export function ensureSettingsShape(raw: AppSettings | Partial<AppSettings> | un
       typeof raw.lastNotifiedGoalMetDate === 'string' ? raw.lastNotifiedGoalMetDate : null,
     lastNotifiedGoalNudgeDate:
       typeof raw.lastNotifiedGoalNudgeDate === 'string' ? raw.lastNotifiedGoalNudgeDate : null,
+    displayName: normalizeDisplayName(raw.displayName),
+    customDailyMessages: normalizeCustomDailyMessages(raw.customDailyMessages),
+    dailyMotivationEnabled:
+      typeof raw.dailyMotivationEnabled === 'boolean' ? raw.dailyMotivationEnabled : true,
   };
 }
 
@@ -232,6 +266,9 @@ export const defaultSettings = (): AppSettings => ({
   lastNotifiedGoalMetDate: null,
   lastNotifiedGoalNudgeDate: null,
   xpNotificationsEnabled: true,
+  displayName: '',
+  customDailyMessages: [],
+  dailyMotivationEnabled: true,
 });
 
 export function dateKeyFromTimestamp(ms: number): string {

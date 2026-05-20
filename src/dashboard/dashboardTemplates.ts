@@ -13,6 +13,7 @@ import {
   nativeNameForResolvedLocale,
 } from '../i18n';
 import {
+  dashWelcomeHtml,
   libraryWelcomeHtml,
   difficultyLabelForCard,
   formatCompletedDate,
@@ -163,8 +164,8 @@ export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
             </div>`;
 
   return `
-          <section class="${vm.viewPanelClass('library')}" data-view-panel="library" aria-label="${escapeHtml(vm.t('nav.library'))}">
-            <h2 class="row-title">${escapeHtml(vm.t('dash.titleLibrary'))}</h2>
+          <section class="${vm.viewPanelClass('library')} dash-section-center" data-view-panel="library" aria-label="${escapeHtml(vm.t('nav.library'))}">
+            <h2 class="row-title dash-section-head">${escapeHtml(vm.t('dash.titleLibrary'))}</h2>
             <div class="filter-chips" role="toolbar" aria-label="${escapeAttr(vm.t('dash.filterAria'))}">
 ${vm.filterChipsInner}
             </div>
@@ -218,9 +219,9 @@ export function dashboardCompletedSectionHtml(vm: DashboardViewModel): string {
             </div>`;
 
   return `
-          <section class="${vm.viewPanelClass('completed')}" data-view-panel="completed" aria-label="${escapeHtml(vm.t('nav.completed'))}">
-            <h2 class="row-title">${escapeHtml(vm.t('dash.titleCompleted'))}</h2>
-            <p class="row-sub">${escapeHtml(vm.t('dash.completedIntro'))}</p>
+          <section class="${vm.viewPanelClass('completed')} dash-section-center" data-view-panel="completed" aria-label="${escapeHtml(vm.t('nav.completed'))}">
+            <h2 class="row-title dash-section-head">${escapeHtml(vm.t('dash.titleCompleted'))}</h2>
+            <p class="row-sub dash-section-sub">${escapeHtml(vm.t('dash.completedIntro'))}</p>
             ${body}
           </section>`;
 }
@@ -249,7 +250,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
                   <div class="chart-bar-wrap">
                     <div class="chart-bar chart-bar--${barTier}" style="height:${pct}%"></div>
                   </div>
-                  <span class="chart-val ${valClass}">${dayCountsAsPracticedForCalendar(d.seconds) ? formatDuration(d.seconds) : 'â€”'}</span>
+                  <span class="chart-val ${valClass}">${dayCountsAsPracticedForCalendar(d.seconds) ? formatDuration(d.seconds) : '\u00B7'}</span>
                   <span class="chart-label${isToday ? ' chart-label--today' : ''}" title="${escapeAttr(d.dateKey)}">${escapeHtml(d.weekdayShort)}</span>
                   ${isToday ? `<span class="chart-today-caption">${escapeHtml(vm.t('dash.chartToday'))}</span>` : ''}
                 </div>`;
@@ -267,22 +268,14 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
     .join('');
 
   return `
-          <section class="${vm.viewPanelClass('stats')}" data-view-panel="stats" aria-label="${escapeHtml(vm.t('nav.stats'))}">
-            <h2 class="row-title">${escapeHtml(vm.t('dash.statsTw'))}</h2>
-            <div class="stat-cards-inline">
-              <div class="mini-stat">
-                <span class="mini-label">${escapeHtml(vm.t('common.today'))}</span>
-                <span class="mini-value">${formatDuration(vm.today)}</span>
-              </div>
-              <div class="mini-stat">
-                <span class="mini-label">${escapeHtml(vm.t('common.thisWeek'))}</span>
-                <span class="mini-value">${formatDuration(vm.week)}</span>
-              </div>
-              <div class="mini-stat">
-                <span class="mini-label">${escapeHtml(vm.t('common.allTime'))}</span>
-                <span class="mini-value">${formatDuration(vm.all)}</span>
-              </div>
+          <section class="${vm.viewPanelClass('stats')} dash-section-center" data-view-panel="stats" aria-label="${escapeHtml(vm.t('nav.stats'))}">
+            <h2 class="row-title dash-section-head">${escapeHtml(vm.t('dash.statsTw'))}</h2>
+            <div class="goal-rings-row">
+              ${goalRingCardHtml(vm.t('common.today'), vm.today, vm.rg.dailyTargetSec, vm.t)}
+              ${goalRingCardHtml(vm.t('common.thisWeek'), vm.week, vm.rg.weeklyTargetSec, vm.t)}
+              ${goalRingCardHtml(vm.t('common.thisMonth'), vm.monthSec, vm.rg.monthlyTargetSec, vm.t)}
             </div>
+            <p class="stats-all-time help dash-section-sub">${escapeHtml(vm.t('common.allTime'))}: <strong>${formatDuration(vm.all)}</strong></p>
 
             ${(() => {
               const grid = buildYearHeatmapGridModel({
@@ -300,7 +293,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
                 showTimeArg = false,
               ) => yearHeatmapStatusLabel(vm.t, display, dateKey, seconds, showTimeArg);
               return `
-            <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('dash.yearHeatmapTitle'))}</h2>
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('dash.yearHeatmapTitle'))}</h2>
             ${yearHeatmapSectionHtml({
               grid,
               locale: vm.resolvedLocale,
@@ -316,10 +309,10 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
             })}`;
             })()}
 
-            <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('dash.statsLast7'))}</h2>
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('dash.statsLast7'))}</h2>
             <div class="chart-week-wrap">
               <div class="chart-streak" dir="ltr" role="status" aria-label="${escapeAttr(streakAriaLabel(vm.t, vm.streak))}">
-                <span class="chart-streak-flame" aria-hidden="true">ðŸ”¥</span>
+                <span class="chart-streak-flame" aria-hidden="true">${icoFlame()}</span>
                 <span class="chart-streak-num">${vm.streak}</span>
                 <span class="chart-streak-cap">${escapeHtml(streakCaption(vm.t, vm.streak))}</span>
               </div>
@@ -344,8 +337,8 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
               </div>
             </div>
 
-            <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('dash.statsByLevel'))}</h2>
-            <p class="row-sub">${escapeHtml(
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('dash.statsByLevel'))}</h2>
+            <p class="row-sub dash-section-sub">${escapeHtml(
               vm.t('dash.statsByLevelHint', {
                 fw:
                   vm.fw === 'jlpt' ? vm.t('framework.jlpt')
@@ -433,11 +426,11 @@ export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
   const streakValue =
     vm.streak > 0
       ? `<span class="progress-momentum-stat__flame" aria-hidden="true">${icoFlame()}</span><span>${vm.streak}</span>`
-      : 'â€”';
+      : '\u2014';
 
   return `
-          <section class="${vm.viewPanelClass('progress')}" data-view-panel="progress" aria-label="${escapeHtml(vm.t('nav.progress'))}">
-            <p class="progress-journey-lead">${escapeHtml(vm.t('progress.journeySubtitle'))}</p>
+          <section class="${vm.viewPanelClass('progress')} dash-section-center" data-view-panel="progress" aria-label="${escapeHtml(vm.t('nav.progress'))}">
+            <p class="progress-journey-lead dash-section-sub">${escapeHtml(vm.t('progress.journeySubtitle'))}</p>
             <div class="progress-journey-card">
               <div class="progress-journey-card__glow" aria-hidden="true"></div>
               <div class="progress-journey-card__mesh" aria-hidden="true"></div>
@@ -536,9 +529,9 @@ export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
 
 export function dashboardGoalsSectionHtml(vm: DashboardViewModel): string {
   return `
-          <section class="${vm.viewPanelClass('goals')}" data-view-panel="goals" aria-label="${escapeHtml(vm.t('nav.goals'))}">
-            <h2 class="row-title">${escapeHtml(vm.t('dash.goalsTitle'))}</h2>
-            <p class="row-sub goals-intro">
+          <section class="${vm.viewPanelClass('goals')} dash-section-center" data-view-panel="goals" aria-label="${escapeHtml(vm.t('nav.goals'))}">
+            <h2 class="row-title dash-section-head">${escapeHtml(vm.t('dash.goalsTitle'))}</h2>
+            <p class="row-sub goals-intro dash-section-sub">
               ${escapeHtml(vm.t('dash.goalsIntro'))}
             </p>
             <div class="goal-rings-row">
@@ -577,6 +570,54 @@ export function dashboardGoalsSectionHtml(vm: DashboardViewModel): string {
           </section>`;
 }
 
+function customDailyMessagesSectionHtml(vm: DashboardViewModel): string {
+  const messages = vm.st.customDailyMessages ?? [];
+  const atMax = messages.length >= 10;
+  const listHtml =
+    messages.length === 0
+      ? `<p class="custom-daily-messages-empty">${escapeHtml(vm.t('settings.customDailyMessagesEmpty'))}</p>`
+      : `<ul class="custom-daily-messages-list" aria-label="${escapeAttr(vm.t('settings.customDailyMessagesListAria'))}">
+              ${messages
+                .map(
+                  (msg, index) => `
+                <li class="custom-daily-messages-item">
+                  <span class="custom-daily-messages-text">${escapeHtml(msg)}</span>
+                  <button
+                    type="button"
+                    class="custom-daily-messages-remove"
+                    data-custom-message-index="${index}"
+                    aria-label="${escapeAttr(vm.t('settings.customDailyMessagesRemoveAria', { message: msg }))}"
+                  >${escapeHtml(vm.t('common.remove'))}</button>
+                </li>`,
+                )
+                .join('')}
+            </ul>`;
+
+  return `
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.customDailyMessagesTitle'))}</h2>
+            <p class="help dash-section-sub">${escapeHtml(vm.t('settings.customDailyMessagesHelp'))}</p>
+            <div class="settings-block custom-daily-messages-block">
+              <div class="custom-daily-messages-add">
+                <label class="visually-hidden" for="custom-daily-message-input">${escapeHtml(vm.t('settings.customDailyMessagesInputLabel'))}</label>
+                <input
+                  type="text"
+                  id="custom-daily-message-input"
+                  maxlength="200"
+                  placeholder="${escapeAttr(vm.t('settings.customDailyMessagesPlaceholder'))}"
+                  ${atMax ? 'disabled' : ''}
+                />
+                <button
+                  type="button"
+                  class="btn-save-goals custom-daily-messages-add-btn"
+                  id="custom-daily-message-add"
+                  ${atMax ? 'disabled' : ''}
+                >${escapeHtml(vm.t('settings.customDailyMessagesAdd'))}</button>
+              </div>
+              ${atMax ? `<p class="help custom-daily-messages-max">${escapeHtml(vm.t('settings.customDailyMessagesMax'))}</p>` : ''}
+              ${listHtml}
+            </div>`;
+}
+
 export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
   const localeOptions = LOCALE_DROPDOWN.map((row) => {
     const current = vm.st.uiLocale ?? 'auto';
@@ -586,34 +627,61 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
   }).join('');
 
   return `
-          <section class="${vm.viewPanelClass('settings')}" data-view-panel="settings" aria-label="${escapeHtml(vm.t('nav.settings'))}">
-            <h2 class="row-title">${escapeHtml(vm.t('dash.levelAndLanguageTitle'))}</h2>
-            <p class="help">${escapeHtml(vm.t('settings.levelFrameworkHint'))}</p>
-            <div class="settings-block">
-              <label for="setting-level-framework">${escapeHtml(vm.t('settings.levelFramework'))}</label>
-              <select id="setting-level-framework">
-                <option value="jlpt" ${vm.fw === 'jlpt' ? 'selected' : ''}>${escapeHtml(vm.t('framework.jlpt'))} (N5â€“N1)</option>
-                <option value="cefr" ${vm.fw === 'cefr' ? 'selected' : ''}>${escapeHtml(vm.t('framework.cefr'))} (A1â€“C2)</option>
-                <option value="custom" ${vm.fw === 'custom' ? 'selected' : ''}>${escapeHtml(vm.t('framework.custom'))}</option>
-              </select>
-            </div>
-            <div class="settings-block" id="custom-levels-block" ${vm.fw === 'custom' ? '' : 'hidden'}>
-              <label for="custom-levels-lines">${escapeHtml(vm.t('settings.customLevelsLabel'))}</label>
-              <textarea id="custom-levels-lines" rows="8" spellcheck="false" placeholder="${escapeAttr(vm.t('settings.customLevelsPlaceholder'))}">${escapeHtml(vm.customLevels.join('\n'))}</textarea>
-              <p class="help">${escapeHtml(vm.t('settings.customLevelsHelp'))}</p>
-              <button type="button" class="btn-save-goals" id="save-custom-levels">${escapeHtml(vm.t('settings.saveCustomLevels'))}</button>
-            </div>
-            <div class="settings-block">
-              <label for="setting-ui-locale">${escapeHtml(vm.t('settings.language'))}</label>
-              <select id="setting-ui-locale">
-                ${localeOptions}
-              </select>
-              <p class="help">${escapeHtml(
-                vm.t('settings.languageActive', { lang: nativeNameForResolvedLocale(vm.resolvedLocale) }),
-              )}</p>
+          <section class="${vm.viewPanelClass('settings')} dash-section-center" data-view-panel="settings" aria-label="${escapeHtml(vm.t('nav.settings'))}">
+            <h2 class="row-title dash-section-head">${escapeHtml(vm.t('settings.profileTitle'))}</h2>
+            <p class="help dash-section-sub">${escapeHtml(vm.t('settings.profileHint'))}</p>
+            <div class="settings-profile">
+              <div class="settings-block">
+                <label for="setting-display-name">${escapeHtml(vm.t('settings.displayName'))}</label>
+                <input
+                  type="text"
+                  id="setting-display-name"
+                  maxlength="40"
+                  autocomplete="nickname"
+                  placeholder="${escapeAttr(vm.t('settings.displayNamePlaceholder'))}"
+                  value="${escapeAttr(vm.displayName)}"
+                />
+                <p class="help">${escapeHtml(vm.t('settings.displayNameHelp'))}</p>
+              </div>
+              <div class="settings-block">
+                <label>
+                  <input type="checkbox" id="daily-motivation-enabled" ${vm.st.dailyMotivationEnabled !== false ? 'checked' : ''} />
+                  <span>${escapeHtml(vm.t('settings.dailyMotivationEnabled'))}</span>
+                </label>
+              </div>
             </div>
 
-            <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('settings.countingTitle'))}</h2>
+            ${customDailyMessagesSectionHtml(vm)}
+
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('dash.levelAndLanguageTitle'))}</h2>
+            <p class="help dash-section-sub">${escapeHtml(vm.t('settings.levelFrameworkHint'))}</p>
+            <div class="settings-framework">
+              <div class="settings-block">
+                <label for="setting-level-framework">${escapeHtml(vm.t('settings.levelFramework'))}</label>
+                <select id="setting-level-framework">
+                  <option value="jlpt" ${vm.fw === 'jlpt' ? 'selected' : ''}>${escapeHtml(vm.t('framework.jlpt'))} (N5\u2013N1)</option>
+                  <option value="cefr" ${vm.fw === 'cefr' ? 'selected' : ''}>${escapeHtml(vm.t('framework.cefr'))} (A1\u2013C2)</option>
+                  <option value="custom" ${vm.fw === 'custom' ? 'selected' : ''}>${escapeHtml(vm.t('framework.custom'))}</option>
+                </select>
+              </div>
+              <div class="settings-block" id="custom-levels-block" ${vm.fw === 'custom' ? '' : 'hidden'}>
+                <label for="custom-levels-lines">${escapeHtml(vm.t('settings.customLevelsLabel'))}</label>
+                <textarea id="custom-levels-lines" rows="8" spellcheck="false" placeholder="${escapeAttr(vm.t('settings.customLevelsPlaceholder'))}">${escapeHtml(vm.customLevels.join('\n'))}</textarea>
+                <p class="help">${escapeHtml(vm.t('settings.customLevelsHelp'))}</p>
+                <button type="button" class="btn-save-goals" id="save-custom-levels">${escapeHtml(vm.t('settings.saveCustomLevels'))}</button>
+              </div>
+              <div class="settings-block">
+                <label for="setting-ui-locale">${escapeHtml(vm.t('settings.language'))}</label>
+                <select id="setting-ui-locale">
+                  ${localeOptions}
+                </select>
+                <p class="help">${escapeHtml(
+                  vm.t('settings.languageActive', { lang: nativeNameForResolvedLocale(vm.resolvedLocale) }),
+                )}</p>
+              </div>
+            </div>
+
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.countingTitle'))}</h2>
             <div class="settings-block">
               <label>
                 <input type="checkbox" id="pause-unfocused" ${vm.data.settings.pauseWhenUnfocused ? 'checked' : ''} />
@@ -628,7 +696,7 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               </label>
               <p class="help">${escapeHtml(vm.t('settings.calendarShowPracticeTimeHelp'))}</p>
             </div>
-            <p class="foot-note">
+            <p class="foot-note dash-section-sub">
               <strong>${escapeHtml(vm.t('settings.howCounted'))}:</strong> ${escapeHtml(vm.t('settings.howCountedBody'))}
             </p>
 
@@ -639,8 +707,8 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               </label>
               <p class="help">${escapeHtml(vm.t('settings.xpNotificationsHelp'))}</p>
             </div>
-            <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('settings.dataTitle'))}</h2>
-            <p class="help">${escapeHtml(vm.t('settings.dataHint'))}</p>
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.dataTitle'))}</h2>
+            <p class="help dash-section-sub">${escapeHtml(vm.t('settings.dataHint'))}</p>
             <div class="settings-block data-actions">
               <button type="button" class="btn-data-export" id="export-extension-data">${escapeHtml(vm.t('settings.export'))}</button>
               <button type="button" class="btn-data-restore" id="restore-extension-data">${escapeHtml(vm.t('settings.restore'))}</button>
@@ -656,6 +724,7 @@ export function dashboardShellHtml(vm: DashboardViewModel, searchQuery: string):
 ${dashboardSidebarHtml(vm)}
       <div class="main-area">
 ${dashboardTopbarHtml(vm, searchQuery)}
+${dashWelcomeHtml(vm.t, vm.displayName, vm.dailyMotivationMessage)}
         <main class="content">
 ${dashboardLibrarySectionHtml(vm)}
 ${dashboardCompletedSectionHtml(vm)}

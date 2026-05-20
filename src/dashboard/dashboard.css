@@ -666,8 +666,14 @@ body {
 }
 
 .chart-streak-flame {
-  font-size: 22px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  color: #ff8c3a;
+}
+
+.chart-streak-flame svg {
+  width: 22px;
+  height: 22px;
 }
 
 .chart-streak-num {
@@ -849,9 +855,16 @@ body {
 }
 
 .level-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
+  max-width: 100%;
+}
+
+.level-grid .level-pill {
+  flex: 0 1 130px;
+  min-width: 130px;
 }
 
 .level-pill {
@@ -1393,6 +1406,201 @@ body {
 
 .year-hm-key-dot--goal {
   background: #e8b84a;
+}
+
+.year-hm-key-dot--diamond {
+  background: linear-gradient(135deg, #7dd3fc 0%, #a78bfa 50%, #f472b6 100%);
+}
+
+.year-hm-key-dot--all-green {
+  background: linear-gradient(90deg, #ffb347, #ffcc33);
+}
+
+.year-hm--all-green-year .year-hm-chart {
+  outline: 2px solid rgba(255, 204, 51, 0.55);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.year-hm-month--diamond {
+  font-weight: 800;
+  color: #c4b5fd;
+  text-shadow: 0 0 8px rgba(167, 139, 250, 0.45);
+}
+
+.year-hm-cell--diamond-month.year-hm-cell--active,
+.year-hm-cell--diamond-month.year-hm-cell--goal {
+  box-shadow: inset 0 0 0 1px rgba(196, 181, 253, 0.75);
+}
+
+.year-hm-month-detail--diamond .year-hm-month-title {
+  color: #c4b5fd;
+}
+
+.stats-all-time {
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+.dash-welcome {
+  padding: 20px 28px 8px;
+  text-align: center;
+}
+
+.dash-welcome-greeting {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.dash-welcome-motivation {
+  margin: 10px auto 0;
+  max-width: 52rem;
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.dash-section-center .row-title,
+.dash-section-center .dash-section-head,
+.dash-section-center .goals-form-title,
+.dash-section-center .achievement-section__title {
+  text-align: center;
+}
+
+.dash-section-center .row-sub,
+.dash-section-center .dash-section-sub,
+.dash-section-center .progress-journey-lead,
+.dash-section-center .chart-credit-hint,
+.dash-section-center .foot-note,
+.dash-section-center > .help {
+  text-align: center;
+  margin-inline: auto;
+}
+
+.dash-section-center .chart-streak,
+.dash-section-center .chart-keys,
+.dash-section-center .year-hm-keys {
+  justify-content: center;
+}
+
+.dash-section-center .goal-rings-row {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dash-section-center .filter-chips,
+.dash-section-center .data-actions {
+  justify-content: center;
+}
+
+.dash-section-center .settings-block,
+.dash-section-center .settings-profile,
+.dash-section-center .settings-framework,
+.dash-section-center .goals-form,
+.dash-section-center .btn-save-goals {
+  display: block;
+  margin-inline: auto;
+}
+
+.dash-section-center .settings-profile,
+.dash-section-center .settings-framework {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 520px;
+}
+
+.dash-section-center .settings-profile label[for],
+.dash-section-center .settings-framework label[for] {
+  text-align: center;
+  width: 100%;
+}
+
+.dash-section-center .settings-profile > .settings-block > input[type='text'] {
+  display: block;
+  max-width: 320px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.dash-section-center .settings-profile .settings-block .help,
+.dash-section-center .settings-framework .settings-block .help {
+  margin: 12px auto 0;
+  text-align: center;
+}
+
+.dash-section-center .settings-profile .settings-block label {
+  justify-content: center;
+}
+
+.dash-section-center .settings-framework select,
+.dash-section-center .settings-framework textarea {
+  display: block;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.dash-section-center .settings-framework textarea {
+  max-width: 480px;
+}
+
+.custom-daily-messages-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 12px;
+}
+
+.custom-daily-messages-add input {
+  flex: 0 1 280px;
+  width: min(280px, 100%);
+  text-align: center;
+}
+
+.custom-daily-messages-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.custom-daily-messages-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+}
+
+.custom-daily-messages-text {
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .year-hm--panel .year-hm-months {
