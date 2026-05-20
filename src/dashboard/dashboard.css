@@ -327,6 +327,9 @@ body {
 
 .view--active {
   display: block;
+}
+
+.view--active.view--animate-in {
   animation: fadeIn 0.2s ease;
 }
 

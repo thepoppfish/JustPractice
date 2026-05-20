@@ -8,9 +8,9 @@ import {
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { thumbnailUrlForVideoId } from '../lib/youtubeMeta';
 import {
-  LOCALE_DROPDOWN,
   formatLocaleOptionLabel,
-  nativeNameForResolvedLocale,
+  languageLabelForLocale,
+  LOCALE_DROPDOWN,
 } from '../i18n';
 import {
   dashWelcomeHtml,
@@ -129,13 +129,13 @@ ${dashboardTopbarMetricsHtml(vm)}
         </header>`;
 }
 
-export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
-  const body =
-    vm.rows.length === 0 ?
-      vm.libraryCount === 0 && vm.completedCount === 0 ?
-        libraryWelcomeHtml(vm.t)
-      : `<div class="empty-board">${escapeHtml(vm.t('dash.libraryEmptyFiltered'))}</div>`
-    : `<div class="video-grid">
+export function libraryPanelBodyHtml(vm: DashboardViewModel): string {
+  if (vm.rows.length === 0) {
+    return vm.libraryCount === 0 && vm.completedCount === 0
+      ? libraryWelcomeHtml(vm.t)
+      : `<div class="empty-board">${escapeHtml(vm.t('dash.libraryEmptyFiltered'))}</div>`;
+  }
+  return `<div class="video-grid">
               ${vm.rows
                 .map(({ item, seconds }) => {
                   const href = `https://www.youtube.com/watch?v=${encodeURIComponent(item.videoId)}`;
@@ -162,14 +162,16 @@ export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
                 })
                 .join('')}
             </div>`;
+}
 
+export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
   return `
           <section class="${vm.viewPanelClass('library')} dash-section-center" data-view-panel="library" aria-label="${escapeHtml(vm.t('nav.library'))}">
             <h2 class="row-title dash-section-head">${escapeHtml(vm.t('dash.titleLibrary'))}</h2>
             <div class="filter-chips" role="toolbar" aria-label="${escapeAttr(vm.t('dash.filterAria'))}">
 ${vm.filterChipsInner}
             </div>
-            ${body}
+            <div class="library-panel-body" data-library-body>${libraryPanelBodyHtml(vm)}</div>
           </section>`;
 }
 
@@ -659,8 +661,8 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               <div class="settings-block">
                 <label for="setting-level-framework">${escapeHtml(vm.t('settings.levelFramework'))}</label>
                 <select id="setting-level-framework">
-                  <option value="jlpt" ${vm.fw === 'jlpt' ? 'selected' : ''}>${escapeHtml(vm.t('framework.jlpt'))} (N5\u2013N1)</option>
-                  <option value="cefr" ${vm.fw === 'cefr' ? 'selected' : ''}>${escapeHtml(vm.t('framework.cefr'))} (A1\u2013C2)</option>
+                  <option value="jlpt" ${vm.fw === 'jlpt' ? 'selected' : ''}>${escapeHtml(vm.t('framework.jlpt'))} (${escapeHtml(vm.t('framework.jlptLevels'))})</option>
+                  <option value="cefr" ${vm.fw === 'cefr' ? 'selected' : ''}>${escapeHtml(vm.t('framework.cefr'))} (${escapeHtml(vm.t('framework.cefrLevels'))})</option>
                   <option value="custom" ${vm.fw === 'custom' ? 'selected' : ''}>${escapeHtml(vm.t('framework.custom'))}</option>
                 </select>
               </div>
@@ -676,7 +678,9 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
                   ${localeOptions}
                 </select>
                 <p class="help">${escapeHtml(
-                  vm.t('settings.languageActive', { lang: nativeNameForResolvedLocale(vm.resolvedLocale) }),
+                  vm.t('settings.languageActive', {
+                    lang: languageLabelForLocale(vm.resolvedLocale, vm.t),
+                  }),
                 )}</p>
               </div>
             </div>

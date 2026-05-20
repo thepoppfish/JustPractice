@@ -10,7 +10,14 @@ import de from './locales/de.json';
 export type MessageKey = keyof typeof en;
 
 export type { ResolvedLocale } from './localeMeta';
-export { formatLocaleOptionLabel, isResolvedLocale, LOCALE_DROPDOWN, nativeNameForResolvedLocale } from './localeMeta';
+export {
+  formatLocaleOptionLabel,
+  isResolvedLocale,
+  languageLabelForLocale,
+  LOCALE_DROPDOWN,
+  LOCALE_LABEL_KEYS,
+  nativeNameForResolvedLocale,
+} from './localeMeta';
 
 const baseEn = en as Record<string, string>;
 

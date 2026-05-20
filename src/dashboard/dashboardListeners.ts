@@ -10,13 +10,17 @@ import {
 import { isResolvedLocale } from '../i18n';
 import { parseGoalMinutes, parseNudgeHour, yearHeatmapStatusLabel } from './dashboardFormatters';
 import { attachYearHeatmapInteractive } from '../lib/yearHeatmapInteractive';
+import { DASH_VIEWS } from './dashboardDomUpdate';
 import type { DashView, DashboardViewModel } from './dashboardViewModel';
 
 export interface AttachDashboardListenersInput {
   root: HTMLElement;
   vm: DashboardViewModel;
   send: <T>(msg: ExtensionMessage) => Promise<T>;
-  render: () => void;
+  signal: AbortSignal;
+  suppressStorageRender: () => void;
+  switchView: (v: DashView) => void;
+  refreshAfterMutation: (panels?: readonly DashView[]) => void | Promise<void>;
   refreshLibraryPanels: () => void;
   afterLibraryDataChange: () => void;
   onSearchBlur?: () => void;
@@ -30,48 +34,60 @@ export interface AttachLibraryPanelListenersInput {
   root: HTMLElement;
   vm: DashboardViewModel;
   send: <T>(msg: ExtensionMessage) => Promise<T>;
-  render: () => void;
+  signal?: AbortSignal;
   refreshLibraryPanels: () => void;
   afterLibraryDataChange: () => void;
   setLibraryLevelFilter: (f: '' | 'unset' | 'legacy' | LevelTag) => void;
 }
 
 export function attachLibraryPanelListeners(input: AttachLibraryPanelListenersInput): void {
-  const { root, vm, send, afterLibraryDataChange, refreshLibraryPanels, setLibraryLevelFilter } =
+  const { root, send, afterLibraryDataChange, refreshLibraryPanels, setLibraryLevelFilter, signal } =
     input;
 
   root.querySelectorAll<HTMLButtonElement>('[data-level-filter]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const raw = btn.getAttribute('data-level-filter');
-      if (raw === 'all' || raw === null) setLibraryLevelFilter('');
-      else if (raw === 'unset') setLibraryLevelFilter('unset');
-      else if (raw === 'legacy') setLibraryLevelFilter('legacy');
-      else setLibraryLevelFilter(raw as LevelTag);
-      refreshLibraryPanels();
-    });
+    btn.addEventListener(
+      'click',
+      () => {
+        const raw = btn.getAttribute('data-level-filter');
+        if (raw === 'all' || raw === null) setLibraryLevelFilter('');
+        else if (raw === 'unset') setLibraryLevelFilter('unset');
+        else if (raw === 'legacy') setLibraryLevelFilter('legacy');
+        else setLibraryLevelFilter(raw as LevelTag);
+        refreshLibraryPanels();
+      },
+      { signal },
+    );
   });
 
   root.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((btn) => {
-    btn.addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      const id = btn.getAttribute('data-remove');
-      if (!id) return;
-      await send({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
-      afterLibraryDataChange();
-    });
+    btn.addEventListener(
+      'click',
+      async (ev) => {
+        ev.preventDefault();
+        const id = btn.getAttribute('data-remove');
+        if (!id) return;
+        await send({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
+        afterLibraryDataChange();
+      },
+      { signal },
+    );
   });
 
   root.querySelectorAll<HTMLButtonElement>('[data-undo-complete]').forEach((btn) => {
-    btn.addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      const id = btn.getAttribute('data-undo-complete');
-      if (!id) return;
-      await send({
-        type: MSG.SET_LIBRARY_COMPLETION,
-        payload: { videoId: id, complete: false },
-      });
-      afterLibraryDataChange();
-    });
+    btn.addEventListener(
+      'click',
+      async (ev) => {
+        ev.preventDefault();
+        const id = btn.getAttribute('data-undo-complete');
+        if (!id) return;
+        await send({
+          type: MSG.SET_LIBRARY_COMPLETION,
+          payload: { videoId: id, complete: false },
+        });
+        afterLibraryDataChange();
+      },
+      { signal },
+    );
   });
 }
 
@@ -80,7 +96,10 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     root,
     vm,
     send,
-    render,
+    signal,
+    suppressStorageRender,
+    switchView,
+    refreshAfterMutation,
     refreshLibraryPanels,
     afterLibraryDataChange,
     onSearchBlur,
@@ -90,20 +109,29 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     setYearHeatmapYear,
   } = input;
 
+  const listen = <K extends keyof HTMLElementEventMap>(
+    el: Element | null | undefined,
+    type: K,
+    handler: (this: HTMLElement, ev: HTMLElementEventMap[K]) => void,
+  ) => {
+    if (!el) return;
+    el.addEventListener(type, handler as EventListener, { signal });
+  };
+
   root.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    listen(btn, 'click', () => {
       const v = btn.getAttribute('data-view') as DashView | null;
       if (!v) return;
       setActiveView(v);
-      render();
+      switchView(v);
     });
   });
 
-  root.querySelector('#dash-search')?.addEventListener('input', (e) => {
+  listen(root.querySelector('#dash-search'), 'input', (e) => {
     setSearchQuery((e.target as HTMLInputElement).value);
     refreshLibraryPanels();
   });
-  root.querySelector('#dash-search')?.addEventListener('blur', () => {
+  listen(root.querySelector('#dash-search'), 'blur', () => {
     onSearchBlur?.();
   });
 
@@ -111,23 +139,23 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     root,
     vm,
     send,
-    render,
+    signal,
     refreshLibraryPanels,
     afterLibraryDataChange,
     setLibraryLevelFilter,
   });
 
-  root.querySelector('#setting-level-framework')?.addEventListener('change', async (e) => {
+  listen(root.querySelector('#setting-level-framework'), 'change', async (e) => {
     const v = (e.target as HTMLSelectElement).value;
     if (v !== 'jlpt' && v !== 'cefr' && v !== 'custom') return;
     await send({
       type: MSG.SET_SETTINGS,
       payload: { levelFramework: v },
     });
-    render();
+    void refreshAfterMutation(DASH_VIEWS);
   });
 
-  root.querySelector('#save-custom-levels')?.addEventListener('click', async () => {
+  listen(root.querySelector('#save-custom-levels'), 'click', async () => {
     const el = root.querySelector<HTMLTextAreaElement>('#custom-levels-lines');
     const lines = el?.value.split(/\r?\n/).map((s) => s.trim()) ?? [];
     const normalized = normalizeCustomLevels(lines);
@@ -135,20 +163,20 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       type: MSG.SET_SETTINGS,
       payload: { customLevels: normalized },
     });
-    render();
+    void refreshAfterMutation(['settings', 'library', 'completed']);
   });
 
-  root.querySelector('#setting-ui-locale')?.addEventListener('change', async (e) => {
+  listen(root.querySelector('#setting-ui-locale'), 'change', async (e) => {
     const v = (e.target as HTMLSelectElement).value;
     if (v !== 'auto' && !isResolvedLocale(v)) return;
     await send({
       type: MSG.SET_SETTINGS,
       payload: { uiLocale: v as UiLocale },
     });
-    render();
+    void refreshAfterMutation(DASH_VIEWS);
   });
 
-  root.querySelector('#save-goals')?.addEventListener('click', async () => {
+  listen(root.querySelector('#save-goals'), 'click', async () => {
     const daily = parseGoalMinutes(root.querySelector<HTMLInputElement>('#goal-daily-min'));
     const nudgeHour = parseNudgeHour(root.querySelector<HTMLInputElement>('#goal-nudge-hour'));
     const payload =
@@ -167,34 +195,34 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       type: MSG.SET_SETTINGS,
       payload: { goals: payload, goalNudgeHourLocal: nudgeHour },
     });
-    render();
+    void refreshAfterMutation(['goals', 'stats']);
   });
 
-  root.querySelector('#goal-notifications')?.addEventListener('change', async (e) => {
+  listen(root.querySelector('#goal-notifications'), 'change', async (e) => {
+    suppressStorageRender();
     const checked = (e.target as HTMLInputElement).checked;
     await send({
       type: MSG.SET_SETTINGS,
       payload: { goalNotificationsEnabled: checked },
     });
-    render();
   });
 
-  root.querySelector('#setting-display-name')?.addEventListener('change', async (e) => {
+  listen(root.querySelector('#setting-display-name'), 'change', async (e) => {
     const value = (e.target as HTMLInputElement).value;
     await send({
       type: MSG.SET_SETTINGS,
       payload: { displayName: value },
     });
-    render();
+    void refreshAfterMutation([]);
   });
 
-  root.querySelector('#daily-motivation-enabled')?.addEventListener('change', async (e) => {
+  listen(root.querySelector('#daily-motivation-enabled'), 'change', async (e) => {
     const checked = (e.target as HTMLInputElement).checked;
     await send({
       type: MSG.SET_SETTINGS,
       payload: { dailyMotivationEnabled: checked },
     });
-    render();
+    void refreshAfterMutation([]);
   });
 
   const customMessageInput = root.querySelector<HTMLInputElement>('#custom-daily-message-input');
@@ -207,18 +235,18 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       type: MSG.SET_SETTINGS,
       payload: { customDailyMessages: next },
     });
-    render();
+    void refreshAfterMutation(['settings']);
   };
-  root.querySelector('#custom-daily-message-add')?.addEventListener('click', () => {
+  listen(root.querySelector('#custom-daily-message-add'), 'click', () => {
     void addCustomMessage();
   });
-  customMessageInput?.addEventListener('keydown', (e) => {
+  listen(customMessageInput, 'keydown', (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
     void addCustomMessage();
   });
   root.querySelectorAll<HTMLButtonElement>('[data-custom-message-index]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+    listen(btn, 'click', async () => {
       const raw = btn.getAttribute('data-custom-message-index');
       const index = raw == null ? -1 : Number(raw);
       if (!Number.isFinite(index) || index < 0) return;
@@ -227,20 +255,20 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
         type: MSG.SET_SETTINGS,
         payload: { customDailyMessages: next },
       });
-      render();
+      void refreshAfterMutation(['settings']);
     });
   });
 
-  root.querySelector('#xp-notifications')?.addEventListener('change', async (e) => {
+  listen(root.querySelector('#xp-notifications'), 'change', async (e) => {
+    suppressStorageRender();
     const checked = (e.target as HTMLInputElement).checked;
     await send({
       type: MSG.SET_SETTINGS,
       payload: { xpNotificationsEnabled: checked },
     });
-    render();
   });
 
-  root.querySelector('#enter-prestige')?.addEventListener('click', async () => {
+  listen(root.querySelector('#enter-prestige'), 'click', async () => {
     const ok = confirm(vm.t('progress.confirmPrestige'));
     if (!ok) return;
     const res = await send<{ ok: boolean; error?: string }>({ type: MSG.PRESTIGE });
@@ -248,11 +276,11 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       window.alert(res.error ?? vm.t('progress.prestigeFailed'));
       return;
     }
-    render();
+    void refreshAfterMutation(['progress', 'stats']);
   });
 
   root.querySelectorAll<HTMLButtonElement>('[data-ach-filter]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    listen(btn, 'click', () => {
       const filter = btn.getAttribute('data-ach-filter') ?? 'all';
       root.querySelectorAll('[data-ach-filter]').forEach((chip) => {
         chip.classList.toggle('is-active', chip === btn);
@@ -264,7 +292,7 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     });
   });
 
-  root.querySelector('#export-extension-data')?.addEventListener('click', async () => {
+  listen(root.querySelector('#export-extension-data'), 'click', async () => {
     try {
       const all = await chrome.storage.local.get(null);
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
@@ -281,12 +309,12 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
   });
 
   const restoreFileInput = root.querySelector<HTMLInputElement>('#restore-extension-file');
-  root.querySelector('#restore-extension-data')?.addEventListener('click', () => {
+  listen(root.querySelector('#restore-extension-data'), 'click', () => {
     restoreFileInput?.click();
   });
-  restoreFileInput?.addEventListener('change', async () => {
-    const file = restoreFileInput.files?.[0];
-    restoreFileInput.value = '';
+  listen(restoreFileInput, 'change', async () => {
+    const file = restoreFileInput?.files?.[0];
+    if (restoreFileInput) restoreFileInput.value = '';
     if (!file) return;
     let parsed: unknown;
     try {
@@ -310,41 +338,43 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       window.alert(res.error ?? vm.t('dash.restoreFailed'));
       return;
     }
-    render();
+    void refreshAfterMutation(DASH_VIEWS);
   });
 
-  root.querySelector('#clear-extension-data')?.addEventListener('click', async () => {
+  listen(root.querySelector('#clear-extension-data'), 'click', async () => {
     const ok = confirm(vm.t('dash.confirmClearBody', { app: APP_NAME }));
     if (!ok) return;
     await send({ type: MSG.CLEAR_ALL_EXTENSION_DATA });
-    render();
+    void refreshAfterMutation(DASH_VIEWS);
   });
 
   const pauseEl = root.querySelector<HTMLInputElement>('#pause-unfocused');
-  pauseEl?.addEventListener('change', async () => {
+  listen(pauseEl, 'change', async () => {
+    if (!pauseEl) return;
+    suppressStorageRender();
     await send({
       type: MSG.SET_SETTINGS,
       payload: { pauseWhenUnfocused: pauseEl.checked },
     });
-    render();
   });
 
   const calTimeEl = root.querySelector<HTMLInputElement>('#calendar-show-practice-time');
-  calTimeEl?.addEventListener('change', async () => {
+  listen(calTimeEl, 'change', async () => {
+    if (!calTimeEl) return;
+    suppressStorageRender();
     await send({
       type: MSG.SET_SETTINGS,
       payload: { calendarShowPracticeTime: calTimeEl.checked },
     });
-    render();
   });
 
-  root.querySelector('.year-hm-prev')?.addEventListener('click', () => {
+  listen(root.querySelector('.year-hm-prev'), 'click', () => {
     setYearHeatmapYear(vm.yearHeatmapYear - 1);
-    render();
+    void refreshAfterMutation(['stats']);
   });
-  root.querySelector('.year-hm-next')?.addEventListener('click', () => {
+  listen(root.querySelector('.year-hm-next'), 'click', () => {
     setYearHeatmapYear(vm.yearHeatmapYear + 1);
-    render();
+    void refreshAfterMutation(['stats']);
   });
 
   const hmRoot = root.querySelector('[data-year-hm-root]');
