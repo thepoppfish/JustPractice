@@ -233,6 +233,7 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
           channel: cleanChannel ?? (channel.trim() || 'Unknown channel'),
           addedAt: Date.now(),
           difficulty: difficulty ?? null,
+          completedAt: null,
         });
       }
       await writePersisted(p);
@@ -263,6 +264,34 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
       if (item) {
         item.difficulty = message.payload.difficulty;
         await writePersisted(p);
+      }
+      return { ok: true };
+    }
+    case MSG.SET_LIBRARY_COMPLETION: {
+      const p = await readPersisted();
+      const { videoId, complete, title, channel } = message.payload;
+      const idx = p.library.findIndex((x) => x.videoId === videoId);
+      const now = Date.now();
+      if (idx >= 0) {
+        p.library[idx] = {
+          ...p.library[idx],
+          completedAt: complete ? now : null,
+        };
+      } else if (complete) {
+        p.library.push({
+          videoId,
+          title: title?.trim() || 'Unknown title',
+          channel: channel?.trim() || 'Unknown channel',
+          addedAt: now,
+          difficulty: null,
+          completedAt: now,
+        });
+      } else {
+        return { ok: true };
+      }
+      await writePersisted(p);
+      if (complete) {
+        void enrichLibraryItemFromOEmbed(videoId, 'fill-unknown');
       }
       return { ok: true };
     }

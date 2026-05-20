@@ -1,6 +1,6 @@
 /** Persisted shape in chrome.storage.local */
 
-export const SCHEMA_VERSION = 6 as const;
+export const SCHEMA_VERSION = 7 as const;
 
 export type JlptLevel = 'N5' | 'N4' | 'N3' | 'N2' | 'N1';
 
@@ -30,6 +30,8 @@ export interface LibraryItem {
   channel: string;
   addedAt: number;
   difficulty: LevelTag | null;
+  /** Unix ms when the user marked the video complete; null = not completed. */
+  completedAt: number | null;
 }
 
 export interface PracticeGoals {
@@ -44,6 +46,13 @@ export interface PracticeGoals {
 export interface AppSettings {
   /** When true, practice seconds only count if the YouTube tab/window has focus */
   pauseWhenUnfocused: boolean;
+  /**
+   * When true (default), use the year heatmap on the watch panel instead of the month grid.
+   * Kept for storage compatibility; there is no UI to turn this off.
+   */
+  yearHeatmapCalendar?: boolean;
+  /** When true, calendar tooltips / month cells include logged practice duration. */
+  calendarShowPracticeTime?: boolean;
   /** Saved position for the watch-page floating panel (viewport pixels). */
   watchPanelLeft?: number;
   watchPanelTop?: number;
@@ -155,6 +164,12 @@ export function ensureSettingsShape(raw: AppSettings | Partial<AppSettings> | un
     ...merged,
     pauseWhenUnfocused:
       typeof raw.pauseWhenUnfocused === 'boolean' ? raw.pauseWhenUnfocused : base.pauseWhenUnfocused,
+    yearHeatmapCalendar:
+      typeof raw.yearHeatmapCalendar === 'boolean' ? raw.yearHeatmapCalendar : base.yearHeatmapCalendar,
+    calendarShowPracticeTime:
+      typeof raw.calendarShowPracticeTime === 'boolean'
+        ? raw.calendarShowPracticeTime
+        : base.calendarShowPracticeTime,
     levelFramework: normalizeLevelFramework(raw.levelFramework),
     customLevels: normalizeCustomLevels(
       raw.customLevels !== undefined ? raw.customLevels : base.customLevels,
@@ -177,6 +192,8 @@ export function ensureSettingsShape(raw: AppSettings | Partial<AppSettings> | un
 
 export const defaultSettings = (): AppSettings => ({
   pauseWhenUnfocused: true,
+  yearHeatmapCalendar: true,
+  calendarShowPracticeTime: false,
   goals: defaultGoals(),
   levelFramework: 'jlpt',
   customLevels: [...DEFAULT_CUSTOM_LEVELS],
@@ -256,13 +273,7 @@ export function persistedNeedsCompactionRewrite(raw: unknown): boolean {
   for (const k of Object.keys(o)) {
     if (!PERSISTED_TOP_KEYS.has(k)) return true;
   }
-  if (o.schemaVersion !== SCHEMA_VERSION) return true;
-  if (Array.isArray(o.library)) {
-    for (const item of o.library) {
-      if (item && typeof item === 'object' && 'completedAt' in item) return true;
-    }
-  }
-  return false;
+  return o.schemaVersion !== SCHEMA_VERSION;
 }
 
 export async function readPersisted(): Promise<PersistedData> {
@@ -293,6 +304,12 @@ function normalizeDifficulty(x: unknown): LevelTag | null {
   return null;
 }
 
+function normalizeCompletedAt(x: unknown): number | null {
+  if (x === null || x === undefined) return null;
+  if (typeof x !== 'number' || !Number.isFinite(x) || x <= 0) return null;
+  return x;
+}
+
 function normalizeLibraryItem(raw: unknown): LibraryItem {
   const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
   return {
@@ -301,7 +318,16 @@ function normalizeLibraryItem(raw: unknown): LibraryItem {
     channel: typeof o.channel === 'string' ? o.channel : 'Unknown channel',
     addedAt: typeof o.addedAt === 'number' && Number.isFinite(o.addedAt) ? o.addedAt : Date.now(),
     difficulty: normalizeDifficulty(o.difficulty),
+    completedAt: normalizeCompletedAt(o.completedAt),
   };
+}
+
+export function isLibraryItemCompleted(item: LibraryItem): boolean {
+  return item.completedAt !== null;
+}
+
+export function completedLibraryItems(library: LibraryItem[]): LibraryItem[] {
+  return library.filter(isLibraryItemCompleted);
 }
 
 function migrate(input: PersistedData): PersistedData {
@@ -328,6 +354,7 @@ function migrate(input: PersistedData): PersistedData {
   const settings = ensureSettingsShape({
     ...base.settings,
     ...incomingSettings,
+    yearHeatmapCalendar: true,
     goals: {
       ...defaultGoals(),
       ...goalsIn,

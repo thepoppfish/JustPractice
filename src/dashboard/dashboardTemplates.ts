@@ -15,11 +15,15 @@ import {
 import {
   libraryWelcomeHtml,
   difficultyLabelForCard,
+  formatCompletedDate,
   statBucketLabel,
   streakCaption,
   streakAriaLabel,
   goalRingCardHtml,
+  yearHeatmapKeysHtml,
+  yearHeatmapStatusLabel,
 } from './dashboardFormatters';
+import { buildYearHeatmapGridModel, yearHeatmapSectionHtml } from '../lib/yearHeatmapHtml';
 import type { DashboardViewModel } from './dashboardViewModel';
 import {
   icoTarget,
@@ -30,6 +34,7 @@ import {
   icoLibrary,
   icoChart,
   icoGear,
+  icoCheck,
 } from './dashboardIcons';
 
 export function dashboardSidebarHtml(vm: DashboardViewModel): string {
@@ -44,6 +49,10 @@ export function dashboardSidebarHtml(vm: DashboardViewModel): string {
             <button type="button" class="${vm.navItemClass('library')}" data-view="library">
               <span class="nav-ico" aria-hidden="true">${icoLibrary()}</span>
               ${escapeHtml(vm.t('nav.library'))}
+            </button>
+            <button type="button" class="${vm.navItemClass('completed')}" data-view="completed">
+              <span class="nav-ico" aria-hidden="true">${icoCheck()}</span>
+              ${escapeHtml(vm.t('nav.completed'))}
             </button>
             <button type="button" class="${vm.navItemClass('stats')}" data-view="stats">
               <span class="nav-ico" aria-hidden="true">${icoChart()}</span>
@@ -83,6 +92,14 @@ export function dashboardTopbarHtml(vm: DashboardViewModel, searchQuery: string)
                 <span class="p-ico">${icoTag()}</span>
                 <span class="p-text"><strong>${vm.taggedCount}</strong> ${escapeHtml(vm.t('dash.leveledTagged'))}</span>
               </div>
+              ${
+                vm.completedCount > 0 ?
+                  `<div class="p-metric">
+                <span class="p-ico">${icoCheck()}</span>
+                <span class="p-text"><strong>${vm.completedCount}</strong> ${escapeHtml(vm.t('dash.videosCompleted'))}</span>
+              </div>`
+                : ''
+              }
             </div>
           </div>
           <div class="topbar-search">
@@ -107,12 +124,17 @@ export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
                   const href = `https://www.youtube.com/watch?v=${encodeURIComponent(item.videoId)}`;
                   const thumb = thumbnailUrlForVideoId(item.videoId);
                   const lvl = difficultyLabelForCard(item.difficulty, vm.fw, vm.customLevels, vm.t);
+                  const completedBadge =
+                    item.completedAt != null ?
+                      `<span class="card-badge card-badge--completed">${escapeHtml(vm.t('dash.completedBadge'))}</span>`
+                    : '';
                   return `
-                <article class="video-card">
+                <article class="video-card${item.completedAt != null ? ' video-card--completed' : ''}">
                   <a class="card-link" href="${href}" target="_blank" rel="noreferrer">
                     <div class="card-media">
                       <img class="card-thumb" src="${escapeAttr(thumb)}" width="320" height="180" alt="" loading="lazy" decoding="async" />
                       <span class="card-badge">${escapeHtml(lvl)}</span>
+                      ${completedBadge}
                       <div class="card-shade" aria-hidden="true"></div>
                       <h3 class="card-title">${escapeHtml(item.title)}</h3>
                     </div>
@@ -135,6 +157,59 @@ export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
             <div class="filter-chips" role="toolbar" aria-label="${escapeAttr(vm.t('dash.filterAria'))}">
 ${vm.filterChipsInner}
             </div>
+            ${body}
+          </section>`;
+}
+
+export function dashboardCompletedSectionHtml(vm: DashboardViewModel): string {
+  const body =
+    vm.completedRows.length === 0 ?
+      `<div class="empty-board">${escapeHtml(vm.t('dash.completedEmpty'))}</div>`
+    : `<div class="video-grid completed-grid">
+              ${vm.completedRows
+                .map(({ item, seconds }) => {
+                  const href = `https://www.youtube.com/watch?v=${encodeURIComponent(item.videoId)}`;
+                  const thumb = thumbnailUrlForVideoId(item.videoId);
+                  const lvl = difficultyLabelForCard(item.difficulty, vm.fw, vm.customLevels, vm.t);
+                  const completedOn =
+                    item.completedAt != null ?
+                      formatCompletedDate(item.completedAt, vm.resolvedLocale)
+                    : '';
+                  return `
+                <article class="video-card video-card--completed">
+                  <a class="card-link" href="${href}" target="_blank" rel="noreferrer">
+                    <div class="card-media">
+                      <img class="card-thumb" src="${escapeAttr(thumb)}" width="320" height="180" alt="" loading="lazy" decoding="async" />
+                      <span class="card-badge card-badge--completed">${escapeHtml(vm.t('dash.completedBadge'))}</span>
+                      <span class="card-badge card-badge--level">${escapeHtml(lvl)}</span>
+                      <div class="card-shade" aria-hidden="true"></div>
+                      <h3 class="card-title">${escapeHtml(item.title)}</h3>
+                    </div>
+                  </a>
+                  <div class="card-footer">
+                    <div class="card-meta">
+                      <span class="card-ch">${escapeHtml(item.channel)}</span>
+                      <span class="card-time">${formatDuration(seconds)}</span>
+                      ${
+                        completedOn ?
+                          `<span class="card-completed-date">${escapeHtml(vm.t('dash.completedOn', { date: completedOn }))}</span>`
+                        : ''
+                      }
+                    </div>
+                    <div class="card-actions">
+                      <button type="button" class="btn-secondary-sm" data-undo-complete="${escapeAttr(item.videoId)}">${escapeHtml(vm.t('dash.undoComplete'))}</button>
+                      <button type="button" class="btn-remove" data-remove="${escapeAttr(item.videoId)}">${escapeHtml(vm.t('common.remove'))}</button>
+                    </div>
+                  </div>
+                </article>`;
+                })
+                .join('')}
+            </div>`;
+
+  return `
+          <section class="${vm.viewPanelClass('completed')}" data-view-panel="completed" aria-label="${escapeHtml(vm.t('nav.completed'))}">
+            <h2 class="row-title">${escapeHtml(vm.t('dash.titleCompleted'))}</h2>
+            <p class="row-sub">${escapeHtml(vm.t('dash.completedIntro'))}</p>
             ${body}
           </section>`;
 }
@@ -195,6 +270,38 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
                 <span class="mini-value">${formatDuration(vm.all)}</span>
               </div>
             </div>
+
+            ${(() => {
+              const grid = buildYearHeatmapGridModel({
+                year: vm.yearHeatmapYear,
+                dailySeconds: vm.data.dailySeconds,
+                extensionInstalledDateKey: vm.data.extensionInstalledDateKey,
+                dailyGoalSec: vm.dailyGoalSec,
+                locale: vm.resolvedLocale,
+              });
+              const showTime = vm.calendarShowPracticeTime;
+              const statusLabel = (
+                display: import('../lib/yearHeatmapCalendar').YearHeatmapDisplayColor,
+                dateKey: string,
+                seconds = 0,
+                showTimeArg = false,
+              ) => yearHeatmapStatusLabel(vm.t, display, dateKey, seconds, showTimeArg);
+              return `
+            <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('dash.yearHeatmapTitle'))}</h2>
+            ${yearHeatmapSectionHtml({
+              grid,
+              locale: vm.resolvedLocale,
+              variant: 'dashboard',
+              statusLabel,
+              showPracticeTime: showTime,
+              showMonthTicks: true,
+              navPrevLabel: vm.t('dash.yearHeatmapPrevYear'),
+              navNextLabel: vm.t('dash.yearHeatmapNextYear'),
+              backToYearLabel: vm.t('yearHeatmap.backToYear'),
+              keysHtml: yearHeatmapKeysHtml(vm.t, vm.dailyGoalSec != null),
+              ariaLabel: vm.t('dash.yearHeatmapAria'),
+            })}`;
+            })()}
 
             <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('dash.statsLast7'))}</h2>
             <div class="chart-week-wrap">
@@ -326,6 +433,13 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               </label>
               <p class="help">${escapeHtml(vm.t('settings.pauseHelp'))}</p>
             </div>
+            <div class="settings-block">
+              <label>
+                <input type="checkbox" id="calendar-show-practice-time" ${vm.data.settings.calendarShowPracticeTime ? 'checked' : ''} />
+                <span>${escapeHtml(vm.t('settings.calendarShowPracticeTime'))}</span>
+              </label>
+              <p class="help">${escapeHtml(vm.t('settings.calendarShowPracticeTimeHelp'))}</p>
+            </div>
             <p class="foot-note">
               <strong>${escapeHtml(vm.t('settings.howCounted'))}:</strong> ${escapeHtml(vm.t('settings.howCountedBody'))}
             </p>
@@ -349,6 +463,7 @@ ${dashboardSidebarHtml(vm)}
 ${dashboardTopbarHtml(vm, searchQuery)}
         <main class="content">
 ${dashboardLibrarySectionHtml(vm)}
+${dashboardCompletedSectionHtml(vm)}
 ${dashboardStatsSectionHtml(vm)}
 ${dashboardGoalsSectionHtml(vm)}
 ${dashboardSettingsSectionHtml(vm)}

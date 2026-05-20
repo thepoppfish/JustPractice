@@ -13,6 +13,11 @@ import {
 } from '../lib/goalFormat';
 import { escapeHtml } from '../lib/htmlEscape';
 import { isLegacyLevelTag, isJlptTag, isCefrTag } from '../lib/levelTags';
+import {
+  defaultYearHeatmapKeysHtml,
+  defaultYearHeatmapStatusLabel,
+} from '../lib/yearHeatmapHtml';
+import type { YearHeatmapDisplayColor } from '../lib/yearHeatmapCalendar';
 
 export type DashTranslate = (key: string, params?: Record<string, string>) => string;
 
@@ -96,6 +101,26 @@ export function streakAriaLabel(t: DashTranslate, streak: number): string {
   return t('dash.streakAria', { n: String(streak) });
 }
 
+export function yearHeatmapStatusLabel(
+  t: DashTranslate,
+  display: YearHeatmapDisplayColor,
+  dateKey: string,
+  seconds = 0,
+  showTime = false,
+): string {
+  return defaultYearHeatmapStatusLabel(
+    (key, params) => t(key, params),
+    display,
+    dateKey,
+    seconds,
+    showTime,
+  );
+}
+
+export function yearHeatmapKeysHtml(t: DashTranslate, showGoalKey: boolean): string {
+  return defaultYearHeatmapKeysHtml((key, params) => t(key, params), showGoalKey);
+}
+
 /** Weekly = daily×7; monthly = daily×days in this local calendar month (matches month progress sum). */
 export function resolvedPracticeGoals(g: PracticeGoals): PracticeGoals {
   const d = g.dailyTargetSec;
@@ -141,6 +166,14 @@ export function goalRingCardHtml(
       </div>
       <span class="goal-ring-fraction">${escapeHtml(formatGoalFraction(doneSec, targetSec, t))}</span>
     </div>`;
+}
+
+export function formatCompletedDate(ms: number, locale: string): string {
+  return new Date(ms).toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 export function parseGoalMinutes(el: HTMLInputElement | null): number | null {

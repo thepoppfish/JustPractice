@@ -15,6 +15,9 @@ export interface WatchPanelEventHandlers {
   /** Toggle collapsed state (read/write settings + UI + persist). */
   onCollapseClick: () => void;
   onAddClick: () => void;
+  onCompleteClick: () => void;
+  onCompletePromptYes: () => void;
+  onCompletePromptNo: () => void;
   onDifficultyChange: (value: string) => void;
   onPracticeToggleChange: (checked: boolean) => void;
   onCalPrev: () => void;
@@ -31,6 +34,8 @@ export interface EnsureWatchPanelOptions {
     level: string;
     saveToLibrary: string;
     countPracticeTime: string;
+    markComplete: string;
+    markIncomplete: string;
   };
   handlers: WatchPanelEventHandlers;
   onMounted: (ctx: { host: HTMLElement; shadowRoot: ShadowRoot; ui: WatchPanelUiRefs }) => void;
@@ -63,10 +68,15 @@ export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
     level: tmpl.level,
     saveToLibrary: tmpl.saveToLibrary,
     countPracticeTime: tmpl.countPracticeTime,
+    markComplete: tmpl.markComplete,
+    markIncomplete: tmpl.markIncomplete,
   });
 
   const root = sr.querySelector('.wrap') as HTMLElement;
   const addBtn = sr.querySelector('[part="add"]') as HTMLButtonElement;
+  const completeBtn = sr.querySelector('[part="complete-btn"]') as HTMLButtonElement;
+  const completePromptYes = sr.querySelector('[part="complete-prompt-yes"]') as HTMLButtonElement;
+  const completePromptNo = sr.querySelector('[part="complete-prompt-no"]') as HTMLButtonElement;
   const difficultySelect = sr.querySelector('[part="difficulty"]') as HTMLSelectElement;
   const practiceToggle = sr.querySelector('[part="practice"]') as HTMLInputElement;
   const statusEl = sr.querySelector('[part="status"]') as HTMLElement;
@@ -93,6 +103,9 @@ export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
   };
 
   addBtn.addEventListener('click', () => h.onAddClick());
+  completeBtn.addEventListener('click', () => h.onCompleteClick());
+  completePromptYes.addEventListener('click', () => h.onCompletePromptYes());
+  completePromptNo.addEventListener('click', () => h.onCompletePromptNo());
   difficultySelect.addEventListener('change', () => h.onDifficultyChange(difficultySelect.value));
   practiceToggle.addEventListener('change', () => {
     h.onPracticeToggleChange(practiceToggle.checked);

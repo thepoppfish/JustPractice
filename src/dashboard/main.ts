@@ -12,6 +12,7 @@ const app = document.getElementById('app')!;
 let searchQuery = '';
 let libraryLevelFilter: '' | 'unset' | 'legacy' | LevelTag = '';
 let activeView: DashView = 'library';
+let yearHeatmapYear = new Date().getFullYear();
 
 async function send<T>(msg: ExtensionMessage): Promise<T> {
   return chrome.runtime.sendMessage(msg) as Promise<T>;
@@ -41,6 +42,7 @@ async function renderAsync(): Promise<void> {
     libraryLevelFilter,
     searchQuery,
     activeView,
+    yearHeatmapYear,
   });
   libraryLevelFilter = vm.libraryLevelFilter;
 
@@ -72,6 +74,9 @@ async function renderAsync(): Promise<void> {
     },
     setLibraryLevelFilter: (f) => {
       libraryLevelFilter = f;
+    },
+    setYearHeatmapYear: (y) => {
+      yearHeatmapYear = y;
     },
   });
 }

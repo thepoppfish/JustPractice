@@ -6,6 +6,8 @@ export interface WatchPanelLabels {
   level: string;
   saveToLibrary: string;
   countPracticeTime: string;
+  markComplete: string;
+  markIncomplete: string;
 }
 
 /** Shadow-DOM markup + styles for the watch-page floating panel. */
@@ -63,6 +65,7 @@ export function watchPanelShadowInnerHtml(
       .panel-main { padding: 10px 12px 12px; }
       .wrap.collapsed .panel-main { display: none; }
       .wrap--no-video .panel-main [part="save-row"],
+      .wrap--no-video .panel-main [part="complete-row"],
       .wrap--no-video .panel-main .row.level-row,
       .wrap--no-video .panel-main .row.practice,
       .wrap--no-video .panel-main .hint {
@@ -158,6 +161,7 @@ export function watchPanelShadowInnerHtml(
       }
       button { cursor: pointer; background: #1a66ff; border-color: #3d7cff; }
       button.secondary { background: #333; border-color: #555; }
+      button.secondary.is-complete { background: rgba(66, 198, 111, 0.22); border-color: rgba(66, 198, 111, 0.55); color: #b8f0cc; }
       button:hover { filter: brightness(1.08); }
       .practice {
         display: flex;
@@ -189,6 +193,37 @@ export function watchPanelShadowInnerHtml(
         background: rgba(80, 160, 255, 0.12);
         border: 1px solid rgba(120, 180, 255, 0.35);
       }
+      .complete-prompt[hidden] {
+        display: none !important;
+      }
+      .complete-prompt {
+        margin-top: 8px;
+        padding: 8px 9px;
+        border-radius: 8px;
+        background: rgba(66, 198, 111, 0.12);
+        border: 1px solid rgba(66, 198, 111, 0.35);
+      }
+      .complete-prompt-text {
+        margin: 0 0 8px;
+        font-size: 11px;
+        line-height: 1.4;
+        color: #c8f0d4;
+      }
+      .complete-prompt-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .complete-prompt-actions button {
+        flex: 1;
+        min-width: 0;
+        font-size: 11px;
+        padding: 5px 8px;
+      }
+      .complete-prompt-actions .secondary {
+        background: #333;
+        border-color: #555;
+      }
       .jp-debug-strip[hidden] {
         display: none !important;
       }
@@ -215,11 +250,24 @@ export function watchPanelShadowInnerHtml(
         border-top: 1px solid rgba(255,255,255,0.08);
       }
       .cal-header {
+        margin-bottom: 8px;
+      }
+      .cal-header-year {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        margin-bottom: 8px;
+      }
+      .cal-header-month {
+        display: none;
+        justify-content: center;
+        width: 100%;
+      }
+      .calendar-section:has(.year-hm--month-open) .cal-header-year {
+        display: none;
+      }
+      .calendar-section:has(.year-hm--month-open) .cal-header-month {
+        display: flex;
       }
       .cal-header button { min-width: 36px; padding: 4px 8px; font-size: 16px; line-height: 1; }
       .cal-label { font-size: 11px; font-weight: 600; color: #ccc; flex: 1; text-align: center; }
@@ -293,6 +341,105 @@ export function watchPanelShadowInnerHtml(
         border: 1px solid rgba(255, 255, 255, 0.06);
       }
       .cal-cell--neutral .cal-day-num { color: #999; }
+      .year-hm-chart { width: 100%; }
+      .year-hm-body {
+        display: grid;
+        grid-template-columns: 16px minmax(0, 1fr);
+        gap: 2px;
+        align-items: stretch;
+        width: 100%;
+      }
+      .year-hm-weekdays {
+        display: grid;
+        grid-template-rows: repeat(7, minmax(0, 1fr));
+        gap: 2px;
+        align-self: stretch;
+      }
+      .year-hm-wd {
+        font-size: 9px;
+        line-height: 1;
+        color: #666;
+        text-align: right;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .year-hm-cells {
+        display: grid;
+        grid-template-rows: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(var(--year-weeks, 53), minmax(0, 1fr));
+        grid-auto-flow: column;
+        gap: 2px;
+        width: 100%;
+        min-width: 0;
+        padding-bottom: 2px;
+      }
+      .year-hm-cell {
+        width: 100%;
+        aspect-ratio: 1;
+        min-width: 0;
+        min-height: 0;
+        border-radius: 2px;
+        box-sizing: border-box;
+      }
+      .year-hm-cell--empty { visibility: hidden; pointer-events: none; }
+      .year-hm-cell--blank { background: rgba(120, 120, 128, 0.45); }
+      .year-hm-cell--none { background: #e04d4d; }
+      .year-hm-cell--active { background: #42c66f; }
+      .year-hm-cell--goal { background: #e8b84a; }
+      .year-hm-cell--today { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.85); }
+      .year-hm-keys {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        margin: 0;
+        font-size: 9px;
+        color: #666;
+      }
+      .year-hm-key { display: inline-flex; align-items: center; gap: 4px; }
+      .year-hm-key-dot { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+      .year-hm-key-dot--none { background: #e04d4d; }
+      .year-hm-key-dot--active { background: #42c66f; }
+      .year-hm-key-dot--goal { background: #e8b84a; }
+      .calendar-section:has(.year-hm--month-open) .cal-legend {
+        display: none;
+      }
+      .year-hm-stage { min-height: 100px; }
+      .year-hm-year-layer[hidden], .year-hm-month-layer[hidden] { display: none !important; }
+      .year-hm-cell--month-hover { filter: brightness(1.35); box-shadow: 0 0 0 1px rgba(255,255,255,0.45); }
+      .year-hm-cell { cursor: pointer; border: none; padding: 0; }
+      .year-hm-month-detail { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; border-radius: 6px; background: rgba(255,255,255,0.04); }
+      .year-hm-month-detail--golden {
+        background: linear-gradient(165deg, rgba(232,184,74,0.28), rgba(232,184,74,0.1) 50%, rgba(255,255,255,0.04));
+        box-shadow: inset 0 0 0 1px rgba(232,184,74,0.35);
+      }
+      .year-hm-month-toolbar { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+      .year-hm-back {
+        display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+        padding: 5px 10px; font-size: 11px; font-weight: 500; line-height: 1.2;
+        color: #eee; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 6px; cursor: pointer;
+      }
+      .year-hm-back:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.24); }
+      .year-hm-back-icon { font-size: 13px; line-height: 1; opacity: 0.85; }
+      .year-hm-back-label { white-space: nowrap; }
+      .year-hm-month-heading { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+      .year-hm-month-title { font-size: 12px; font-weight: 700; line-height: 1.2; }
+      .month-hm-total { margin: 0; font-size: 9px; color: #888; }
+      .month-hm-chart { width: 100%; }
+      .month-hm-dow-header { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-bottom: 2px; }
+      .month-hm-dow { font-size: 8px; color: #666; text-align: center; }
+      .month-hm-cells { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; min-width: 0; width: 100%; }
+      .month-hm-cell { min-height: 32px; border-radius: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 2px 1px; box-sizing: border-box; }
+      .month-hm-cell--empty { visibility: hidden; pointer-events: none; }
+      .month-hm-cell--blank { background: rgba(120,120,128,0.45); }
+      .month-hm-cell--none { background: rgba(224,77,77,0.2); border: 1px solid rgba(224,77,77,0.4); }
+      .month-hm-cell--active { background: rgba(66,198,111,0.2); border: 1px solid rgba(66,198,111,0.4); }
+      .month-hm-cell--goal { background: rgba(232,184,74,0.25); border: 1px solid rgba(232,184,74,0.45); }
+      .month-hm-cell--today { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.75); }
+      .month-hm-day-num { font-size: 9px; font-weight: 700; }
+      .month-hm-time { font-size: 8px; color: #aaa; font-variant-numeric: tabular-nums; }
+      .month-hm-time--empty { opacity: 0.35; }
     </style>
     <div class="wrap">
       <div class="drag-strip">
@@ -318,6 +465,16 @@ export function watchPanelShadowInnerHtml(
         ></div>
         <div class="row" part="save-row">
           <button type="button" class="secondary" part="add">${escapeHtml(labels.saveToLibrary)}</button>
+        </div>
+        <div class="row" part="complete-row">
+          <button type="button" class="secondary" part="complete-btn">${escapeHtml(labels.markComplete)}</button>
+        </div>
+        <div class="complete-prompt" part="complete-prompt" hidden>
+          <p class="complete-prompt-text" part="complete-prompt-text"></p>
+          <div class="complete-prompt-actions">
+            <button type="button" part="complete-prompt-yes"></button>
+            <button type="button" class="secondary" part="complete-prompt-no"></button>
+          </div>
         </div>
         <pre class="jp-debug-strip" part="jp-debug-strip" hidden></pre>
         <div class="row level-row">
@@ -363,9 +520,12 @@ export function watchPanelShadowInnerHtml(
         <div class="hint" part="hint"></div>
         <div class="calendar-section">
           <div class="cal-header">
-            <button type="button" class="secondary" part="cal-prev">‹</button>
-            <span class="cal-label" part="cal-label"></span>
-            <button type="button" class="secondary" part="cal-next">›</button>
+            <div class="cal-header-year" data-year-hm-nav-year>
+              <button type="button" class="secondary" part="cal-prev">‹</button>
+              <span class="cal-label" part="cal-label"></span>
+              <button type="button" class="secondary" part="cal-next">›</button>
+            </div>
+            <div class="cal-header-month" data-year-hm-nav-month hidden></div>
           </div>
           <div class="cal-streak" part="cal-streak" dir="ltr" role="status"></div>
           <div class="cal-grid" part="cal-grid"></div>

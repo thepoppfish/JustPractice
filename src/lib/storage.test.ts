@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
+  completedLibraryItems,
   dateKeyFromTimestamp,
   daysInCalendarMonth,
   emptyPersisted,
   ensureSettingsShape,
   firstPositiveDailyDateKey,
   inferExtensionInstalledDateKey,
+  isLibraryItemCompleted,
   missTrackingStartDateKey,
   normalizeCustomLevels,
   normalizeImportedPersisted,
+  persistedNeedsCompactionRewrite,
   secondsInRange,
   startOfWeekMonday,
+  type LibraryItem,
 } from './storage';
 
 describe('extension install / miss window keys', () => {
@@ -129,6 +133,48 @@ describe('normalizeImportedPersisted', () => {
     });
     expect(out.library[0].difficulty).toBe('HSK 3');
   });
+
+  it('defaults completedAt to null when missing', () => {
+    const out = normalizeImportedPersisted({
+      schemaVersion: 6,
+      library: [{ videoId: 'a', title: 'T', channel: 'C', addedAt: 1, difficulty: null }],
+      dailySeconds: {},
+      videoSeconds: {},
+      settings: {},
+    });
+    expect(out.library[0].completedAt).toBeNull();
+    expect(out.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it('preserves completedAt on v7 library items', () => {
+    const ts = 1_700_000_000_000;
+    const out = normalizeImportedPersisted({
+      schemaVersion: 7,
+      library: [
+        { videoId: 'a', title: 'T', channel: 'C', addedAt: 1, difficulty: null, completedAt: ts },
+      ],
+      dailySeconds: {},
+      videoSeconds: {},
+      settings: {},
+    });
+    expect(out.library[0].completedAt).toBe(ts);
+    expect(out.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it('rejects invalid completedAt values', () => {
+    const out = normalizeImportedPersisted({
+      schemaVersion: 7,
+      library: [
+        { videoId: 'a', title: 'T', channel: 'C', addedAt: 1, difficulty: null, completedAt: 'bad' },
+        { videoId: 'b', title: 'T', channel: 'C', addedAt: 1, difficulty: null, completedAt: -1 },
+      ],
+      dailySeconds: {},
+      videoSeconds: {},
+      settings: {},
+    });
+    expect(out.library[0].completedAt).toBeNull();
+    expect(out.library[1].completedAt).toBeNull();
+  });
 });
 
 describe('normalizeCustomLevels', () => {
@@ -138,6 +184,63 @@ describe('normalizeCustomLevels', () => {
 
   it('falls back to defaults when empty after filtering', () => {
     expect(normalizeCustomLevels(['   ', '!!!'])[0]).toBe('Beginner');
+  });
+});
+
+describe('library completion helpers', () => {
+  const item = (completedAt: number | null): LibraryItem => ({
+    videoId: 'x',
+    title: 'T',
+    channel: 'C',
+    addedAt: 1,
+    difficulty: null,
+    completedAt,
+  });
+
+  it('isLibraryItemCompleted is true only when completedAt is set', () => {
+    expect(isLibraryItemCompleted(item(100))).toBe(true);
+    expect(isLibraryItemCompleted(item(null))).toBe(false);
+  });
+
+  it('completedLibraryItems filters completed rows', () => {
+    const rows = [item(null), item(200), item(300)];
+    expect(completedLibraryItems(rows).map((x) => x.completedAt)).toEqual([200, 300]);
+  });
+});
+
+describe('persistedNeedsCompactionRewrite', () => {
+  it('does not rewrite v7 data solely because library items have completedAt', () => {
+    const blob = {
+      schemaVersion: SCHEMA_VERSION,
+      library: [
+        {
+          videoId: 'a',
+          title: 'T',
+          channel: 'C',
+          addedAt: 1,
+          difficulty: null,
+          completedAt: 1_700_000_000_000,
+        },
+      ],
+      extensionInstalledDateKey: '2026-05-01',
+      dailySeconds: {},
+      videoSeconds: {},
+      settings: {},
+    };
+    expect(persistedNeedsCompactionRewrite(blob)).toBe(false);
+  });
+
+  it('still rewrites when schema version differs', () => {
+    expect(
+      persistedNeedsCompactionRewrite({
+        schemaVersion: 6,
+        library: [],
+        extensionInstalledDateKey: '2026-05-01',
+        dailySeconds: {},
+        videoSeconds: {},
+        settings: {},
+      }),
+    ).toBe(true);
   });
 });
 

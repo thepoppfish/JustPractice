@@ -3,6 +3,7 @@ import {
   defaultGoals,
   defaultSettings,
   ensureSettingsShape,
+  isLibraryItemCompleted,
   missTrackingStartDateKey,
   type AppSettings,
   type LevelFramework,
@@ -34,7 +35,7 @@ import {
   resolvedPracticeGoals,
 } from './dashboardFormatters';
 
-export type DashView = 'library' | 'stats' | 'goals' | 'settings';
+export type DashView = 'library' | 'completed' | 'stats' | 'goals' | 'settings';
 
 export interface DashboardViewModel {
   data: PersistedData;
@@ -58,9 +59,13 @@ export interface DashboardViewModel {
   dailyGoalSec: number | null;
   todayKey: string;
   streak: number;
+  yearHeatmapYear: number;
+  calendarShowPracticeTime: boolean;
   byLevel: { label: string; seconds: number }[];
   hasLegacyVideos: boolean;
   rows: Array<{ item: LibraryItem; seconds: number }>;
+  completedRows: Array<{ item: LibraryItem; seconds: number }>;
+  completedCount: number;
   taggedCount: number;
   filterChipsInner: string;
 
@@ -73,6 +78,7 @@ export function buildDashboardViewModel(input: {
   libraryLevelFilter: '' | 'unset' | 'legacy' | LevelTag;
   searchQuery: string;
   activeView: DashView;
+  yearHeatmapYear: number;
 }): DashboardViewModel {
   const { data, searchQuery, activeView } = input;
   const st = ensureSettingsShape({ ...defaultSettings(), ...data.settings });
@@ -112,6 +118,11 @@ export function buildDashboardViewModel(input: {
     .filter((r) => matchesLevel(r.item, libraryLevelFilter, fw, customLevels))
     .filter((r) => matchesLibrarySearch(r.item, searchQuery))
     .sort((a, b) => b.item.addedAt - a.item.addedAt);
+  const completedRows = libraryRowsWithPracticeSeconds(data)
+    .filter((r) => isLibraryItemCompleted(r.item))
+    .filter((r) => matchesLibrarySearch(r.item, searchQuery))
+    .sort((a, b) => (b.item.completedAt ?? 0) - (a.item.completedAt ?? 0));
+  const completedCount = data.library.filter(isLibraryItemCompleted).length;
   const taggedCount = data.library.filter((x) => x.difficulty !== null).length;
 
   const filterChipsInner = `
@@ -154,9 +165,13 @@ export function buildDashboardViewModel(input: {
     dailyGoalSec,
     todayKey,
     streak,
+    yearHeatmapYear: input.yearHeatmapYear,
+    calendarShowPracticeTime: st.calendarShowPracticeTime === true,
     byLevel,
     hasLegacyVideos,
     rows,
+    completedRows,
+    completedCount,
     taggedCount,
     filterChipsInner,
     navItemClass,

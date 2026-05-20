@@ -101,3 +101,59 @@ export function attachHomeFeedPointerPick(opts: HomeFeedPointerPickOptions): voi
     true,
   );
 }
+
+/** Seconds before video end when the completion prompt should appear. */
+export const COMPLETION_PROMPT_LEAD_SEC = 30;
+
+/** For videos shorter than {@link COMPLETION_PROMPT_LEAD_SEC}, show when this fraction remains. */
+export const SHORT_VIDEO_COMPLETION_PROMPT_RATIO = 0.5;
+
+/** Playback time (seconds) at which the completion prompt should first appear. */
+export function completionPromptThresholdSec(durationSec: number): number | null {
+  if (!Number.isFinite(durationSec) || durationSec <= 0) return null;
+  if (durationSec >= COMPLETION_PROMPT_LEAD_SEC) {
+    return durationSec - COMPLETION_PROMPT_LEAD_SEC;
+  }
+  return durationSec * SHORT_VIDEO_COMPLETION_PROMPT_RATIO;
+}
+
+export function shouldTriggerCompletionPrompt(currentTimeSec: number, durationSec: number): boolean {
+  const threshold = completionPromptThresholdSec(durationSec);
+  if (threshold === null) return false;
+  return currentTimeSec >= threshold;
+}
+
+/** Poll `timeupdate` (throttled) until playback crosses the completion-prompt threshold. */
+export function attachVideoCompletionPromptListener(
+  video: HTMLVideoElement,
+  onThresholdReached: () => void,
+  throttleMs = 5000,
+): () => void {
+  let lastCheck = 0;
+
+  const check = (): void => {
+    const duration = video.duration;
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    if (shouldTriggerCompletionPrompt(video.currentTime, duration)) {
+      onThresholdReached();
+    }
+  };
+
+  const onTimeUpdate = (): void => {
+    const now = Date.now();
+    if (now - lastCheck < throttleMs) return;
+    lastCheck = now;
+    check();
+  };
+
+  video.addEventListener('timeupdate', onTimeUpdate);
+  video.addEventListener('loadedmetadata', check);
+  video.addEventListener('durationchange', check);
+  check();
+
+  return () => {
+    video.removeEventListener('timeupdate', onTimeUpdate);
+    video.removeEventListener('loadedmetadata', check);
+    video.removeEventListener('durationchange', check);
+  };
+}

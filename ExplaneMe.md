@@ -192,7 +192,7 @@ All of this lives in `src/lib/storage.ts`. The background is the normal writer; 
 | Field | Role |
 |-------|------|
 | `schemaVersion` | Bumped when migrations run (`SCHEMA_VERSION`). |
-| `library` | `LibraryItem[]` — `videoId`, `title`, `channel`, `addedAt`, `difficulty`. |
+| `library` | `LibraryItem[]` — `videoId`, `title`, `channel`, `addedAt`, `difficulty`, `completedAt` (Unix ms or null). |
 | `extensionInstalledDateKey` | `yyyy-mm-dd` anchor for “missed practice” / streak semantics. |
 | `dailySeconds` | Map `dateKey → seconds` for the practice timer (not watch history). |
 | `videoSeconds` | Map `videoId → seconds` (same metric as daily). |
@@ -215,6 +215,7 @@ Defined in `src/lib/messages.ts`; dispatched in `src/background/index.ts` inside
 | `ADD_OR_UPDATE_LIBRARY` | Panel, feed strip, context menu click | `videoId`, `title`, `channel`, optional `difficulty` | Upsert library row; async oEmbed enrich (`fill-unknown`); returns **`LibraryWriteOkResponse`** (`libraryAction`, final title/channel/difficulty). |
 | `REMOVE_LIBRARY` | UIs removing a save | `videoId` | Filter library; `{ ok: true }`. |
 | `SET_DIFFICULTY` | Panel / library UIs | `videoId`, `difficulty` | Patch existing row only; `{ ok: true }`. |
+| `SET_LIBRARY_COMPLETION` | Watch panel, Completed tab | `videoId`, `complete`, optional `title`/`channel` | Sets or clears `completedAt`; upserts library row when marking complete on an unsaved video; `{ ok: true }`. |
 | `PRACTICE_TICK` | Watch script: `youtube.ts` → `flushPendingPracticeSeconds` (`youtubePracticeTimer.ts`) → `sendMsgFireAndForget` (`youtubeMessaging.ts`) | `videoId`, `deltaSeconds`, `endedAtMs` | Clamps delta to `MAX_TICK_SECONDS` (120); adds to `dailySeconds[dateKey]` and `videoSeconds`; may trigger **daily goal met** notification path; `{ ok: true }`. |
 | `SET_SETTINGS` | Dashboard (and any caller) | `Partial<AppSettings>` | Merges with `ensureSettingsShape`; deep-merge `goals`; **rebuilds context menus**; `{ ok: true }`. |
 | `ENRICH_LIBRARY_META` | UI that wants title/channel refresh | `videoId` | oEmbed **`overwrite`** mode; `{ ok: true }`. |

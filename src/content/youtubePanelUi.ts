@@ -7,15 +7,20 @@ import {
   missTrackingStartDateKey,
   type LevelFramework,
   type LevelTag,
+  type LibraryItem,
   type PracticeGoals,
 } from '../lib/storage';
-import {
-  dayCountsAsPracticedForCalendar,
-  formatDuration,
-  practiceCalendarDayVisual,
-  practiceStreakDays,
-} from '../lib/practiceStats';
+import { formatDuration, practiceCalendarDayVisual, practiceStreakDays } from '../lib/practiceStats';
 import type { ResolvedLocale } from '../i18n';
+import { daysInCalendarMonth } from '../lib/storage';
+import { attachYearHeatmapInteractive } from '../lib/yearHeatmapInteractive';
+import {
+  buildYearHeatmapGridModel,
+  defaultYearHeatmapKeysHtml,
+  defaultYearHeatmapStatusLabel,
+  yearHeatmapBackButtonHtml,
+  yearHeatmapSectionHtml,
+} from '../lib/yearHeatmapHtml';
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -114,6 +119,47 @@ export function syncWatchPanelLabels(p: {
   p.onAfter?.();
 }
 
+export function syncWatchPanelCompletionUi(p: {
+  shadowRoot: ShadowRoot | null;
+  item: LibraryItem | null;
+  panelT: (k: string, p?: Record<string, string | number>) => string;
+}): void {
+  if (!p.shadowRoot) return;
+  const btn = p.shadowRoot.querySelector('[part="complete-btn"]') as HTMLButtonElement | null;
+  const row = p.shadowRoot.querySelector('[part="complete-row"]') as HTMLElement | null;
+  if (!btn || !row) return;
+  const isComplete = p.item?.completedAt != null;
+  btn.textContent = isComplete ? p.panelT('panel.markIncomplete') : p.panelT('panel.markComplete');
+  btn.classList.toggle('is-complete', isComplete);
+  if (isComplete) {
+    btn.title = p.panelT('panel.markIncompleteHint');
+  } else {
+    btn.title = p.panelT('panel.markCompleteHint');
+  }
+}
+
+export function syncWatchPanelEndedPromptLabels(p: {
+  shadowRoot: ShadowRoot | null;
+  panelT: (k: string, p?: Record<string, string | number>) => string;
+}): void {
+  if (!p.shadowRoot) return;
+  const text = p.shadowRoot.querySelector('[part="complete-prompt-text"]');
+  const yes = p.shadowRoot.querySelector('[part="complete-prompt-yes"]') as HTMLButtonElement | null;
+  const no = p.shadowRoot.querySelector('[part="complete-prompt-no"]') as HTMLButtonElement | null;
+  if (text) text.textContent = p.panelT('panel.videoEndedPrompt');
+  if (yes) yes.textContent = p.panelT('panel.videoEndedYes');
+  if (no) no.textContent = p.panelT('panel.videoEndedNo');
+}
+
+export function setWatchPanelEndedPromptVisible(p: {
+  shadowRoot: ShadowRoot | null;
+  visible: boolean;
+}): void {
+  const el = p.shadowRoot?.querySelector('[part="complete-prompt"]') as HTMLElement | null;
+  if (!el) return;
+  el.hidden = !p.visible;
+}
+
 export function applyWatchPanelCollapsed(p: {
   shadowRoot: ShadowRoot | null;
   collapsed: boolean;
@@ -199,10 +245,112 @@ export interface RenderWatchPanelCalendarParams {
   extensionInstallDateKey: string;
   getGoals: () => PracticeGoals;
   getTodayPracticeSeconds: () => number;
+  useYearHeatmap?: boolean;
+  showPracticeTime?: boolean;
+}
+
+let panelHeatmapDetach: (() => void) | null = null;
+
+function renderWatchPanelYearHeatmap(p: RenderWatchPanelCalendarParams): void {
+  if (!p.shadowRoot) return;
+  const grid = p.shadowRoot.querySelector('[part="cal-grid"]') as HTMLElement | null;
+  const label = p.shadowRoot.querySelector('[part="cal-label"]') as HTMLElement | null;
+  if (!grid || !label) return;
+
+  const goals = p.getGoals();
+  const dailyGoalSec = goals.dailyTargetSec != null && goals.dailyTargetSec > 0 ? goals.dailyTargetSec : null;
+  const monthlyGoalSec =
+    dailyGoalSec != null ? dailyGoalSec * daysInCalendarMonth(Date.now()) : null;
+  const merged = buildMergedDailyForPanel(p.dailySeconds, p.getTodayPracticeSeconds);
+  const hm = buildYearHeatmapGridModel({
+    year: p.calendarYear,
+    dailySeconds: merged,
+    extensionInstalledDateKey: p.extensionInstallDateKey,
+    dailyGoalSec,
+  });
+
+  label.textContent = String(p.calendarYear);
+  const statusLabel = (
+    display: Parameters<typeof defaultYearHeatmapStatusLabel>[1],
+    dateKey: string,
+    seconds = 0,
+    showTimeArg = false,
+  ) => defaultYearHeatmapStatusLabel((key, params) => p.panelT(key, params), display, dateKey, seconds, showTimeArg);
+
+  const backLabel = p.panelT('yearHeatmap.backToYear');
+  const navMonth = p.shadowRoot.querySelector('[data-year-hm-nav-month]');
+  if (navMonth) {
+    navMonth.innerHTML = yearHeatmapBackButtonHtml(backLabel);
+  }
+
+  grid.innerHTML = yearHeatmapSectionHtml({
+    grid: hm,
+    locale: p.panelLocale,
+    variant: 'panel',
+    statusLabel,
+    showPracticeTime: p.showPracticeTime === true,
+    showMonthTicks: false,
+    hideYearNav: true,
+    navPrevLabel: '',
+    navNextLabel: '',
+    backToYearLabel: backLabel,
+    keysHtml: defaultYearHeatmapKeysHtml(
+      (key, params) => p.panelT(key, params),
+      dailyGoalSec != null,
+    ),
+    ariaLabel: p.panelT('dash.yearHeatmapAria'),
+  });
+
+  if (panelHeatmapDetach) {
+    panelHeatmapDetach();
+    panelHeatmapDetach = null;
+  }
+  const hmRoot = grid.querySelector('[data-year-hm-root]');
+  if (hmRoot instanceof HTMLElement) {
+    panelHeatmapDetach = attachYearHeatmapInteractive({
+      root: hmRoot,
+      locale: p.panelLocale,
+      variant: 'panel',
+      getYear: () => p.calendarYear,
+      getData: () => ({
+        dailySeconds: merged,
+        extensionInstalledDateKey: p.extensionInstallDateKey,
+        dailyGoalSec,
+        monthlyGoalSec,
+      }),
+      statusLabel,
+      showPracticeTimeOnYear: p.showPracticeTime === true,
+      backToYearLabel: p.panelT('yearHeatmap.backToYear'),
+    });
+  }
+
+  const calLeg = p.shadowRoot.querySelector('[part="cal-legend"]');
+  if (calLeg) {
+    calLeg.innerHTML = defaultYearHeatmapKeysHtml(
+      (key, params) => p.panelT(key, params),
+      dailyGoalSec != null,
+    );
+  }
+
+  paintCalStreak({
+    shadowRoot: p.shadowRoot,
+    dailySeconds: p.dailySeconds,
+    extensionInstallDateKey: p.extensionInstallDateKey,
+    getTodayPracticeSeconds: p.getTodayPracticeSeconds,
+    panelT: p.panelT,
+  });
 }
 
 export function renderWatchPanelCalendar(p: RenderWatchPanelCalendarParams): void {
   if (!p.shadowRoot) return;
+  if (p.useYearHeatmap) {
+    renderWatchPanelYearHeatmap(p);
+    return;
+  }
+  if (panelHeatmapDetach) {
+    panelHeatmapDetach();
+    panelHeatmapDetach = null;
+  }
   const grid = p.shadowRoot.querySelector('[part="cal-grid"]') as HTMLElement | null;
   const label = p.shadowRoot.querySelector('[part="cal-label"]') as HTMLElement | null;
   if (!grid || !label) return;
@@ -280,13 +428,13 @@ export function renderWatchPanelCalendar(p: RenderWatchPanelCalendarParams): voi
 
     const mins = document.createElement('span');
     mins.className = 'cal-day-min';
-    mins.textContent = isFuture ? '' : formatDayMinutes(sec);
+    // Panel month calendar always shows per-day practice time (independent of dashboard setting).
+    const showTime = true;
+    mins.textContent = isFuture || !showTime ? '' : formatDayMinutes(sec);
     cell.appendChild(mins);
 
-    if (!isFuture && dayCountsAsPracticedForCalendar(sec)) {
+    if (!isFuture && showTime && sec > 0) {
       cell.title = formatDuration(sec);
-    } else if (isFuture) {
-      cell.title = '';
     } else {
       cell.title = '';
     }

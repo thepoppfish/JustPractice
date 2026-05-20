@@ -8,7 +8,8 @@ import {
   type UiLocale,
 } from '../lib/storage';
 import { isResolvedLocale } from '../i18n';
-import { parseGoalMinutes, parseNudgeHour } from './dashboardFormatters';
+import { parseGoalMinutes, parseNudgeHour, yearHeatmapStatusLabel } from './dashboardFormatters';
+import { attachYearHeatmapInteractive } from '../lib/yearHeatmapInteractive';
 import type { DashView, DashboardViewModel } from './dashboardViewModel';
 
 export interface AttachDashboardListenersInput {
@@ -19,10 +20,20 @@ export interface AttachDashboardListenersInput {
   setActiveView: (v: DashView) => void;
   setSearchQuery: (q: string) => void;
   setLibraryLevelFilter: (f: '' | 'unset' | 'legacy' | LevelTag) => void;
+  setYearHeatmapYear: (y: number) => void;
 }
 
 export function attachDashboardListeners(input: AttachDashboardListenersInput): void {
-  const { root, vm, send, render, setActiveView, setSearchQuery, setLibraryLevelFilter } = input;
+  const {
+    root,
+    vm,
+    send,
+    render,
+    setActiveView,
+    setSearchQuery,
+    setLibraryLevelFilter,
+    setYearHeatmapYear,
+  } = input;
 
   root.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -177,6 +188,19 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     });
   });
 
+  root.querySelectorAll<HTMLButtonElement>('[data-undo-complete]').forEach((btn) => {
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const id = btn.getAttribute('data-undo-complete');
+      if (!id) return;
+      await send({
+        type: MSG.SET_LIBRARY_COMPLETION,
+        payload: { videoId: id, complete: false },
+      });
+      render();
+    });
+  });
+
   const pauseEl = root.querySelector<HTMLInputElement>('#pause-unfocused');
   pauseEl?.addEventListener('change', async () => {
     await send({
@@ -185,4 +209,42 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     });
     render();
   });
+
+  const calTimeEl = root.querySelector<HTMLInputElement>('#calendar-show-practice-time');
+  calTimeEl?.addEventListener('change', async () => {
+    await send({
+      type: MSG.SET_SETTINGS,
+      payload: { calendarShowPracticeTime: calTimeEl.checked },
+    });
+    render();
+  });
+
+  root.querySelector('.year-hm-prev')?.addEventListener('click', () => {
+    setYearHeatmapYear(vm.yearHeatmapYear - 1);
+    render();
+  });
+  root.querySelector('.year-hm-next')?.addEventListener('click', () => {
+    setYearHeatmapYear(vm.yearHeatmapYear + 1);
+    render();
+  });
+
+  const hmRoot = root.querySelector('[data-year-hm-root]');
+  if (hmRoot instanceof HTMLElement) {
+    attachYearHeatmapInteractive({
+      root: hmRoot,
+      locale: vm.resolvedLocale,
+      variant: 'dashboard',
+      getYear: () => vm.yearHeatmapYear,
+      getData: () => ({
+        dailySeconds: vm.data.dailySeconds,
+        extensionInstalledDateKey: vm.data.extensionInstalledDateKey,
+        dailyGoalSec: vm.dailyGoalSec,
+        monthlyGoalSec: vm.rg.monthlyTargetSec,
+      }),
+      statusLabel: (display, dateKey, seconds = 0, showTimeArg = false) =>
+        yearHeatmapStatusLabel(vm.t, display, dateKey, seconds, showTimeArg),
+      showPracticeTimeOnYear: vm.calendarShowPracticeTime,
+      backToYearLabel: vm.t('yearHeatmap.backToYear'),
+    });
+  }
 }

@@ -222,3 +222,39 @@ export async function applyWatchPanelDifficultyChange(p: {
   }
   await p.afterPersist(videoId);
 }
+
+export async function setWatchPanelLibraryCompletion(p: {
+  complete: boolean;
+  getVideoId: () => string | null;
+  readTitle: () => string;
+  readChannel: () => string;
+  panelT: Translator;
+  getUi: () => WatchPanelUiRefs | null;
+  afterPersist: (videoId: string) => Promise<void>;
+}): Promise<void> {
+  const videoId = p.getVideoId();
+  const ui = p.getUi();
+  if (!videoId || !ui) {
+    setWatchPanelStatusFlash(ui?.statusEl ?? null, p.panelT('panel.noVideo'), 'err');
+    return;
+  }
+  const res = (await sendMsg<ExtensionResponse>({
+    type: MSG.SET_LIBRARY_COMPLETION,
+    payload: {
+      videoId,
+      complete: p.complete,
+      title: p.readTitle(),
+      channel: p.readChannel(),
+    },
+  })) as ExtensionResponse;
+  if (!res.ok) {
+    setWatchPanelStatusFlash(ui.statusEl, res.error, 'err');
+    return;
+  }
+  if (p.complete) {
+    setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedComplete'));
+  } else {
+    setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedIncomplete'));
+  }
+  await p.afterPersist(videoId);
+}

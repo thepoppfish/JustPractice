@@ -5,6 +5,7 @@ export const MSG = {
   ADD_OR_UPDATE_LIBRARY: 'ADD_OR_UPDATE_LIBRARY',
   REMOVE_LIBRARY: 'REMOVE_LIBRARY',
   SET_DIFFICULTY: 'SET_DIFFICULTY',
+  SET_LIBRARY_COMPLETION: 'SET_LIBRARY_COMPLETION',
   PRACTICE_TICK: 'PRACTICE_TICK',
   SET_SETTINGS: 'SET_SETTINGS',
   ENRICH_LIBRARY_META: 'ENRICH_LIBRARY_META',
@@ -36,6 +37,17 @@ export interface RemoveLibraryMessage {
 export interface SetDifficultyMessage {
   type: typeof MSG.SET_DIFFICULTY;
   payload: { videoId: string; difficulty: LevelTag | null };
+}
+
+export interface SetLibraryCompletionMessage {
+  type: typeof MSG.SET_LIBRARY_COMPLETION;
+  payload: {
+    videoId: string;
+    complete: boolean;
+    /** Used when upserting a library row that does not exist yet. */
+    title?: string;
+    channel?: string;
+  };
 }
 
 /** Delta seconds accumulated on the client while practice rules held */
@@ -74,6 +86,7 @@ export type ExtensionMessage =
   | AddOrUpdateLibraryMessage
   | RemoveLibraryMessage
   | SetDifficultyMessage
+  | SetLibraryCompletionMessage
   | PracticeTickMessage
   | SetSettingsMessage
   | EnrichLibraryMetaMessage
