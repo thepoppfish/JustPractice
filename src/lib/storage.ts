@@ -1,6 +1,8 @@
 /** Persisted shape in chrome.storage.local */
 
-export const SCHEMA_VERSION = 7 as const;
+export const SCHEMA_VERSION = 9 as const;
+
+const HISTORICAL_XP_BACKFILL_CAP = 50_000;
 
 export type JlptLevel = 'N5' | 'N4' | 'N3' | 'N2' | 'N1';
 
@@ -76,6 +78,29 @@ export interface AppSettings {
   lastNotifiedGoalMetDate?: string | null;
   /** yyyy-mm-dd — last local day we showed the evening nudge */
   lastNotifiedGoalNudgeDate?: string | null;
+  /**
+   * When true (default), show browser notifications for account level-up / achievements.
+   * Phase 2+ UI may expose this toggle.
+   */
+  xpNotificationsEnabled?: boolean;
+}
+
+/** Account-level XP / achievements (not video difficulty / LevelTag). */
+export interface PlayerProgress {
+  /** XP in the current prestige cycle (source of truth for rank). Resets on prestige. */
+  totalXp: number;
+  /** All XP ever earned across every cycle; never decreases. */
+  lifetimeXp: number;
+  /** Prestige count: 0 = never prestiged; 1 after first prestige; max 10. */
+  prestigeLevel: number;
+  /** achievementId -> unlockedAt Unix ms */
+  achievements: Record<string, number>;
+  /** yyyy-mm-dd — already granted daily-goal XP bonus */
+  lastDailyGoalXpDateKey: string | null;
+  /** yyyy-mm-dd — already granted streak-day XP bonus */
+  lastStreakXpDateKey: string | null;
+  /** videoIds that already received first-complete XP */
+  completeXpAwarded: Record<string, true>;
 }
 
 export interface PersistedData {
@@ -88,6 +113,7 @@ export interface PersistedData {
   /** videoId -> seconds (same metric as daily) */
   videoSeconds: Record<string, number>;
   settings: AppSettings;
+  playerProgress: PlayerProgress;
 }
 
 export const STORAGE_KEY = 'jpPractice' as const;
@@ -182,6 +208,8 @@ export function ensureSettingsShape(raw: AppSettings | Partial<AppSettings> | un
     },
     goalNotificationsEnabled:
       typeof raw.goalNotificationsEnabled === 'boolean' ? raw.goalNotificationsEnabled : false,
+    xpNotificationsEnabled:
+      typeof raw.xpNotificationsEnabled === 'boolean' ? raw.xpNotificationsEnabled : true,
     goalNudgeHourLocal: nh,
     lastNotifiedGoalMetDate:
       typeof raw.lastNotifiedGoalMetDate === 'string' ? raw.lastNotifiedGoalMetDate : null,
@@ -202,6 +230,7 @@ export const defaultSettings = (): AppSettings => ({
   goalNudgeHourLocal: null,
   lastNotifiedGoalMetDate: null,
   lastNotifiedGoalNudgeDate: null,
+  xpNotificationsEnabled: true,
 });
 
 export const emptyPersisted = (): PersistedData => {
@@ -213,8 +242,89 @@ export const emptyPersisted = (): PersistedData => {
     dailySeconds: {},
     videoSeconds: {},
     settings: defaultSettings(),
+    playerProgress: defaultPlayerProgress(),
   };
 };
+
+export function defaultPlayerProgress(): PlayerProgress {
+  return {
+    totalXp: 0,
+    lifetimeXp: 0,
+    prestigeLevel: 0,
+    achievements: {},
+    lastDailyGoalXpDateKey: null,
+    lastStreakXpDateKey: null,
+    completeXpAwarded: {},
+  };
+}
+
+function historicalPracticeBackfillXp(dailySeconds: Record<string, number>): number {
+  const totalSec = Object.values(dailySeconds).reduce(
+    (a, b) => a + (typeof b === 'number' ? b : 0),
+    0,
+  );
+  const raw = Math.floor(totalSec / 60);
+  return Math.min(HISTORICAL_XP_BACKFILL_CAP, raw);
+}
+
+function normalizePlayerProgress(raw: unknown, priorSchema: number, dailySeconds: Record<string, number>): PlayerProgress {
+  const base = defaultPlayerProgress();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    if (priorSchema < 8) {
+      base.totalXp = historicalPracticeBackfillXp(dailySeconds);
+    }
+    base.lifetimeXp = base.totalXp;
+    return base;
+  }
+  const o = raw as Record<string, unknown>;
+  const totalXp =
+    typeof o.totalXp === 'number' && Number.isFinite(o.totalXp) && o.totalXp >= 0
+      ? Math.floor(o.totalXp)
+      : priorSchema < 8
+        ? historicalPracticeBackfillXp(dailySeconds)
+        : 0;
+
+  const achievements: Record<string, number> = {};
+  if (o.achievements && typeof o.achievements === 'object' && !Array.isArray(o.achievements)) {
+    for (const [k, v] of Object.entries(o.achievements as Record<string, unknown>)) {
+      if (typeof v === 'number' && Number.isFinite(v) && v > 0) achievements[k] = v;
+    }
+  }
+
+  const completeXpAwarded: Record<string, true> = {};
+  if (o.completeXpAwarded && typeof o.completeXpAwarded === 'object' && !Array.isArray(o.completeXpAwarded)) {
+    for (const k of Object.keys(o.completeXpAwarded as Record<string, unknown>)) {
+      if (typeof k === 'string' && k) completeXpAwarded[k] = true;
+    }
+  }
+  const legacyIds = o.completeXpAwardedVideoIds;
+  if (Array.isArray(legacyIds)) {
+    for (const id of legacyIds) {
+      if (typeof id === 'string' && id) completeXpAwarded[id] = true;
+    }
+  }
+
+  const lifetimeXp =
+    typeof o.lifetimeXp === 'number' && Number.isFinite(o.lifetimeXp) && o.lifetimeXp >= 0
+      ? Math.floor(o.lifetimeXp)
+      : totalXp;
+
+  const prestigeLevel =
+    typeof o.prestigeLevel === 'number' && Number.isFinite(o.prestigeLevel) && o.prestigeLevel >= 0
+      ? Math.min(10, Math.floor(o.prestigeLevel))
+      : 0;
+
+  return {
+    totalXp,
+    lifetimeXp,
+    prestigeLevel,
+    achievements,
+    lastDailyGoalXpDateKey:
+      typeof o.lastDailyGoalXpDateKey === 'string' ? o.lastDailyGoalXpDateKey : null,
+    lastStreakXpDateKey: typeof o.lastStreakXpDateKey === 'string' ? o.lastStreakXpDateKey : null,
+    completeXpAwarded,
+  };
+}
 
 const YMD_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -264,7 +374,16 @@ const PERSISTED_TOP_KEYS = new Set([
   'dailySeconds',
   'videoSeconds',
   'settings',
+  'playerProgress',
 ]);
+
+function playerProgressNeedsLifetimeXpRewrite(pp: unknown): boolean {
+  if (!pp || typeof pp !== 'object' || Array.isArray(pp)) return true;
+  const o = pp as Record<string, unknown>;
+  return (
+    typeof o.lifetimeXp !== 'number' || !Number.isFinite(o.lifetimeXp) || o.lifetimeXp < 0
+  );
+}
 
 /** True when stored blob includes legacy keys so we should rewrite a compact v4 payload. */
 export function persistedNeedsCompactionRewrite(raw: unknown): boolean {
@@ -273,6 +392,7 @@ export function persistedNeedsCompactionRewrite(raw: unknown): boolean {
   for (const k of Object.keys(o)) {
     if (!PERSISTED_TOP_KEYS.has(k)) return true;
   }
+  if (playerProgressNeedsLifetimeXpRewrite(o.playerProgress)) return true;
   return o.schemaVersion !== SCHEMA_VERSION;
 }
 
@@ -330,6 +450,10 @@ export function completedLibraryItems(library: LibraryItem[]): LibraryItem[] {
   return library.filter(isLibraryItemCompleted);
 }
 
+export function inProgressLibraryItems(library: LibraryItem[]): LibraryItem[] {
+  return library.filter((item) => !isLibraryItemCompleted(item));
+}
+
 function migrate(input: PersistedData): PersistedData {
   const base = emptyPersisted();
   const libraryRaw = Array.isArray(input.library) ? input.library : [];
@@ -367,6 +491,11 @@ function migrate(input: PersistedData): PersistedData {
     extensionInstalledDateKey: (input as PersistedData).extensionInstalledDateKey,
   });
 
+  const priorSchema =
+    typeof input.schemaVersion === 'number' && Number.isFinite(input.schemaVersion)
+      ? input.schemaVersion
+      : 0;
+
   return {
     schemaVersion: SCHEMA_VERSION,
     library,
@@ -374,6 +503,11 @@ function migrate(input: PersistedData): PersistedData {
     dailySeconds,
     videoSeconds,
     settings,
+    playerProgress: normalizePlayerProgress(
+      (input as PersistedData).playerProgress,
+      priorSchema,
+      dailySeconds,
+    ),
   };
 }
 

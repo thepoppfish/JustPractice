@@ -9,7 +9,7 @@ import {
   secondsByLevelBucket,
   secondsThisCalendarMonth,
 } from './practiceStats';
-import { SCHEMA_VERSION, defaultSettings, type PersistedData } from './storage';
+import { SCHEMA_VERSION, defaultPlayerProgress, defaultSettings, type PersistedData } from './storage';
 
 function mockData(over: Partial<PersistedData> = {}): PersistedData {
   const base: PersistedData = {
@@ -19,6 +19,7 @@ function mockData(over: Partial<PersistedData> = {}): PersistedData {
     dailySeconds: {},
     videoSeconds: {},
     settings: defaultSettings(),
+    playerProgress: defaultPlayerProgress(),
   };
   const { settings: sOverride, ...rest } = over;
   return {

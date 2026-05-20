@@ -122,6 +122,39 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     render();
   });
 
+  root.querySelector('#xp-notifications')?.addEventListener('change', async (e) => {
+    const checked = (e.target as HTMLInputElement).checked;
+    await send({
+      type: MSG.SET_SETTINGS,
+      payload: { xpNotificationsEnabled: checked },
+    });
+    render();
+  });
+
+  root.querySelector('#enter-prestige')?.addEventListener('click', async () => {
+    const ok = confirm(vm.t('progress.confirmPrestige'));
+    if (!ok) return;
+    const res = await send<{ ok: boolean; error?: string }>({ type: MSG.PRESTIGE });
+    if (!res.ok) {
+      window.alert(res.error ?? vm.t('progress.prestigeFailed'));
+      return;
+    }
+    render();
+  });
+
+  root.querySelectorAll<HTMLButtonElement>('[data-ach-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filter = btn.getAttribute('data-ach-filter') ?? 'all';
+      root.querySelectorAll('[data-ach-filter]').forEach((chip) => {
+        chip.classList.toggle('is-active', chip === btn);
+      });
+      root.querySelectorAll<HTMLElement>('.achievement-section').forEach((section) => {
+        const cat = section.getAttribute('data-ach-category') ?? '';
+        section.hidden = filter !== 'all' && cat !== filter;
+      });
+    });
+  });
+
   root.querySelector('#export-extension-data')?.addEventListener('click', async () => {
     try {
       const all = await chrome.storage.local.get(null);

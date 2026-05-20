@@ -25,6 +25,8 @@ import {
 } from './dashboardFormatters';
 import { buildYearHeatmapGridModel, yearHeatmapSectionHtml } from '../lib/yearHeatmapHtml';
 import type { DashboardViewModel } from './dashboardViewModel';
+import { ringDasharrayFromProgress } from '../lib/goalFormat';
+import { MAX_ACCOUNT_LEVEL } from '../lib/playerProgress';
 import {
   icoTarget,
   icoSearch,
@@ -35,6 +37,11 @@ import {
   icoChart,
   icoGear,
   icoCheck,
+  icoTrophy,
+  icoClock,
+  icoFlame,
+  icoAchievement,
+  icoLock,
 } from './dashboardIcons';
 
 export function dashboardSidebarHtml(vm: DashboardViewModel): string {
@@ -58,6 +65,10 @@ export function dashboardSidebarHtml(vm: DashboardViewModel): string {
               <span class="nav-ico" aria-hidden="true">${icoChart()}</span>
               ${escapeHtml(vm.t('nav.stats'))}
             </button>
+            <button type="button" class="${vm.navItemClass('progress')}" data-view="progress">
+              <span class="nav-ico" aria-hidden="true">${icoTrophy()}</span>
+              ${escapeHtml(vm.t('nav.progress'))}
+            </button>
             <button type="button" class="${vm.navItemClass('goals')}" data-view="goals">
               <span class="nav-ico" aria-hidden="true">${icoTarget()}</span>
               ${escapeHtml(vm.t('nav.goals'))}
@@ -77,7 +88,7 @@ export function dashboardSidebarHtml(vm: DashboardViewModel): string {
 export function dashboardTopbarHtml(vm: DashboardViewModel, searchQuery: string): string {
   return `
         <header class="topbar">
-          <div class="topbar-progress${vm.data.library.length === 0 ? ' is-soft' : ''}">
+          <div class="topbar-progress${vm.libraryCount === 0 ? ' is-soft' : ''}">
             <span class="progress-lead">${escapeHtml(vm.t('dash.progressLead'))}</span>
             <div class="progress-metrics">
               <div class="p-metric">
@@ -86,7 +97,7 @@ export function dashboardTopbarHtml(vm: DashboardViewModel, searchQuery: string)
               </div>
               <div class="p-metric">
                 <span class="p-ico">${icoBook()}</span>
-                <span class="p-text"><strong>${vm.data.library.length}</strong> ${escapeHtml(vm.t('dash.videosSaved'))}</span>
+                <span class="p-text"><strong>${vm.libraryCount}</strong> ${escapeHtml(vm.t('dash.videosSaved'))}</span>
               </div>
               <div class="p-metric">
                 <span class="p-ico">${icoTag()}</span>
@@ -115,7 +126,7 @@ export function dashboardTopbarHtml(vm: DashboardViewModel, searchQuery: string)
 export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
   const body =
     vm.rows.length === 0 ?
-      vm.data.library.length === 0 ?
+      vm.libraryCount === 0 && vm.completedCount === 0 ?
         libraryWelcomeHtml(vm.t)
       : `<div class="empty-board">${escapeHtml(vm.t('dash.libraryEmptyFiltered'))}</div>`
     : `<div class="video-grid">
@@ -124,17 +135,12 @@ export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
                   const href = `https://www.youtube.com/watch?v=${encodeURIComponent(item.videoId)}`;
                   const thumb = thumbnailUrlForVideoId(item.videoId);
                   const lvl = difficultyLabelForCard(item.difficulty, vm.fw, vm.customLevels, vm.t);
-                  const completedBadge =
-                    item.completedAt != null ?
-                      `<span class="card-badge card-badge--completed">${escapeHtml(vm.t('dash.completedBadge'))}</span>`
-                    : '';
                   return `
-                <article class="video-card${item.completedAt != null ? ' video-card--completed' : ''}">
+                <article class="video-card">
                   <a class="card-link" href="${href}" target="_blank" rel="noreferrer">
                     <div class="card-media">
                       <img class="card-thumb" src="${escapeAttr(thumb)}" width="320" height="180" alt="" loading="lazy" decoding="async" />
                       <span class="card-badge">${escapeHtml(lvl)}</span>
-                      ${completedBadge}
                       <div class="card-shade" aria-hidden="true"></div>
                       <h3 class="card-title">${escapeHtml(item.title)}</h3>
                     </div>
@@ -217,6 +223,7 @@ export function dashboardCompletedSectionHtml(vm: DashboardViewModel): string {
 export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
   const chartCols = vm.days7
     .map((d) => {
+      const isToday = d.dateKey === vm.todayKey;
       const pct = (d.seconds / vm.maxDaySec) * 100;
       const vis = practiceCalendarDayVisual(
         d.dateKey,
@@ -233,12 +240,13 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
       const valClass =
         vis === 'neutral' || vis === 'future' ? `chart-val--${barTier}` : `chart-val--${vis}`;
       return `
-                <div class="chart-col">
+                <div class="chart-col${isToday ? ' chart-col--today' : ''}"${isToday ? ' aria-current="date"' : ''}>
                   <div class="chart-bar-wrap">
                     <div class="chart-bar chart-bar--${barTier}" style="height:${pct}%"></div>
                   </div>
                   <span class="chart-val ${valClass}">${dayCountsAsPracticedForCalendar(d.seconds) ? formatDuration(d.seconds) : '—'}</span>
-                  <span class="chart-label" title="${escapeAttr(d.dateKey)}">${escapeHtml(d.weekdayShort)}</span>
+                  <span class="chart-label${isToday ? ' chart-label--today' : ''}" title="${escapeAttr(d.dateKey)}">${escapeHtml(d.weekdayShort)}</span>
+                  ${isToday ? `<span class="chart-today-caption">${escapeHtml(vm.t('dash.chartToday'))}</span>` : ''}
                 </div>`;
     })
     .join('');
@@ -346,6 +354,181 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
           </section>`;
 }
 
+export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
+  const maxLevel = vm.accountLevel >= MAX_ACCOUNT_LEVEL;
+  const barWidth = maxLevel ? 100 : vm.levelProgressPercent;
+  const ringDash = ringDasharrayFromProgress(maxLevel ? 1 : barWidth / 100);
+  const prestigeBadgeHtml =
+    vm.prestigeLevel > 0
+      ? `<span class="progress-prestige-badge" aria-label="${escapeAttr(vm.t('progress.prestigeBadge', { level: String(vm.prestigeLevel) }))}">${escapeHtml(vm.t('progress.prestigeBadge', { level: String(vm.prestigeLevel) }))}</span>`
+      : '';
+  const prestigeMasterHtml =
+    vm.isPrestigeMaster
+      ? `<span class="progress-prestige-master">${escapeHtml(vm.t('progress.prestigeMaster'))}</span>`
+      : '';
+  const prestigeBonusHtml =
+    vm.prestigeLevel > 0
+      ? `<span class="progress-prestige-pill">${escapeHtml(vm.t('progress.prestigeXpBonus', { percent: String(vm.prestigeXpBonusPercent) }))}</span>`
+      : '';
+  const prestigeCtaHtml =
+    vm.canPrestige
+      ? `<div class="progress-prestige-cta">
+          <p class="progress-prestige-cta__lead">${escapeHtml(vm.t('progress.prestigeReadyLead'))}</p>
+          <p class="progress-prestige-cta__hint">${escapeHtml(vm.t('progress.prestigeReadyHint'))}</p>
+          <button type="button" class="btn-prestige" id="enter-prestige">${escapeHtml(vm.t('progress.enterPrestige'))}</button>
+        </div>`
+      : '';
+  const renderAchievementCard = (a: (typeof vm.achievementSections)[0]['achievements'][0]) => {
+      const locked = !a.unlocked;
+      const unlockedDate =
+        a.unlockedAt != null ? formatCompletedDate(a.unlockedAt, vm.resolvedLocale) : '';
+      return `
+              <article class="achievement-card${locked ? ' achievement-card--locked' : ' achievement-card--unlocked'}" data-ach-category="${escapeAttr(a.category)}">
+                <div class="achievement-card__icon-wrap" aria-hidden="true">
+                  <span class="achievement-card__icon">${icoAchievement(a.category)}</span>
+                  ${locked ? `<span class="achievement-card__lock">${icoLock()}</span>` : ''}
+                </div>
+                <div class="achievement-card__body">
+                  <h3 class="achievement-card__title">${escapeHtml(vm.t(`achievement.${a.id}.title`))}</h3>
+                  <p class="achievement-card__desc">${escapeHtml(vm.t(`achievement.${a.id}.description`))}</p>
+                  <footer class="achievement-card__footer">
+                    ${
+                      locked
+                        ? `<span class="achievement-badge achievement-badge--locked"><span class="achievement-badge__ico">${icoLock()}</span>${escapeHtml(vm.t('progress.achievementLocked'))}</span>`
+                        : `<span class="achievement-badge achievement-badge--unlocked">${escapeHtml(vm.t('progress.achievementUnlocked'))}</span>${
+                            unlockedDate
+                              ? `<time class="achievement-card__date" datetime="${escapeAttr(new Date(a.unlockedAt!).toISOString().slice(0, 10))}">${escapeHtml(vm.t('progress.achievementUnlockedOn', { date: unlockedDate }))}</time>`
+                              : ''
+                          }`
+                    }
+                  </footer>
+                </div>
+              </article>`;
+  };
+
+  const achievementSectionsHtml = vm.achievementSections
+    .map(
+      (section) => `
+            <section class="achievement-section" data-ach-category="${escapeAttr(section.category)}">
+              <h3 class="achievement-section__title">${escapeHtml(vm.t(`progress.category.${section.category}`))}</h3>
+              <div class="achievement-grid">
+                ${section.achievements.map(renderAchievementCard).join('')}
+              </div>
+            </section>`,
+    )
+    .join('');
+
+  const categoryFilters = vm.achievementCategories
+    .map(
+      (cat) =>
+        `<button type="button" class="filter-chip" data-ach-filter="${escapeAttr(cat)}">${escapeHtml(vm.t(`progress.category.${cat}`))}</button>`,
+    )
+    .join('');
+
+  const streakValue =
+    vm.streak > 0
+      ? `<span class="progress-momentum-stat__flame" aria-hidden="true">${icoFlame()}</span><span>${vm.streak}</span>`
+      : '—';
+
+  return `
+          <section class="${vm.viewPanelClass('progress')}" data-view-panel="progress" aria-label="${escapeHtml(vm.t('nav.progress'))}">
+            <p class="progress-journey-lead">${escapeHtml(vm.t('progress.journeySubtitle'))}</p>
+            <div class="progress-journey-card">
+              <div class="progress-journey-card__glow" aria-hidden="true"></div>
+              <div class="progress-journey-card__mesh" aria-hidden="true"></div>
+              <div class="progress-journey-card__inner">
+                <div class="progress-journey-stage">
+                  <div class="progress-level-ring-wrap" role="img" aria-label="${escapeAttr(vm.t('progress.rank', { level: String(vm.accountLevel) }))}">
+                    <svg class="progress-level-ring" viewBox="0 0 120 120" aria-hidden="true">
+                      <circle class="progress-level-ring__track" pathLength="100" cx="60" cy="60" r="52" fill="none" />
+                      <circle
+                        class="progress-level-ring__fill"
+                        pathLength="100"
+                        cx="60"
+                        cy="60"
+                        r="52"
+                        fill="none"
+                        stroke-dasharray="${escapeAttr(ringDash)}"
+                        transform="rotate(-90 60 60)"
+                      />
+                    </svg>
+                    <div class="progress-level-ring__center">
+                      <span class="progress-level-ring__label">${escapeHtml(vm.t('progress.rankLabel'))}</span>
+                      <span class="progress-level-ring__num">${vm.accountLevel}</span>
+                    </div>
+                  </div>
+                  <div class="progress-journey-meta">
+                    <div class="progress-journey-meta__head">
+                      ${prestigeBadgeHtml}
+                      ${prestigeMasterHtml}
+                      ${
+                        vm.weekendXpActive
+                          ? `<span class="progress-weekend-pill">${escapeHtml(vm.t('progress.weekendBonus'))}</span>`
+                          : ''
+                      }
+                      ${prestigeBonusHtml}
+                    </div>
+                <div class="progress-xp-bar-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="${maxLevel ? vm.totalXp : vm.xpNeededForNext}" aria-valuenow="${maxLevel ? vm.totalXp : vm.xpIntoLevel}" aria-label="${escapeAttr(vm.t('progress.xpBarAria'))}">
+                      <div class="progress-xp-bar-track">
+                        <div class="progress-xp-bar-fill" style="width:${barWidth}%"></div>
+                        <span class="progress-xp-bar-milestone" aria-hidden="true"></span>
+                      </div>
+                  <p class="progress-xp-bar-label">
+                    ${
+                      maxLevel
+                        ? escapeHtml(vm.t('progress.maxLevel'))
+                        : escapeHtml(
+                            vm.t('progress.xpToNext', {
+                              current: String(vm.xpIntoLevel),
+                              needed: String(vm.xpNeededForNext),
+                            }),
+                          )
+                    }
+                      </p>
+                    </div>
+                    <p class="progress-total-xp">${escapeHtml(vm.t('progress.cycleXp', { xp: String(vm.totalXp) }))}</p>
+                    <p class="progress-lifetime-xp">${escapeHtml(vm.t('progress.lifetimeXp', { xp: String(vm.lifetimeXp) }))}</p>
+                  </div>
+                </div>
+                ${prestigeCtaHtml}
+                <div class="progress-momentum-stats" role="list">
+                  <article class="progress-momentum-stat" role="listitem">
+                    <span class="progress-momentum-stat__ico" aria-hidden="true">${icoClock()}</span>
+                    <div class="progress-momentum-stat__text">
+                      <span class="progress-momentum-stat__label">${escapeHtml(vm.t('common.today'))}</span>
+                      <span class="progress-momentum-stat__value">${formatDuration(vm.today)}</span>
+                    </div>
+                  </article>
+                  <article class="progress-momentum-stat" role="listitem">
+                    <span class="progress-momentum-stat__ico progress-momentum-stat__ico--flame" aria-hidden="true">${icoFlame()}</span>
+                    <div class="progress-momentum-stat__text">
+                      <span class="progress-momentum-stat__label">${escapeHtml(vm.t('progress.statStreak'))}</span>
+                      <span class="progress-momentum-stat__value progress-momentum-stat__value--streak">${streakValue}</span>
+                    </div>
+                  </article>
+                  <article class="progress-momentum-stat" role="listitem">
+                    <span class="progress-momentum-stat__ico" aria-hidden="true">${icoCheck()}</span>
+                    <div class="progress-momentum-stat__text">
+                      <span class="progress-momentum-stat__label">${escapeHtml(vm.t('nav.completed'))}</span>
+                      <span class="progress-momentum-stat__value">${vm.completedCount}</span>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </div>
+            <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('progress.achievementsTitle'))}</h2>
+            <p class="row-sub row-sub--tight">${escapeHtml(vm.t('progress.achievementsIntro'))}</p>
+            <div class="filter-chips progress-trophy-filters" role="toolbar" aria-label="${escapeHtml(vm.t('progress.achievementFiltersAria'))}">
+              <button type="button" class="filter-chip is-active" data-ach-filter="all">${escapeHtml(vm.t('dash.filterAll'))}</button>
+              ${categoryFilters}
+            </div>
+            <div class="achievement-sections">
+              ${achievementSectionsHtml}
+            </div>
+          </section>`;
+}
+
+
 export function dashboardGoalsSectionHtml(vm: DashboardViewModel): string {
   return `
           <section class="${vm.viewPanelClass('goals')}" data-view-panel="goals" aria-label="${escapeHtml(vm.t('nav.goals'))}">
@@ -444,6 +627,13 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               <strong>${escapeHtml(vm.t('settings.howCounted'))}:</strong> ${escapeHtml(vm.t('settings.howCountedBody'))}
             </p>
 
+            <div class="settings-block">
+              <label>
+                <input type="checkbox" id="xp-notifications" ${vm.data.settings.xpNotificationsEnabled !== false ? 'checked' : ''} />
+                <span>${escapeHtml(vm.t('settings.xpNotifications'))}</span>
+              </label>
+              <p class="help">${escapeHtml(vm.t('settings.xpNotificationsHelp'))}</p>
+            </div>
             <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('settings.dataTitle'))}</h2>
             <p class="help">${escapeHtml(vm.t('settings.dataHint'))}</p>
             <div class="settings-block data-actions">
@@ -465,6 +655,7 @@ ${dashboardTopbarHtml(vm, searchQuery)}
 ${dashboardLibrarySectionHtml(vm)}
 ${dashboardCompletedSectionHtml(vm)}
 ${dashboardStatsSectionHtml(vm)}
+${dashboardProgressSectionHtml(vm)}
 ${dashboardGoalsSectionHtml(vm)}
 ${dashboardSettingsSectionHtml(vm)}
         </main>

@@ -29,6 +29,7 @@ export interface WatchPanelGetStateSideEffects {
   applyWatchPanelCollapsed: () => void;
   renderCalendar: (dailySeconds: Record<string, number>) => void;
   updateDailyGoalRing: () => void;
+  updatePlayerXpBar: (totalXp: number, prestigeLevel?: number) => void;
   syncWatchPanelLabels: () => void;
 }
 
@@ -69,6 +70,7 @@ export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
     p.mut.setExtensionInstallDateKey(res.data.extensionInstalledDateKey);
     p.fx.renderCalendar(res.data.dailySeconds);
     p.fx.updateDailyGoalRing();
+    p.fx.updatePlayerXpBar(res.data.playerProgress.totalXp, res.data.playerProgress.prestigeLevel);
     const item = res.data.library.find((x) => x.videoId === p.videoId);
     p.mut.setInLibrary(Boolean(item));
     p.mut.setLibraryItemForCurrentVideo(item ?? null);
@@ -139,6 +141,25 @@ export function flashWatchPanelAfterLibraryWrite(p: {
     return;
   }
   setWatchPanelStatusFlash(p.ui.statusEl, p.panelT(p.successKey));
+}
+
+export function flashWatchPanelXpTick(p: {
+  ui: WatchPanelUiRefs;
+  panelT: Translator;
+  xpGained: number;
+  levelUp: boolean;
+  newLevel: number;
+}): void {
+  if (p.xpGained <= 0 && !p.levelUp) return;
+  if (p.levelUp) {
+    setWatchPanelStatusFlash(
+      p.ui.statusEl,
+      p.panelT('panel.flashRankUp', { level: String(p.newLevel) }),
+      'ok',
+    );
+    return;
+  }
+  setWatchPanelStatusFlash(p.ui.statusEl, p.panelT('panel.flashXp', { xp: String(p.xpGained) }), 'ok');
 }
 
 export async function saveWatchPanelVideoToLibrary(p: {

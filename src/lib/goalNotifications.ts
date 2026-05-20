@@ -8,7 +8,10 @@ import {
   writePersisted,
   type PersistedData,
 } from './storage';
+import { awardDailyGoalXpBonus } from './playerProgress';
+import { processDailyGoalXpEvent } from './playerProgressEvents';
 import { formatDuration } from './practiceStats';
+import { evaluateAchievements } from './achievements';
 
 /** Resolved URL or data URL for `chrome.notifications` (packaged asset or Vite-inlined PNG). */
 export function notificationIconUrl(): string {
@@ -58,16 +61,41 @@ function notifyT(p: PersistedData): ReturnType<typeof createTranslator> {
 }
 
 /**
+ * Award daily-goal XP and scan achievements when the daily target is met (idempotent per day).
+ * Persists when progress changes.
+ */
+export async function syncDailyGoalXpFromPersisted(p: PersistedData): Promise<void> {
+  const todayKey = dateKeyFromTimestamp(Date.now());
+  const target = p.settings.goals?.dailyTargetSec;
+  if (target === null || target === undefined || target <= 0) return;
+  if ((p.dailySeconds[todayKey] ?? 0) < target) return;
+
+  const xpBefore = p.playerProgress.totalXp;
+  const achBefore = Object.keys(p.playerProgress.achievements).length;
+  awardDailyGoalXpBonus(p.playerProgress, todayKey);
+  evaluateAchievements(p, p.playerProgress);
+  if (
+    p.playerProgress.totalXp !== xpBefore ||
+    Object.keys(p.playerProgress.achievements).length !== achBefore
+  ) {
+    await writePersisted(p);
+  }
+}
+
+/**
  * After practice data was written — notify if daily goal just reached (once per local day).
  */
 export async function maybeNotifyDailyGoalMet(p: PersistedData): Promise<void> {
-  if (!canNotify(p) || !(await notificationsGranted())) return;
   const dailyTarget = p.settings.goals?.dailyTargetSec;
   if (dailyTarget === null || dailyTarget === undefined || dailyTarget <= 0) return;
 
   const todayKey = dateKeyFromTimestamp(Date.now());
   const todaySec = p.dailySeconds[todayKey] ?? 0;
   if (todaySec < dailyTarget) return;
+
+  await syncDailyGoalXpFromPersisted(p);
+
+  if (!canNotify(p) || !(await notificationsGranted())) return;
   if (p.settings.lastNotifiedGoalMetDate === todayKey) return;
 
   const t = notifyT(p);
@@ -94,7 +122,6 @@ export async function maybeNotifyDailyGoalMet(p: PersistedData): Promise<void> {
  */
 export async function runPeriodicGoalChecks(): Promise<void> {
   const p = await readPersisted();
-  if (!canNotify(p) || !(await notificationsGranted())) return;
 
   const dailyTarget = p.settings.goals?.dailyTargetSec;
   if (dailyTarget === null || dailyTarget === undefined || dailyTarget <= 0) return;
@@ -106,11 +133,15 @@ export async function runPeriodicGoalChecks(): Promise<void> {
   const nh = nudgeHour(p);
 
   if (todaySec >= dailyTarget) {
-    if (p.settings.lastNotifiedGoalMetDate !== todayKey) {
+    processDailyGoalXpEvent(p, todayKey);
+    await writePersisted(p);
+    if (canNotify(p) && (await notificationsGranted()) && p.settings.lastNotifiedGoalMetDate !== todayKey) {
       await maybeNotifyDailyGoalMet(p);
     }
     return;
   }
+
+  if (!canNotify(p) || !(await notificationsGranted())) return;
 
   if (p.settings.lastNotifiedGoalNudgeDate === todayKey) return;
   if (hour < nh) return;

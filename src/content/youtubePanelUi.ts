@@ -11,6 +11,7 @@ import {
   type PracticeGoals,
 } from '../lib/storage';
 import { formatDuration, practiceCalendarDayVisual, practiceStreakDays } from '../lib/practiceStats';
+import { levelFromTotalXp, MAX_ACCOUNT_LEVEL, xpIntoCurrentLevel } from '../lib/playerProgress';
 import type { ResolvedLocale } from '../i18n';
 import { daysInCalendarMonth } from '../lib/storage';
 import { attachYearHeatmapInteractive } from '../lib/yearHeatmapInteractive';
@@ -214,6 +215,42 @@ export function updateDailyGoalRing(p: {
   fg.style.strokeDashoffset = '0';
   label.textContent = formatGoalSlash(done, target);
   wrap.title = `Daily goal: ${formatGoalPairLine(done, target)} (${Math.round(pct * 100)}%).`;
+}
+
+export function updatePlayerXpBar(p: {
+  shadowRoot: ShadowRoot | null;
+  totalXp: number;
+  prestigeLevel?: number;
+  panelT: (k: string, params?: Record<string, string | number>) => string;
+}): void {
+  if (!p.shadowRoot) return;
+  const badge = p.shadowRoot.querySelector('[part="player-level-badge"]') as HTMLElement | null;
+  const prestigeEl = p.shadowRoot.querySelector('[part="player-prestige-badge"]') as HTMLElement | null;
+  const fill = p.shadowRoot.querySelector('[part="player-xp-fill"]') as HTMLElement | null;
+  const wrap = p.shadowRoot.querySelector('[part="player-xp"]') as HTMLElement | null;
+  if (!badge || !fill || !wrap) return;
+
+  const level = levelFromTotalXp(p.totalXp);
+  const bar = xpIntoCurrentLevel(p.totalXp);
+  const maxLevel = level >= MAX_ACCOUNT_LEVEL;
+  badge.textContent = p.panelT('panel.rankShort', { level: String(level) });
+  fill.style.width = `${maxLevel ? 100 : bar.progressPercent}%`;
+  wrap.setAttribute(
+    'aria-label',
+    maxLevel
+      ? p.panelT('progress.maxLevel')
+      : p.panelT('progress.rank', { level: String(level) }),
+  );
+  if (prestigeEl) {
+    const pl = p.prestigeLevel ?? 0;
+    if (pl > 0) {
+      prestigeEl.hidden = false;
+      prestigeEl.textContent = p.panelT('progress.prestigeBadgeShort', { level: String(pl) });
+    } else {
+      prestigeEl.hidden = true;
+      prestigeEl.textContent = '';
+    }
+  }
 }
 
 export function paintCalStreak(p: {

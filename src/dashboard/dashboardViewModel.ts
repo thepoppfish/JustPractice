@@ -3,6 +3,7 @@ import {
   defaultGoals,
   defaultSettings,
   ensureSettingsShape,
+  inProgressLibraryItems,
   isLibraryItemCompleted,
   missTrackingStartDateKey,
   type AppSettings,
@@ -21,6 +22,21 @@ import {
   secondsThisCalendarMonth,
   type DayBucket,
 } from '../lib/practiceStats';
+import {
+  canPrestige,
+  isWeekendPracticeBonusActive,
+  levelFromTotalXp,
+  MAX_ACCOUNT_LEVEL,
+  MAX_PRESTIGE_LEVEL,
+  PRESTIGE_XP_BONUS_PER_LEVEL,
+  xpIntoCurrentLevel,
+} from '../lib/playerProgress';
+import {
+  ACHIEVEMENT_CATEGORY_ORDER,
+  groupedAchievementsForUi,
+  type AchievementCategory,
+  type AchievementUiSection,
+} from '../lib/achievements';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { tagsForFramework, isLegacyLevelTag } from '../lib/levelTags';
 import {
@@ -35,7 +51,7 @@ import {
   resolvedPracticeGoals,
 } from './dashboardFormatters';
 
-export type DashView = 'library' | 'completed' | 'stats' | 'goals' | 'settings';
+export type DashView = 'library' | 'completed' | 'stats' | 'progress' | 'goals' | 'settings';
 
 export interface DashboardViewModel {
   data: PersistedData;
@@ -65,12 +81,40 @@ export interface DashboardViewModel {
   hasLegacyVideos: boolean;
   rows: Array<{ item: LibraryItem; seconds: number }>;
   completedRows: Array<{ item: LibraryItem; seconds: number }>;
+  /** Saved videos still in the library tab (not completed). */
+  libraryCount: number;
   completedCount: number;
   taggedCount: number;
   filterChipsInner: string;
 
+  accountLevel: number;
+  totalXp: number;
+  lifetimeXp: number;
+  prestigeLevel: number;
+  canPrestige: boolean;
+  isPrestigeMaster: boolean;
+  prestigeXpBonusPercent: number;
+  xpIntoLevel: number;
+  xpNeededForNext: number;
+  levelProgressPercent: number;
+  weekendXpActive: boolean;
+  achievementSections: AchievementUiSection[];
+  achievementCategories: AchievementCategory[];
+
   navItemClass: (view: DashView) => string;
   viewPanelClass: (view: DashView) => string;
+}
+
+function compareCompletedLibraryRows(
+  a: { item: LibraryItem; seconds: number },
+  b: { item: LibraryItem; seconds: number },
+): number {
+  const aCompleted = a.item.completedAt ?? 0;
+  const bCompleted = b.item.completedAt ?? 0;
+  if (bCompleted !== aCompleted) return bCompleted - aCompleted;
+  const byTitle = a.item.title.localeCompare(b.item.title, undefined, { sensitivity: 'base' });
+  if (byTitle !== 0) return byTitle;
+  return b.item.addedAt - a.item.addedAt;
 }
 
 export function buildDashboardViewModel(input: {
@@ -111,19 +155,44 @@ export function buildDashboardViewModel(input: {
   const missStart = missTrackingStartDateKey(data.extensionInstalledDateKey, data.dailySeconds);
   const streak = practiceStreakDays(data.dailySeconds, Date.now(), missStart);
   const byLevel = secondsByLevelBucket(data, fw, customLevels);
-  const hasLegacyVideos = data.library.some(
+  const inProgress = inProgressLibraryItems(data.library);
+  const hasLegacyVideos = inProgress.some(
     (it) => it.difficulty !== null && isLegacyLevelTag(it.difficulty, fw, customLevels),
   );
   const rows = libraryRowsWithPracticeSeconds(data)
+    .filter((r) => !isLibraryItemCompleted(r.item))
     .filter((r) => matchesLevel(r.item, libraryLevelFilter, fw, customLevels))
     .filter((r) => matchesLibrarySearch(r.item, searchQuery))
     .sort((a, b) => b.item.addedAt - a.item.addedAt);
-  const completedRows = libraryRowsWithPracticeSeconds(data)
+  const completedRows = data.library
+    .map((item) => ({
+      item,
+      seconds: data.videoSeconds[item.videoId] ?? 0,
+    }))
     .filter((r) => isLibraryItemCompleted(r.item))
     .filter((r) => matchesLibrarySearch(r.item, searchQuery))
-    .sort((a, b) => (b.item.completedAt ?? 0) - (a.item.completedAt ?? 0));
+    .sort(compareCompletedLibraryRows);
+  const libraryCount = inProgress.length;
   const completedCount = data.library.filter(isLibraryItemCompleted).length;
-  const taggedCount = data.library.filter((x) => x.difficulty !== null).length;
+  const taggedCount = inProgress.filter((x) => x.difficulty !== null).length;
+
+  const pp = data.playerProgress;
+  const totalXp = pp.totalXp;
+  const lifetimeXp =
+    typeof pp.lifetimeXp === 'number' && Number.isFinite(pp.lifetimeXp) && pp.lifetimeXp >= 0
+      ? pp.lifetimeXp
+      : totalXp;
+  const prestigeLevel = pp.prestigeLevel;
+  const accountLevel = levelFromTotalXp(totalXp);
+  const levelBar = xpIntoCurrentLevel(totalXp);
+  const canPrestigeNow = canPrestige(pp);
+  const isPrestigeMaster = prestigeLevel >= MAX_PRESTIGE_LEVEL;
+  const prestigeXpBonusPercent = Math.round(prestigeLevel * PRESTIGE_XP_BONUS_PER_LEVEL * 100);
+  const weekendXpActive = isWeekendPracticeBonusActive();
+  const achievementSections = groupedAchievementsForUi(pp);
+  const achievementCategories = ACHIEVEMENT_CATEGORY_ORDER.filter((cat) =>
+    achievementSections.some((s) => s.category === cat),
+  );
 
   const filterChipsInner = `
               <button type="button" class="filter-chip ${libraryLevelFilter === '' ? 'is-active' : ''}" data-level-filter="all">${escapeHtml(t('dash.filterAll'))}</button>
@@ -171,8 +240,22 @@ export function buildDashboardViewModel(input: {
     hasLegacyVideos,
     rows,
     completedRows,
+    libraryCount,
     completedCount,
     taggedCount,
+    accountLevel,
+    totalXp,
+    lifetimeXp,
+    prestigeLevel,
+    canPrestige: canPrestigeNow,
+    isPrestigeMaster,
+    prestigeXpBonusPercent,
+    xpIntoLevel: levelBar.xpIntoLevel,
+    xpNeededForNext: levelBar.xpNeededForNext,
+    levelProgressPercent: levelBar.progressPercent,
+    weekendXpActive,
+    achievementSections,
+    achievementCategories,
     filterChipsInner,
     navItemClass,
     viewPanelClass,

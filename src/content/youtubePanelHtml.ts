@@ -146,6 +146,45 @@ export function watchPanelShadowInnerHtml(
         color: #666;
         font-weight: 600;
       }
+      .player-xp-mini {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        min-width: 52px;
+      }
+      .player-level-badge {
+        font-size: 9px;
+        font-weight: 800;
+        color: #ffb347;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+      .player-prestige-badge {
+        font-size: 8px;
+        font-weight: 800;
+        color: #ffd966;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+      .player-prestige-badge[hidden] {
+        display: none !important;
+      }
+      .player-xp-track {
+        width: 52px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+      }
+      .player-xp-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #ff6b26, #ffb347);
+        width: 0%;
+        transition: width 0.35s ease;
+      }
       .row[hidden] {
         display: none !important;
       }
@@ -484,6 +523,13 @@ export function watchPanelShadowInnerHtml(
               <option value="">—</option>
               ${levelOptionsHtml}
             </select>
+          </div>
+          <div class="player-xp-mini" part="player-xp" aria-label="Rank">
+            <span class="player-level-badge" part="player-level-badge">—</span>
+            <span class="player-prestige-badge" part="player-prestige-badge" hidden></span>
+            <div class="player-xp-track" aria-hidden="true">
+              <div class="player-xp-fill" part="player-xp-fill"></div>
+            </div>
           </div>
           <div class="daily-goal-ring" part="daily-goal-ring" role="img" aria-hidden="true">
             <svg class="daily-ring-svg" viewBox="0 0 36 36" aria-hidden="true">

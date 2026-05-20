@@ -91,13 +91,17 @@ Shared everywhere: messages.ts, storage types, i18n/, levelTags, practiceStats, 
 | `levelTags.ts` | JLPT/CEFR/custom tag lists, legacy detection, `tagsForFramework`, context-menu parsing helpers. | Background menus, all UIs that show levels | 4 | 3 | No |
 | `practiceStats.ts` | Aggregations: streaks, calendar visuals, duration formatting, buckets for stats views. | `youtube.ts`, `youtubePanelUi.ts`, `dashboard/dashboardViewModel.ts` + `dashboardTemplates.ts`, `popup/main.ts`, `goalNotifications.ts` | 4 | 4 | **Maybe** — pure “date math” vs “presentation strings” |
 | `goalFormat.ts` | SVG ring / goal progress line formatting shared between watch panel and dashboard. | `youtubePanelUi.ts`, `dashboard/dashboardFormatters.ts` | 3 | 2 | No |
-| `goalNotifications.ts` | `chrome.alarms` scheduling + optional `chrome.notifications` for daily goal / nudge; uses Vite `?url` import for notify icon. | `background/index.ts` | 4 | 3 | No |
+| `goalNotifications.ts` | `chrome.alarms` scheduling + optional `chrome.notifications` for daily goal / nudge; daily-goal XP bonus sync; uses Vite `?url` import for notify icon. | `background/index.ts`, `playerProgress.ts` | 4 | 3 | No |
+| `playerProgress.ts` | Account **rank** curve (cap 120/cycle), cycle vs lifetime XP, **prestige** (`canPrestige` / `applyPrestige`, +5%/level practice XP cap +50%), weekend 2×, bonus helpers, backfill cap. | `playerProgressEvents.ts`, dashboard/popup/panel UI | 4 | 3 | No |
+| `playerProgressEvents.ts` | Background orchestration: award XP on tick/complete/goal, run `evaluateAchievements`, return `XpEventResult`. | `background/index.ts` | 4 | 3 | No |
+| `achievements.ts` | Static catalog (~36 badges incl. prestige), `evaluateAchievements`, UI sort helpers. | `playerProgressEvents.ts`, Progress tab | 3 | 2 | No |
+| `xpNotifications.ts` | Optional browser toasts for level-up and achievement unlock (`xpNotificationsEnabled`). | `background/index.ts` | 3 | 2 | No |
 | `youtubeIds.ts` | Parse video IDs from URLs and DOM; **`resolveYoutubeVideoIdFromPage`** and related helpers (high YouTube churn). | `youtube.ts`, `feedCards.ts`, background | 4 | 4 | **Maybe** — URL parsing vs DOM scraping modules |
 | `youtubeMeta.ts` | Thumbnail URL helper from `videoId`. | Popup + `dashboard/dashboardTemplates.ts` (library cards) | 2 | 1 | No |
 | `htmlEscape.ts` | Safe string escaping for injected HTML. | Any file building HTML strings | 3 | 1 | No |
 | `branding.ts` | `APP_NAME` constant. | Menus, UI chrome | 2 | 1 | No |
 | `vite-env.d.ts` | Vite client type refs. | Build | 1 | 1 | No |
-| `*.test.ts` | Unit tests: `youtubeIds`, `storage`, `levelTags`, `practiceStats` (under `src/lib/`); **`youtubePracticeTimer`** eligibility + flush (`src/content/youtubePracticeTimer.test.ts`). | Matching modules above | 3 | 2 | N/A |
+| `*.test.ts` | Unit tests: `youtubeIds`, `storage`, `levelTags`, `practiceStats`, **`playerProgress`**, **`achievements`** (under `src/lib/`); **`youtubePracticeTimer`** eligibility + flush (`src/content/youtubePracticeTimer.test.ts`). | Matching modules above | 3 | 2 | N/A |
 
 ---
 
@@ -196,12 +200,16 @@ All of this lives in `src/lib/storage.ts`. The background is the normal writer; 
 | `extensionInstalledDateKey` | `yyyy-mm-dd` anchor for “missed practice” / streak semantics. |
 | `dailySeconds` | Map `dateKey → seconds` for the practice timer (not watch history). |
 | `videoSeconds` | Map `videoId → seconds` (same metric as daily). |
-| `settings` | `AppSettings` — goals, framework, custom levels, `uiLocale`, panel position/collapse, `pauseWhenUnfocused`, goal notification prefs, etc. |
+| `settings` | `AppSettings` — goals, framework, custom levels, `uiLocale`, panel position/collapse, `pauseWhenUnfocused`, goal + **XP notification** prefs, etc. |
+| `playerProgress` | **Schema v9** — `totalXp` (cycle rank XP, resets on prestige), `lifetimeXp` (never decreases), `prestigeLevel` (0–10), `achievements`, bonus dedupe date keys, `completeXpAwarded`. Rank is derived from `totalXp` only. |
 
 **Settings worth remembering for AI debugging**
 
 - **`pauseWhenUnfocused`** — when true, practice seconds do not accrue unless the document has focus (see practice rules below).
-- **`levelFramework` / `customLevels`** — drive every level picker and context menu rebuild after `SET_SETTINGS`.
+- **`levelFramework` / `customLevels`** — drive every level picker and context menu rebuild after `SET_SETTINGS`. These are **video difficulty** tags (JLPT/CEFR/custom), not account practice level.
+- **`xpNotificationsEnabled`** (default true) — browser toasts for practice level-up and achievement unlocks.
+- **Historical XP backfill** — on first migration to v8, `totalXp` is seeded once from summed `dailySeconds` (1 XP/min, cap 50k). v9 adds `lifetimeXp` (= existing `totalXp` on upgrade) and `prestigeLevel` (0).
+- **Prestige** — voluntary at rank 120 via Progress tab `PRESTIGE` message; resets cycle XP/rank, keeps lifetime XP and all other data; +5% practice XP per prestige (max 10).
 
 ---
 
@@ -215,12 +223,13 @@ Defined in `src/lib/messages.ts`; dispatched in `src/background/index.ts` inside
 | `ADD_OR_UPDATE_LIBRARY` | Panel, feed strip, context menu click | `videoId`, `title`, `channel`, optional `difficulty` | Upsert library row; async oEmbed enrich (`fill-unknown`); returns **`LibraryWriteOkResponse`** (`libraryAction`, final title/channel/difficulty). |
 | `REMOVE_LIBRARY` | UIs removing a save | `videoId` | Filter library; `{ ok: true }`. |
 | `SET_DIFFICULTY` | Panel / library UIs | `videoId`, `difficulty` | Patch existing row only; `{ ok: true }`. |
-| `SET_LIBRARY_COMPLETION` | Watch panel, Completed tab | `videoId`, `complete`, optional `title`/`channel` | Sets or clears `completedAt`; upserts library row when marking complete on an unsaved video; `{ ok: true }`. |
-| `PRACTICE_TICK` | Watch script: `youtube.ts` → `flushPendingPracticeSeconds` (`youtubePracticeTimer.ts`) → `sendMsgFireAndForget` (`youtubeMessaging.ts`) | `videoId`, `deltaSeconds`, `endedAtMs` | Clamps delta to `MAX_TICK_SECONDS` (120); adds to `dailySeconds[dateKey]` and `videoSeconds`; may trigger **daily goal met** notification path; `{ ok: true }`. |
+| `SET_LIBRARY_COMPLETION` | Watch panel, Completed tab | `videoId`, `complete`, optional `title`/`channel` | Sets or clears `completedAt`; first-time complete awards +15 XP; evaluates achievements; returns **`SetLibraryCompletionOkResponse`** (`xpGained`, `levelUp`, `newLevel`, `newAchievements`). |
+| `PRACTICE_TICK` | Watch script flush (`youtubeWatchPanelRuntime.ts` → `sendMsg`) | `videoId`, `deltaSeconds`, `endedAtMs` | Clamps delta to 120s; updates practice maps; awards practice XP (weekend 2×), streak/goal bonuses; evaluates achievements; returns **`PracticeTickOkResponse`** (`xpGained`, `levelUp`, `newLevel`, `newAchievements`). |
 | `SET_SETTINGS` | Dashboard (and any caller) | `Partial<AppSettings>` | Merges with `ensureSettingsShape`; deep-merge `goals`; **rebuilds context menus**; `{ ok: true }`. |
 | `ENRICH_LIBRARY_META` | UI that wants title/channel refresh | `videoId` | oEmbed **`overwrite`** mode; `{ ok: true }`. |
 | `CLEAR_ALL_EXTENSION_DATA` | Dashboard reset | none | `emptyPersisted()` + re-arm goal alarm; `{ ok: true }`. |
 | `RESTORE_EXTENSION_STORAGE` | Dashboard import | full `chrome.storage.local` object | Validates shape; `storage.local.clear()` then `set()`; normalizes `jpPractice` key; `{ ok: true }` or error. |
+| `PRESTIGE` | Dashboard Progress tab | none | At rank 120 and prestige &lt; 10: increments `prestigeLevel`, resets `totalXp` to 0, evaluates prestige achievements; returns **`PrestigeOkResponse`** (`prestigeUp`, `prestigeLevel`, `newAchievements`). |
 
 **OEmbed enrichment** (`background/index.ts`): after library writes from unknown title/channel (e.g. context menu), the background fetches YouTube oEmbed to fill in metadata when still placeholder or empty.
 

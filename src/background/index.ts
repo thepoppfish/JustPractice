@@ -2,6 +2,7 @@ import { MSG } from '../lib/messages';
 import type { ExtensionMessage, ExtensionResponse } from '../lib/messages';
 import { APP_NAME } from '../lib/branding';
 import { parseYoutubeVideoId } from '../lib/youtubeIds';
+import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import {
   dateKeyFromTimestamp,
   ensureSettingsShape,
@@ -19,7 +20,16 @@ import {
   onGoalAlarmName,
   maybeNotifyDailyGoalMet,
   runPeriodicGoalChecks,
+  syncDailyGoalXpFromPersisted,
 } from '../lib/goalNotifications';
+import {
+  processAchievementScan,
+  processFirstCompleteXpEvent,
+  processPracticeTickXpEvent,
+  processPrestigeEvent,
+} from '../lib/playerProgressEvents';
+import { canPrestige, levelFromTotalXp } from '../lib/playerProgress';
+import { maybeNotifyXpEvents, maybeNotifyPrestigeUp } from '../lib/xpNotifications';
 const MAX_TICK_SECONDS = 120;
 
 const DOC_YT = ['https://*.youtube.com/*', 'https://youtube.com/*', 'https://m.youtube.com/*'] as const;
@@ -161,7 +171,8 @@ async function enrichLibraryItemFromOEmbed(
     const fillTitle =
       mode === 'overwrite' ||
       item.title === 'Unknown title' ||
-      !item.title.trim();
+      !item.title.trim() ||
+      isPlaceholderYoutubePageTitle(item.title);
     const fillChannel =
       mode === 'overwrite' ||
       item.channel === 'Unknown channel' ||
@@ -205,6 +216,12 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
   switch (message.type) {
     case MSG.GET_STATE: {
       const data = await readPersisted();
+      const achBefore = Object.keys(data.playerProgress.achievements).length;
+      const xpResult = processAchievementScan(data);
+      if (xpResult.newAchievements.length > 0 || Object.keys(data.playerProgress.achievements).length !== achBefore) {
+        await writePersisted(data);
+        void maybeNotifyXpEvents(data, xpResult);
+      }
       return { ok: true, data };
     }
     case MSG.ADD_OR_UPDATE_LIBRARY: {
@@ -212,7 +229,9 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
       const { videoId, title, channel, difficulty } = message.payload;
       const idx = p.library.findIndex((x) => x.videoId === videoId);
       const cleanTitle =
-        title.trim() && title !== 'Unknown title' ? title.trim() : null;
+        title.trim() && title !== 'Unknown title' && !isPlaceholderYoutubePageTitle(title) ?
+          title.trim()
+        : null;
       const cleanChannel =
         channel.trim() && channel !== 'Unknown channel' ? channel.trim() : null;
 
@@ -272,41 +291,77 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
       const { videoId, complete, title, channel } = message.payload;
       const idx = p.library.findIndex((x) => x.videoId === videoId);
       const now = Date.now();
+      const wasAlreadyComplete = idx >= 0 && p.library[idx].completedAt !== null;
       if (idx >= 0) {
+        const prev = p.library[idx];
+        const cleanTitle =
+          title?.trim() && !isPlaceholderYoutubePageTitle(title) && title !== 'Unknown title' ?
+            title.trim()
+          : null;
+        const cleanChannel =
+          channel?.trim() && channel !== 'Unknown channel' ? channel.trim() : null;
         p.library[idx] = {
-          ...p.library[idx],
+          ...prev,
           completedAt: complete ? now : null,
+          title: cleanTitle ?? prev.title,
+          channel: cleanChannel ?? prev.channel,
         };
       } else if (complete) {
+        const rawTitle = title?.trim();
+        const safeTitle =
+          rawTitle && !isPlaceholderYoutubePageTitle(rawTitle) ? rawTitle : 'Unknown title';
         p.library.push({
           videoId,
-          title: title?.trim() || 'Unknown title',
+          title: safeTitle,
           channel: channel?.trim() || 'Unknown channel',
           addedAt: now,
           difficulty: null,
           completedAt: now,
         });
       } else {
-        return { ok: true };
+        return { ok: true, xpGained: 0, newAchievements: [], levelUp: false, newLevel: levelFromTotalXp(p.playerProgress.totalXp) };
+      }
+      let xpResult = {
+        xpGained: 0,
+        newAchievements: [] as string[],
+        levelUp: false,
+        newLevel: levelFromTotalXp(p.playerProgress.totalXp),
+      };
+      if (complete && !wasAlreadyComplete) {
+        xpResult = processFirstCompleteXpEvent(p, videoId);
+      } else {
+        const scan = processAchievementScan(p);
+        xpResult = scan;
       }
       await writePersisted(p);
       if (complete) {
         void enrichLibraryItemFromOEmbed(videoId, 'fill-unknown');
       }
-      return { ok: true };
+      void maybeNotifyXpEvents(p, xpResult);
+      return { ok: true, ...xpResult };
     }
     case MSG.PRACTICE_TICK: {
       let { deltaSeconds } = message.payload;
-      if (deltaSeconds <= 0) return { ok: true };
+      if (deltaSeconds <= 0) {
+        return {
+          ok: true,
+          xpGained: 0,
+          newAchievements: [],
+          levelUp: false,
+          newLevel: levelFromTotalXp((await readPersisted()).playerProgress.totalXp),
+        };
+      }
       if (deltaSeconds > MAX_TICK_SECONDS) deltaSeconds = MAX_TICK_SECONDS;
       const p = await readPersisted();
       const { videoId, endedAtMs } = message.payload;
       const key = dateKeyFromTimestamp(endedAtMs);
       p.dailySeconds[key] = (p.dailySeconds[key] ?? 0) + deltaSeconds;
       p.videoSeconds[videoId] = (p.videoSeconds[videoId] ?? 0) + deltaSeconds;
+      const xpResult = processPracticeTickXpEvent(p, deltaSeconds, endedAtMs);
       await writePersisted(p);
       void maybeNotifyDailyGoalMet(p);
-      return { ok: true };
+      void maybeNotifyXpEvents(p, xpResult);
+      return { ok: true, ...xpResult };
     }
     case MSG.SET_SETTINGS: {
       const p = await readPersisted();
@@ -349,6 +404,28 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionRespon
           error: e instanceof Error ? e.message : 'Could not restore backup.',
         };
       }
+    }
+    case MSG.PRESTIGE: {
+      const p = await readPersisted();
+      if (!canPrestige(p.playerProgress)) {
+        return { ok: false, error: 'Cannot prestige yet' };
+      }
+      const xpResult = processPrestigeEvent(p);
+      if (!xpResult.prestigeUp) {
+        return { ok: false, error: 'Cannot prestige yet' };
+      }
+      await writePersisted(p);
+      void maybeNotifyXpEvents(p, xpResult);
+      void maybeNotifyPrestigeUp(p, xpResult.prestigeLevel);
+      return {
+        ok: true,
+        xpGained: 0,
+        newAchievements: xpResult.newAchievements,
+        levelUp: false,
+        newLevel: levelFromTotalXp(p.playerProgress.totalXp),
+        prestigeUp: true,
+        prestigeLevel: xpResult.prestigeLevel,
+      };
     }
     default:
       return { ok: false, error: 'Unknown message' };

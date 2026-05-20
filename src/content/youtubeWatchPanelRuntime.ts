@@ -1,6 +1,6 @@
 import { APP_NAME } from '../lib/branding';
 import { MSG } from '../lib/messages';
-import type { ExtensionResponse } from '../lib/messages';
+import type { ExtensionResponse, PracticeTickOkResponse } from '../lib/messages';
 import {
   STORAGE_KEY,
   dateKeyFromTimestamp,
@@ -13,12 +13,16 @@ import {
 } from '../lib/storage';
 import type { VideoMeta } from './feedCards';
 import {
+  isPlaceholderYoutubePageTitle,
+  stripYoutubeSuffixFromPageTitle,
+} from '../lib/youtubePageTitle';
+import {
   attachPracticePageFlushListeners,
   createPracticeIntervalController,
   flushPendingPracticeSeconds,
   shouldCountPracticeTime,
 } from './youtubePracticeTimer';
-import { fireAsyncWatch, sendMsgFireAndForget } from './youtubeMessaging';
+import { fireAsyncWatch, sendMsg, sendMsgFireAndForget } from './youtubeMessaging';
 import {
   attachHomeFeedPointerPick,
   attachVideoCompletionPromptListener,
@@ -37,10 +41,12 @@ import {
   syncWatchPanelEndedPromptLabels,
   syncWatchPanelLabels as syncWatchPanelLabelsUi,
   updateDailyGoalRing as updateDailyGoalRingUi,
+  updatePlayerXpBar as updatePlayerXpBarUi,
 } from './youtubePanelUi';
 import {
   applyWatchPanelDifficultyChange,
   flashWatchPanelAfterLibraryWrite,
+  flashWatchPanelXpTick,
   refreshWatchPanelLibraryUiFromRemoteState,
   saveWatchPanelVideoToLibrary,
   setWatchPanelLibraryCompletion,
@@ -99,6 +105,8 @@ let completionPromptShownForVideoId: string | null = null;
 let completionPromptDismissedForVideoId: string | null = null;
 
 let lastDailySnapshot: Record<string, number> = {};
+let cachedPlayerTotalXp = 0;
+let cachedPlayerPrestigeLevel = 0;
 let extensionInstallDateKey = dateKeyFromTimestamp(Date.now());
 
 let calendarYear = new Date().getFullYear();
@@ -260,6 +268,17 @@ function updateDailyGoalRing(): void {
   });
 }
 
+function updatePlayerXpBar(totalXp?: number, prestigeLevel?: number): void {
+  if (totalXp != null) cachedPlayerTotalXp = totalXp;
+  if (prestigeLevel != null) cachedPlayerPrestigeLevel = prestigeLevel;
+  updatePlayerXpBarUi({
+    shadowRoot,
+    totalXp: cachedPlayerTotalXp,
+    prestigeLevel: cachedPlayerPrestigeLevel,
+    panelT,
+  });
+}
+
 function renderCalendar(dailySeconds: Record<string, number>): void {
   renderWatchPanelCalendar({
     shadowRoot,
@@ -316,10 +335,14 @@ function readTitle(): string {
     return hp.title;
   }
   const meta = document.querySelector('meta[property="og:title"]');
-  if (meta?.getAttribute('content')) return meta.getAttribute('content')!.trim();
+  const og = meta?.getAttribute('content')?.trim();
+  if (og && !isPlaceholderYoutubePageTitle(og)) return og;
   const h = document.querySelector('h1 yt-formatted-string, h1.title, ytd-watch-metadata h1');
-  if (h?.textContent) return h.textContent.trim();
-  return document.title.replace(/\s*-\s*YouTube\s*$/, '').trim() || 'Unknown title';
+  const heading = h?.textContent?.trim();
+  if (heading && !isPlaceholderYoutubePageTitle(heading)) return heading;
+  const stripped = stripYoutubeSuffixFromPageTitle(document.title);
+  if (isPlaceholderYoutubePageTitle(stripped)) return 'Unknown title';
+  return stripped;
 }
 
 function readChannel(): string {
@@ -423,9 +446,14 @@ function applyPersistedPracticeSnapshotToPanel(persisted: PersistedData | undefi
   if (typeof persisted.extensionInstalledDateKey === 'string' && persisted.extensionInstalledDateKey.length > 0) {
     extensionInstallDateKey = persisted.extensionInstalledDateKey;
   }
+  if (persisted.playerProgress && typeof persisted.playerProgress.totalXp === 'number') {
+    cachedPlayerTotalXp = persisted.playerProgress.totalXp;
+    cachedPlayerPrestigeLevel = persisted.playerProgress.prestigeLevel ?? 0;
+  }
   if (!shadowRoot) return;
   renderCalendar(lastDailySnapshot);
   updateDailyGoalRing();
+  updatePlayerXpBar();
   paintCalStreak(lastDailySnapshot);
 }
 
@@ -473,6 +501,7 @@ async function refreshState(videoId: string | null): Promise<void> {
       applyWatchPanelCollapsed,
       renderCalendar,
       updateDailyGoalRing,
+      updatePlayerXpBar,
       syncWatchPanelLabels,
     },
     getPanelT: () => panelT,
@@ -569,13 +598,34 @@ function tickSecond(): void {
 }
 
 export function flushWatchPanelPractice(): void {
-  flushPendingPracticeSeconds({
-    videoId: currentVideoId,
-    getPendingSeconds: () => pendingSeconds,
-    setPendingSeconds: (next) => {
-      pendingSeconds = next;
+  if (!currentVideoId) return;
+  const pending = pendingSeconds;
+  if (pending <= 0) return;
+  pendingSeconds = 0;
+  void sendMsg<PracticeTickOkResponse>({
+    type: MSG.PRACTICE_TICK,
+    payload: {
+      videoId: currentVideoId,
+      deltaSeconds: pending,
+      endedAtMs: Date.now(),
     },
-    sendFireAndForget: sendMsgFireAndForget,
+  }).then((res) => {
+    if (!res?.ok || !('xpGained' in res)) return;
+    if (res.xpGained > 0) {
+      cachedPlayerTotalXp += res.xpGained;
+      updatePlayerXpBar();
+    } else if (res.levelUp) {
+      updatePlayerXpBar();
+    }
+    if (ui && (res.xpGained > 0 || res.levelUp)) {
+      flashWatchPanelXpTick({
+        ui,
+        panelT,
+        xpGained: res.xpGained,
+        levelUp: res.levelUp,
+        newLevel: res.newLevel,
+      });
+    }
   });
 }
 

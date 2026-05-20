@@ -11,6 +11,7 @@ export const MSG = {
   ENRICH_LIBRARY_META: 'ENRICH_LIBRARY_META',
   CLEAR_ALL_EXTENSION_DATA: 'CLEAR_ALL_EXTENSION_DATA',
   RESTORE_EXTENSION_STORAGE: 'RESTORE_EXTENSION_STORAGE',
+  PRESTIGE: 'PRESTIGE',
 } as const;
 
 export type MessageType = (typeof MSG)[keyof typeof MSG];
@@ -81,6 +82,10 @@ export interface RestoreExtensionStorageMessage {
   payload: Record<string, unknown>;
 }
 
+export interface PrestigeMessage {
+  type: typeof MSG.PRESTIGE;
+}
+
 export type ExtensionMessage =
   | GetStateMessage
   | AddOrUpdateLibraryMessage
@@ -91,7 +96,8 @@ export type ExtensionMessage =
   | SetSettingsMessage
   | EnrichLibraryMetaMessage
   | ClearAllExtensionDataMessage
-  | RestoreExtensionStorageMessage;
+  | RestoreExtensionStorageMessage
+  | PrestigeMessage;
 
 export interface GetStateResponse {
   ok: true;
@@ -100,6 +106,23 @@ export interface GetStateResponse {
 
 export interface OkResponse {
   ok: true;
+}
+
+/** Account XP / achievement payload returned from mutating handlers. */
+export interface XpAwardFields {
+  xpGained: number;
+  newAchievements: string[];
+  levelUp: boolean;
+  newLevel: number;
+}
+
+export interface PracticeTickOkResponse extends OkResponse, XpAwardFields {}
+
+export interface SetLibraryCompletionOkResponse extends OkResponse, XpAwardFields {}
+
+export interface PrestigeOkResponse extends OkResponse, XpAwardFields {
+  prestigeUp: boolean;
+  prestigeLevel: number;
 }
 
 /** Returned for {@link MSG.ADD_OR_UPDATE_LIBRARY} so the UI can tell a new save from an update. */
@@ -114,5 +137,8 @@ export interface LibraryWriteOkResponse {
 export type ExtensionResponse =
   | GetStateResponse
   | OkResponse
+  | PracticeTickOkResponse
+  | SetLibraryCompletionOkResponse
+  | PrestigeOkResponse
   | LibraryWriteOkResponse
   | { ok: false; error: string };

@@ -5,6 +5,7 @@ import {
   STORAGE_KEY,
   defaultSettings,
   ensureSettingsShape,
+  inProgressLibraryItems,
   type LevelFramework,
   type LevelTag,
   type LibraryItem,
@@ -12,7 +13,9 @@ import {
 } from '../lib/storage';
 import { tagsForFramework, isLegacyLevelTag, isJlptTag, isCefrTag } from '../lib/levelTags';
 import { thumbnailUrlForVideoId } from '../lib/youtubeMeta';
+import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import { aggregatePracticeStats, formatDuration } from '../lib/practiceStats';
+import { levelFromTotalXp, MAX_ACCOUNT_LEVEL, xpIntoCurrentLevel } from '../lib/playerProgress';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { createTranslator, resolveLocale } from '../i18n';
 
@@ -77,8 +80,8 @@ function difficultyLabel(
   return t('dash.legacyBadge', { framework: fwName, tag: d });
 }
 
-function emptyMessage(data: PersistedData, t: (k: string) => string): string {
-  if (data.library.length === 0 && !searchQuery.trim() && filterLevel === '') {
+function emptyMessage(inProgressCount: number, t: (k: string) => string): string {
+  if (inProgressCount === 0 && !searchQuery.trim() && filterLevel === '') {
     return t('popup.libraryEmpty');
   }
   return t('popup.noMatches');
@@ -113,16 +116,32 @@ async function renderAsync(): Promise<void> {
   }
 
   const { today, week, all } = aggregatePracticeStats(data);
+  const pp = data.playerProgress;
+  const accountLevel = levelFromTotalXp(pp.totalXp);
+  const xpBar = xpIntoCurrentLevel(pp.totalXp);
+  const maxLevel = accountLevel >= MAX_ACCOUNT_LEVEL;
+  const prestigeBadge =
+    pp.prestigeLevel > 0
+      ? `<span class="popup-prestige-badge">${escapeHtml(t('progress.prestigeBadge', { level: String(pp.prestigeLevel) }))}</span>`
+      : '';
+  const xpLabel = maxLevel
+    ? escapeHtml(t('progress.maxLevel'))
+    : escapeHtml(t('popup.xpToNext', { current: String(xpBar.xpIntoLevel), needed: String(xpBar.xpNeededForNext) }));
 
   const tipStore = await chrome.storage.local.get(POPUP_TIP_SEEN_KEY);
   const showOnboardingTip = tipStore[POPUP_TIP_SEEN_KEY] !== true;
 
-  const hasLegacyVideos = data.library.some(
+  const inProgress = inProgressLibraryItems(data.library);
+
+  const hasLegacyVideos = inProgress.some(
     (it) => it.difficulty !== null && isLegacyLevelTag(it.difficulty, fw, customLevels),
   );
 
   const needsMeta = data.library.filter(
-    (i) => i.title === 'Unknown title' || i.channel === 'Unknown channel',
+    (i) =>
+      i.title === 'Unknown title' ||
+      isPlaceholderYoutubePageTitle(i.title) ||
+      i.channel === 'Unknown channel',
   );
   for (const item of needsMeta.slice(0, 10)) {
     void send({
@@ -131,7 +150,7 @@ async function renderAsync(): Promise<void> {
     });
   }
 
-  const filtered = data.library
+  const filtered = inProgress
     .filter((item) => matchesFilter(item, fw, customLevels))
     .filter(matchesSearch)
     .sort((a, b) => b.addedAt - a.addedAt);
@@ -152,7 +171,17 @@ async function renderAsync(): Promise<void> {
 
   app.innerHTML = `
     <div class="wrap">
-      <h1>${escapeHtml(APP_NAME)}</h1>
+      <div class="popup-head">
+        <h1>${escapeHtml(APP_NAME)}</h1>
+        <div class="popup-xp-row" aria-label="${escapeAttr(t('progress.xpBarAria'))}">
+          <span class="popup-rank-badge">${escapeHtml(t('popup.rank', { level: String(accountLevel) }))}</span>
+          ${prestigeBadge}
+          <div class="popup-xp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${maxLevel ? accountLevel : xpBar.xpNeededForNext}" aria-valuenow="${maxLevel ? accountLevel : xpBar.xpIntoLevel}">
+            <div class="popup-xp-fill" style="width:${maxLevel ? 100 : xpBar.progressPercent}%"></div>
+          </div>
+          <span class="popup-xp-label">${xpLabel}</span>
+        </div>
+      </div>
       ${
         showOnboardingTip
           ? `<div class="onboarding-tip" role="status">
@@ -180,7 +209,7 @@ async function renderAsync(): Promise<void> {
         <div class="list">
           ${
             filtered.length === 0 ?
-              `<div class="empty">${escapeHtml(emptyMessage(data, t))}</div>`
+              `<div class="empty">${escapeHtml(emptyMessage(inProgress.length, t))}</div>`
             : filtered.map((item) => libraryItemHtml(item, fw, customLevels, t)).join('')
           }
         </div>

@@ -1,6 +1,7 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage, GetStateResponse } from '../lib/messages';
 import { STORAGE_KEY, type LevelTag, type PersistedData } from '../lib/storage';
+import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import { escapeHtml } from '../lib/htmlEscape';
 import { createTranslator, resolveLocale } from '../i18n';
 import { buildDashboardViewModel, type DashView } from './dashboardViewModel';
@@ -50,7 +51,10 @@ async function renderAsync(): Promise<void> {
   document.documentElement.setAttribute('dir', vm.resolvedLocale === 'he' ? 'rtl' : 'ltr');
 
   const needsMeta = vm.data.library.filter(
-    (i) => i.title === 'Unknown title' || i.channel === 'Unknown channel',
+    (i) =>
+      i.title === 'Unknown title' ||
+      isPlaceholderYoutubePageTitle(i.title) ||
+      i.channel === 'Unknown channel',
   );
   for (const item of needsMeta.slice(0, 15)) {
     void send({

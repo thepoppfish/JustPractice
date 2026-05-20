@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
   completedLibraryItems,
+  inProgressLibraryItems,
   dateKeyFromTimestamp,
   daysInCalendarMonth,
+  defaultPlayerProgress,
   emptyPersisted,
   ensureSettingsShape,
   firstPositiveDailyDateKey,
@@ -146,6 +148,95 @@ describe('normalizeImportedPersisted', () => {
     expect(out.schemaVersion).toBe(SCHEMA_VERSION);
   });
 
+  it('migrates v7 to v8 with playerProgress backfill capped at 50k', () => {
+    const out = normalizeImportedPersisted({
+      schemaVersion: 7,
+      library: [],
+      dailySeconds: { '2020-01-01': 60 * 60 * 60_000 },
+      videoSeconds: {},
+      settings: {},
+    });
+    expect(out.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(out.playerProgress.totalXp).toBe(50_000);
+    expect(out.playerProgress.completeXpAwarded).toEqual({});
+  });
+
+  it('migrates v7 with moderate practice to proportional backfill', () => {
+    const out = normalizeImportedPersisted({
+      schemaVersion: 7,
+      library: [],
+      dailySeconds: { '2026-05-01': 7200 },
+      videoSeconds: {},
+      settings: {},
+    });
+    expect(out.playerProgress.totalXp).toBe(120);
+  });
+
+  it('preserves v8 playerProgress and converts legacy completeXpAwardedVideoIds', () => {
+    const out = normalizeImportedPersisted({
+      schemaVersion: 8,
+      library: [],
+      dailySeconds: {},
+      videoSeconds: {},
+      settings: {},
+      playerProgress: {
+        totalXp: 42,
+        achievements: { library_1: 1 },
+        lastDailyGoalXpDateKey: '2026-05-01',
+        lastStreakXpDateKey: null,
+        completeXpAwardedVideoIds: ['abc'],
+      },
+    });
+    expect(out.playerProgress.totalXp).toBe(42);
+    expect(out.playerProgress.lifetimeXp).toBe(42);
+    expect(out.playerProgress.prestigeLevel).toBe(0);
+    expect(out.playerProgress.completeXpAwarded.abc).toBe(true);
+    expect(out.playerProgress.achievements.library_1).toBe(1);
+    expect(out.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it('preserves v9 prestige fields', () => {
+    const out = normalizeImportedPersisted({
+      schemaVersion: 9,
+      library: [],
+      dailySeconds: {},
+      videoSeconds: {},
+      settings: {},
+      playerProgress: {
+        totalXp: 100,
+        lifetimeXp: 9000,
+        prestigeLevel: 3,
+        achievements: {},
+        lastDailyGoalXpDateKey: null,
+        lastStreakXpDateKey: null,
+        completeXpAwarded: {},
+      },
+    });
+    expect(out.playerProgress.totalXp).toBe(100);
+    expect(out.playerProgress.lifetimeXp).toBe(9000);
+    expect(out.playerProgress.prestigeLevel).toBe(3);
+  });
+
+  it('v9 playerProgress without lifetimeXp defaults lifetimeXp to totalXp', () => {
+    const out = normalizeImportedPersisted({
+      schemaVersion: 9,
+      library: [],
+      dailySeconds: {},
+      videoSeconds: {},
+      settings: {},
+      playerProgress: {
+        totalXp: 31,
+        prestigeLevel: 0,
+        achievements: {},
+        lastDailyGoalXpDateKey: null,
+        lastStreakXpDateKey: null,
+        completeXpAwarded: {},
+      },
+    });
+    expect(out.playerProgress.totalXp).toBe(31);
+    expect(out.playerProgress.lifetimeXp).toBe(31);
+  });
+
   it('preserves completedAt on v7 library items', () => {
     const ts = 1_700_000_000_000;
     const out = normalizeImportedPersisted({
@@ -206,9 +297,28 @@ describe('library completion helpers', () => {
     const rows = [item(null), item(200), item(300)];
     expect(completedLibraryItems(rows).map((x) => x.completedAt)).toEqual([200, 300]);
   });
+
+  it('inProgressLibraryItems excludes completed rows', () => {
+    const rows = [item(null), item(200), item(null), item(300)];
+    expect(inProgressLibraryItems(rows)).toHaveLength(2);
+    expect(inProgressLibraryItems(rows).every((x) => x.completedAt === null)).toBe(true);
+  });
 });
 
 describe('persistedNeedsCompactionRewrite', () => {
+  it('includes playerProgress in v8 compaction keys', () => {
+    const blob = {
+      schemaVersion: SCHEMA_VERSION,
+      library: [],
+      extensionInstalledDateKey: '2026-05-01',
+      dailySeconds: {},
+      videoSeconds: {},
+      settings: {},
+      playerProgress: defaultPlayerProgress(),
+    };
+    expect(persistedNeedsCompactionRewrite(blob)).toBe(false);
+  });
+
   it('does not rewrite v7 data solely because library items have completedAt', () => {
     const blob = {
       schemaVersion: SCHEMA_VERSION,
@@ -226,6 +336,7 @@ describe('persistedNeedsCompactionRewrite', () => {
       dailySeconds: {},
       videoSeconds: {},
       settings: {},
+      playerProgress: defaultPlayerProgress(),
     };
     expect(persistedNeedsCompactionRewrite(blob)).toBe(false);
   });
