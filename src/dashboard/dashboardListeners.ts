@@ -8,6 +8,7 @@ import {
   type UiLocale,
 } from '../lib/storage';
 import { isResolvedLocale } from '../i18n';
+import { formatDuration } from '../lib/practiceStats';
 import { parseGoalMinutes, parseNudgeHour, yearHeatmapStatusLabel } from './dashboardFormatters';
 import { attachYearHeatmapInteractive } from '../lib/yearHeatmapInteractive';
 import { DASH_VIEWS } from './dashboardDomUpdate';
@@ -394,6 +395,11 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
         yearHeatmapStatusLabel(vm.t, display, dateKey, seconds, showTimeArg),
       showPracticeTimeOnYear: vm.calendarShowPracticeTime,
       backToYearLabel: vm.t('yearHeatmap.backToYear'),
+      navPrevMonthLabel: vm.t('yearHeatmap.prevMonth'),
+      navNextMonthLabel: vm.t('yearHeatmap.nextMonth'),
+      formatMonthTotal: (sec) =>
+        vm.t('yearHeatmap.monthTotal', { duration: formatDuration(sec) }),
+      translate: (key, params) => vm.t(key, params),
     });
   }
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   aggregatePracticeStats,
+  calendarDayBottomLabel,
   chartDayTier,
   formatDuration,
   lastNDaysBuckets,
@@ -76,6 +77,19 @@ describe('chartDayTier', () => {
     expect(chartDayTier(700, 600)).toBe('goal');
     expect(chartDayTier(60, null)).toBe('active');
     expect(chartDayTier(0, null)).toBe('none');
+  });
+});
+
+describe('calendarDayBottomLabel', () => {
+  const today = '2026-05-14';
+
+  it('shows 0 on today and X on past missed days', () => {
+    expect(calendarDayBottomLabel('none', 0, today, today)).toBe('0');
+    expect(calendarDayBottomLabel('none', 0, '2026-05-13', today)).toBe('X');
+  });
+
+  it('shows duration when at least one minute practiced', () => {
+    expect(calendarDayBottomLabel('active', 77, today, today)).toBe('1m 17s');
   });
 });
 

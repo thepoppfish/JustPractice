@@ -5,13 +5,18 @@ import {
   missTrackingStartDateKey,
   type PracticeGoals,
 } from '../lib/storage';
-import { formatDuration, practiceCalendarDayVisual, practiceStreakDays } from '../lib/practiceStats';
+import {
+  CALENDAR_UNDER_MINUTE_MARK,
+  formatDuration,
+  practiceCalendarDayVisual,
+  practiceStreakDays,
+} from '../lib/practiceStats';
 import type { ResolvedLocale } from '../i18n';
 import { daysInCalendarMonth } from '../lib/storage';
 import { attachYearHeatmapInteractive } from '../lib/yearHeatmapInteractive';
 import {
   buildYearHeatmapGridModel,
-  defaultYearHeatmapKeysHtml,
+  yearHeatmapLegendHtml,
   defaultYearHeatmapStatusLabel,
   yearHeatmapBackButtonHtml,
   yearHeatmapSectionHtml,
@@ -59,7 +64,7 @@ export function streakAriaLabel(
 /** Whole minutes only (floor), aligned with {@link MIN_DAY_PRACTICE_CREDIT_SECONDS} for calendar color. */
 export function formatDayMinutes(sec: number): string {
   if (!sec || sec <= 0) return '';
-  if (sec < MIN_DAY_PRACTICE_CREDIT_SECONDS) return '·';
+  if (sec < MIN_DAY_PRACTICE_CREDIT_SECONDS) return CALENDAR_UNDER_MINUTE_MARK;
   const m = Math.floor(sec / 60);
   if (m >= 60) return `${Math.floor(m / 60)}h`;
   return `${m}m`;
@@ -142,7 +147,7 @@ function renderWatchPanelYearHeatmap(p: RenderWatchPanelCalendarParams): void {
     navPrevLabel: '',
     navNextLabel: '',
     backToYearLabel: backLabel,
-    keysHtml: defaultYearHeatmapKeysHtml(
+    keysHtml: yearHeatmapLegendHtml(
       (key, params) => p.panelT(key, params),
       dailyGoalSec != null,
     ),
@@ -169,12 +174,17 @@ function renderWatchPanelYearHeatmap(p: RenderWatchPanelCalendarParams): void {
       statusLabel,
       showPracticeTimeOnYear: p.showPracticeTime === true,
       backToYearLabel: p.panelT('yearHeatmap.backToYear'),
+      navPrevMonthLabel: p.panelT('yearHeatmap.prevMonth'),
+      navNextMonthLabel: p.panelT('yearHeatmap.nextMonth'),
+      formatMonthTotal: (sec) =>
+        p.panelT('yearHeatmap.monthTotal', { duration: formatDuration(sec) }),
+      translate: (key, params) => p.panelT(key, params),
     });
   }
 
   const calLeg = p.shadowRoot.querySelector('[part="cal-legend"]');
   if (calLeg) {
-    calLeg.innerHTML = defaultYearHeatmapKeysHtml(
+    calLeg.innerHTML = yearHeatmapLegendHtml(
       (key, params) => p.panelT(key, params),
       dailyGoalSec != null,
     );

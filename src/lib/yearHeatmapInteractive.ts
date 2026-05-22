@@ -1,18 +1,13 @@
 import { parseDateKey } from './yearHeatmapCalendar';
-import { buildMonthDetailGrid } from './yearHeatmapMonth';
-import { monthDetailLayerHtml } from './yearHeatmapMonthHtml';
+import type { YearHeatmapPracticeData } from './yearHeatmapMonth';
+import { monthCarouselLayerHtml, monthHeatmapLegendHtml } from './yearHeatmapMonthHtml';
 import type { YearHeatmapStatusLabelFn } from './yearHeatmapHtml';
+
+export type { YearHeatmapPracticeData } from './yearHeatmapMonth';
 
 export type YearHeatmapZoom =
   | { mode: 'year' }
   | { mode: 'month'; year: number; monthIndex: number };
-
-export interface YearHeatmapPracticeData {
-  dailySeconds: Record<string, number>;
-  extensionInstalledDateKey: string;
-  dailyGoalSec: number | null;
-  monthlyGoalSec: number | null;
-}
 
 export interface AttachYearHeatmapInteractiveOptions {
   root: HTMLElement;
@@ -23,6 +18,11 @@ export interface AttachYearHeatmapInteractiveOptions {
   statusLabel: YearHeatmapStatusLabelFn;
   showPracticeTimeOnYear?: boolean;
   backToYearLabel: string;
+  navPrevMonthLabel: string;
+  navNextMonthLabel: string;
+  formatMonthTotal: (totalSec: number) => string;
+  /** When set, month drill-down includes its own legend and monthly-goal badge copy. */
+  translate?: (key: string, params?: Record<string, string>) => string;
   onYearChange?: (year: number) => void;
 }
 
@@ -47,6 +47,7 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
   const monthLayer = monthLayerNode;
 
   let hoveredMonth: string | null = null;
+  let activeMonth: { year: number; monthIndex: number } | null = null;
 
   const cellsRoot = () => yearLayer.querySelector('.year-hm-cells');
 
@@ -77,32 +78,48 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
     yearLayer.hidden = false;
     monthLayer.hidden = true;
     monthLayer.innerHTML = '';
+    activeMonth = null;
     if (keys) keys.hidden = false;
     setNavMode('year');
     opts.root.classList.remove('year-hm--month-open');
     clearMonthHover();
   }
 
-  function openMonth(year: number, monthIndex: number): void {
+  function renderMonthView(year: number, monthIndex: number): void {
+    activeMonth = { year, monthIndex };
     const data = opts.getData();
-    const detail = buildMonthDetailGrid({
+    const monthExtras = opts.translate
+      ? {
+          monthLegendHtml: monthHeatmapLegendHtml(opts.translate),
+          monthlyGoalMetLabel: opts.translate('yearHeatmap.monthlyGoalMet'),
+        }
+      : {};
+    monthLayer.innerHTML = monthCarouselLayerHtml({
       year,
       monthIndex,
-      dailySeconds: data.dailySeconds,
-      extensionInstalledDateKey: data.extensionInstalledDateKey,
-      dailyGoalSec: data.dailyGoalSec,
-      monthlyGoalSec: data.monthlyGoalSec,
-      locale: opts.locale,
-    });
-    monthLayer.innerHTML = monthDetailLayerHtml(detail, {
+      data,
       locale: opts.locale,
       variant: opts.variant,
+      navPrevLabel: opts.navPrevMonthLabel,
+      navNextLabel: opts.navNextMonthLabel,
+      formatMonthTotal: opts.formatMonthTotal,
+      ...monthExtras,
     });
     yearLayer.hidden = true;
     monthLayer.hidden = false;
     if (keys) keys.hidden = true;
     setNavMode('month');
     opts.root.classList.add('year-hm--month-open');
+  }
+
+  function openMonth(year: number, monthIndex: number): void {
+    const clamped = Math.max(0, Math.min(11, monthIndex));
+    renderMonthView(year, clamped);
+  }
+
+  function shiftMonth(delta: number): void {
+    if (!activeMonth) return;
+    openMonth(activeMonth.year, activeMonth.monthIndex + delta);
   }
 
   function onCellPointerOver(e: Event): void {
@@ -122,7 +139,7 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
     clearMonthHover();
   }
 
-  function onCellClick(e: Event): void {
+  function onYearLayerClick(e: Event): void {
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;
     const btn = t.closest<HTMLElement>('[data-date]');
@@ -137,20 +154,41 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
   function onScopeClick(e: Event): void {
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;
-    if (!t.closest('[data-year-hm-back]')) return;
-    e.preventDefault();
-    showYearView();
+
+    if (t.closest('[data-year-hm-back]')) {
+      e.preventDefault();
+      showYearView();
+      return;
+    }
+
+    if (!monthLayer.hidden && activeMonth) {
+      if (t.closest('[data-year-hm-month-prev]:not(:disabled)')) {
+        e.preventDefault();
+        shiftMonth(-1);
+        return;
+      }
+      if (t.closest('[data-year-hm-month-next]:not(:disabled)')) {
+        e.preventDefault();
+        shiftMonth(1);
+        return;
+      }
+      const sideSlot = t.closest<HTMLElement>('[data-year-hm-month-slot="prev"], [data-year-hm-month-slot="next"]');
+      if (sideSlot?.dataset.monthIndex != null) {
+        e.preventDefault();
+        openMonth(activeMonth.year, Number(sideSlot.dataset.monthIndex));
+      }
+    }
   }
 
   yearLayer.addEventListener('pointerover', onCellPointerOver);
   yearLayer.addEventListener('pointerout', onCellPointerOut);
-  yearLayer.addEventListener('click', onCellClick);
+  yearLayer.addEventListener('click', onYearLayerClick);
   scope.addEventListener('click', onScopeClick);
 
   return () => {
     yearLayer.removeEventListener('pointerover', onCellPointerOver);
     yearLayer.removeEventListener('pointerout', onCellPointerOut);
-    yearLayer.removeEventListener('click', onCellClick);
+    yearLayer.removeEventListener('click', onYearLayerClick);
     scope.removeEventListener('click', onScopeClick);
   };
 }

@@ -1,6 +1,6 @@
 ﻿import { APP_NAME } from '../lib/branding';
 import {
-  dayCountsAsPracticedForCalendar,
+  calendarDayBottomLabel,
   formatDuration,
   formatHoursMinutesClock,
   practiceCalendarDayVisual,
@@ -252,7 +252,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
                   <div class="chart-bar-wrap">
                     <div class="chart-bar chart-bar--${barTier}" style="height:${pct}%"></div>
                   </div>
-                  <span class="chart-val ${valClass}">${dayCountsAsPracticedForCalendar(d.seconds) ? formatDuration(d.seconds) : '\u00B7'}</span>
+                  <span class="chart-val ${valClass}">${escapeHtml(calendarDayBottomLabel(vis, d.seconds, d.dateKey, vm.todayKey))}</span>
                   <span class="chart-label${isToday ? ' chart-label--today' : ''}" title="${escapeAttr(d.dateKey)}">${escapeHtml(d.weekdayShort)}</span>
                   ${isToday ? `<span class="chart-today-caption">${escapeHtml(vm.t('dash.chartToday'))}</span>` : ''}
                 </div>`;
@@ -307,6 +307,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
               navNextLabel: vm.t('dash.yearHeatmapNextYear'),
               backToYearLabel: vm.t('yearHeatmap.backToYear'),
               keysHtml: yearHeatmapKeysHtml(vm.t, vm.dailyGoalSec != null),
+              flawlessYearBadgeLabel: vm.t('dash.yearFlawlessBadge'),
               ariaLabel: vm.t('dash.yearHeatmapAria'),
             })}`;
             })()}

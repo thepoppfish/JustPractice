@@ -1,4 +1,9 @@
-import { practiceCalendarDayVisual, type PracticeCalendarVisual } from './practiceStats';
+import {
+  CALENDAR_UNDER_MINUTE_MARK,
+  dayCountsAsPracticedForCalendar,
+  practiceCalendarDayVisual,
+  type PracticeCalendarVisual,
+} from './practiceStats';
 import {
   allDateKeysInMonth,
   buildYearHeatmapGrid,
@@ -6,7 +11,7 @@ import {
   type YearHeatmapDisplayColor,
   yearHeatmapDisplayColor,
 } from './yearHeatmapCalendar';
-import { dateKeyFromTimestamp, MIN_DAY_PRACTICE_CREDIT_SECONDS } from './storage';
+import { dateKeyFromTimestamp } from './storage';
 
 export type MonthDetailCell =
   | { kind: 'pad' }
@@ -19,6 +24,13 @@ export type MonthDetailCell =
       timeLabel: string;
       isToday: boolean;
     };
+
+export interface YearHeatmapPracticeData {
+  dailySeconds: Record<string, number>;
+  extensionInstalledDateKey: string;
+  dailyGoalSec: number | null;
+  monthlyGoalSec: number | null;
+}
 
 export interface MonthDetailGrid {
   year: number;
@@ -35,10 +47,11 @@ export interface MonthDetailGrid {
   isMonthComplete: boolean;
 }
 
-/** Compact duration for inside month cells (always shown when > 0). */
-export function formatMonthCellTime(sec: number): string {
-  if (!sec || sec <= 0) return '';
-  if (sec < MIN_DAY_PRACTICE_CREDIT_SECONDS) return '<1m';
+/** Compact duration for month grid cells. “0” only on today; other missed days use X in markup. */
+export function formatMonthCellTime(sec: number, isToday = false): string {
+  if (!dayCountsAsPracticedForCalendar(sec)) {
+    return isToday ? CALENDAR_UNDER_MINUTE_MARK : '';
+  }
   const m = Math.floor(sec / 60);
   if (m >= 60) {
     const h = Math.floor(m / 60);
@@ -133,14 +146,15 @@ export function buildMonthDetailGrid(p: {
       p.dailySeconds,
       p.dailyGoalSec,
     );
+    const isToday = dateKey === todayKey;
     cells.push({
       kind: 'day',
       dateKey,
       dayOfMonth: day,
       display: yearHeatmapDisplayColor(vis),
       seconds: sec,
-      timeLabel: formatMonthCellTime(sec),
-      isToday: dateKey === todayKey,
+      timeLabel: formatMonthCellTime(sec, isToday),
+      isToday,
     });
   }
 

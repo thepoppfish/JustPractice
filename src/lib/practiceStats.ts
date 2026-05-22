@@ -54,8 +54,28 @@ export type ChartDayTier = 'none' | 'active' | 'goal';
 
 export type PracticeCalendarVisual = ChartDayTier | 'neutral' | 'future';
 
+/** Some watch time, but under {@link MIN_DAY_PRACTICE_CREDIT_SECONDS} (still red on calendar). */
+export const CALENDAR_UNDER_MINUTE_MARK = '0';
+
+/** Missed tracked day with no credited practice. */
+export const CALENDAR_MISSED_DAY_MARK = 'X';
+
 export function dayCountsAsPracticedForCalendar(seconds: number): boolean {
   return seconds >= MIN_DAY_PRACTICE_CREDIT_SECONDS;
+}
+
+/** Bottom label for stats chart / panel day cells (aligned with month grid: 0 = today, X = past missed). */
+export function calendarDayBottomLabel(
+  vis: PracticeCalendarVisual,
+  seconds: number,
+  dateKey: string,
+  todayKey: string,
+): string {
+  if (dayCountsAsPracticedForCalendar(seconds)) return formatDuration(seconds);
+  if (dateKey === todayKey) return CALENDAR_UNDER_MINUTE_MARK;
+  if (vis === 'none') return CALENDAR_MISSED_DAY_MARK;
+  if (seconds > 0) return CALENDAR_UNDER_MINUTE_MARK;
+  return '—';
 }
 
 /** Red = missed day in tracking window; green/gold = practice; neutral = before tracking or future. */

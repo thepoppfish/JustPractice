@@ -836,20 +836,14 @@ body {
 
 .chart-val {
   font-size: 10px;
-  color: var(--text);
+  color: #fff;
   font-variant-numeric: tabular-nums;
 }
 
-.chart-val--none {
-  color: #e88888;
-}
-
-.chart-val--active {
-  color: #7bdc9e;
-}
-
+.chart-val--none,
+.chart-val--active,
 .chart-val--goal {
-  color: #e8c878;
+  color: #fff;
 }
 
 .chart-val--neutral,
@@ -1379,11 +1373,17 @@ body {
 
 .year-hm-keys {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 16px;
+  justify-content: center;
   margin-top: 10px;
   font-size: 11px;
   color: var(--muted);
+}
+
+.year-hm-keys-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
 }
 
 .year-hm-key {
@@ -1411,12 +1411,43 @@ body {
   background: #e8b84a;
 }
 
-.year-hm-key-dot--diamond {
-  background: linear-gradient(135deg, #7dd3fc 0%, #a78bfa 50%, #f472b6 100%);
+.year-hm-key-icon {
+  flex-shrink: 0;
+  line-height: 1;
 }
 
-.year-hm-key-dot--all-green {
-  background: linear-gradient(90deg, #ffb347, #ffcc33);
+.year-hm-key-icon--flawless-month {
+  font-size: 11px;
+  color: #c4b5fd;
+}
+
+.year-hm-key-icon--flawless-year {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 2px solid rgba(255, 204, 51, 0.85);
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.year-hm-flawless-badge {
+  margin-left: 6px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffcc33;
+  border: 1px solid rgba(255, 204, 51, 0.55);
+  border-radius: 4px;
+  background: rgba(255, 204, 51, 0.12);
+}
+
+.year-hm-month-flawless {
+  margin-left: 2px;
+  font-size: 9px;
+  color: #c4b5fd;
+  vertical-align: super;
 }
 
 .year-hm--all-green-year .year-hm-chart {
@@ -1438,6 +1469,38 @@ body {
 
 .year-hm-month-detail--diamond .year-hm-month-title {
   color: #c4b5fd;
+}
+
+.year-hm-month-title-flawless {
+  margin-left: 4px;
+  font-size: 12px;
+  color: #c4b5fd;
+  vertical-align: middle;
+}
+
+.year-hm-month-goal-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #f5d76e;
+  border: 1px solid rgba(232, 184, 74, 0.45);
+  border-radius: 4px;
+  background: rgba(232, 184, 74, 0.15);
+  vertical-align: middle;
+}
+
+.month-hm-legend {
+  margin: 0 0 8px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.month-hm-legend-mark {
+  font-weight: 700;
+  color: #fff;
 }
 
 .stats-all-time {
@@ -1730,6 +1793,225 @@ body {
   width: 100%;
 }
 
+/* Month carousel: center month + translucent neighbors */
+.year-hm-month-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.year-hm-month-carousel-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.year-hm-month-nav {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text, #eee);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.year-hm-month-nav:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.year-hm-month-nav:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.year-hm-month-nav:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 2px;
+}
+
+.year-hm-month-slot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.year-hm-month-slot-scale {
+  width: 100%;
+  transform-origin: center center;
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.year-hm-month-slot--prev,
+.year-hm-month-slot--next {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.year-hm-month-slot--prev .year-hm-month-slot-scale,
+.year-hm-month-slot--next .year-hm-month-slot-scale {
+  transform: scale(0.72);
+  opacity: 0.4;
+}
+
+.year-hm-month-slot--prev:hover .year-hm-month-slot-scale,
+.year-hm-month-slot--next:hover .year-hm-month-slot-scale {
+  opacity: 0.55;
+  transform: scale(0.76);
+}
+
+.year-hm-month-slot--center {
+  z-index: 2;
+}
+
+.year-hm-month-slot--center .year-hm-month-slot-scale {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.year-hm-month-slot--empty {
+  flex: 0 0 0;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.year-hm-month-slot .year-hm-month-detail {
+  max-width: 100%;
+  margin-inline: auto;
+  width: 100%;
+}
+
+.year-hm-month-slot .month-hm-chart {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+/* Dashboard month carousel: center large, sides small previews */
+.year-hm--dashboard .year-hm-month-carousel {
+  max-width: 880px;
+}
+
+.year-hm--dashboard .year-hm-month-slot--center {
+  flex-basis: 300px;
+  width: 300px;
+}
+
+.year-hm--dashboard .year-hm-month-slot--prev,
+.year-hm--dashboard .year-hm-month-slot--next {
+  flex-basis: 188px;
+  width: 188px;
+}
+
+.year-hm--dashboard .year-hm-month-slot--center .year-hm-month-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.year-hm--dashboard .year-hm-month-slot--prev .year-hm-month-title,
+.year-hm--dashboard .year-hm-month-slot--next .year-hm-month-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.year-hm-month-detail--peek .month-hm-time,
+.year-hm-month-detail--peek .month-hm-total {
+  display: none;
+}
+
+.year-hm-month-detail--peek .month-hm-cell {
+  justify-content: center;
+  padding: 2px;
+}
+
+.year-hm-month-detail--peek .month-hm-day-num {
+  position: static;
+  font-size: 9px;
+}
+
+.year-hm--dashboard .month-hm-legend {
+  width: 100%;
+  max-width: 340px;
+  margin-inline: auto;
+}
+
+.year-hm--dashboard .year-hm-month-slot--center .month-hm-chart {
+  max-width: 300px;
+}
+
+.year-hm--dashboard .year-hm-month-slot--prev .month-hm-chart,
+.year-hm--dashboard .year-hm-month-slot--next .month-hm-chart {
+  max-width: 188px;
+}
+
+.year-hm--dashboard .month-hm-dow-header,
+.year-hm--dashboard .month-hm-cells,
+.year-hm--dashboard .year-hm-month-slot .month-hm-dow-header,
+.year-hm--dashboard .year-hm-month-slot .month-hm-cells {
+  gap: 3px;
+}
+
+.year-hm--dashboard .month-hm-dow-header {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 3px;
+}
+
+.year-hm--dashboard .month-hm-cells {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.year-hm--dashboard .month-hm-cell,
+.year-hm--dashboard .year-hm-month-slot .month-hm-cell {
+  aspect-ratio: 1;
+  min-height: 0;
+  padding: 3px 4px 4px;
+}
+
+.year-hm--dashboard .month-hm-day-num {
+  top: 4px;
+  right: 5px;
+  font-size: 11px;
+}
+
+.year-hm--dashboard .month-hm-time {
+  font-size: 9px;
+}
+
+.year-hm--dashboard.year-hm--month-open .year-hm-stage {
+  min-height: 0;
+}
+
 .month-hm-dow-header {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1779,6 +2061,17 @@ body {
   border: 1px solid rgba(224, 77, 77, 0.45);
 }
 
+/* Month viewer: missed-day shades (base --none is fallback) */
+.month-hm-cell--none.month-hm-cell--no-practice {
+  background: rgba(150, 42, 52, 0.42);
+  border: 1px solid rgba(195, 72, 82, 0.62);
+}
+
+.month-hm-cell--none.month-hm-cell--today-open {
+  background: rgba(88, 108, 138, 0.3);
+  border: 1px solid rgba(128, 158, 198, 0.55);
+}
+
 .month-hm-cell--active {
   background: rgba(66, 198, 111, 0.2);
   border: 1px solid rgba(66, 198, 111, 0.45);
@@ -1805,12 +2098,34 @@ body {
 .month-hm-time {
   font-size: 10px;
   line-height: 1.1;
-  color: var(--muted);
+  font-weight: 600;
+  color: #fff;
   font-variant-numeric: tabular-nums;
+}
+
+.month-hm-cell--none .month-hm-time,
+.month-hm-cell--active .month-hm-time,
+.month-hm-cell--goal .month-hm-time {
+  color: #fff;
+}
+
+.month-hm-time--under,
+.month-hm-time--missed {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.month-hm-time--missed {
+  opacity: 0.55;
 }
 
 .month-hm-time--empty {
   opacity: 0.35;
+}
+
+.year-hm--dashboard .month-hm-time--under,
+.year-hm--dashboard .month-hm-time--missed {
+  font-size: 11px;
 }
 
 .year-hm--panel .month-hm-cell {

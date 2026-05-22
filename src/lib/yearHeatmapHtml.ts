@@ -73,16 +73,26 @@ export function yearHeatmapCellTitle(
   return statusLabel(slot.display, slot.dateKey, seconds, showTime);
 }
 
-export function defaultYearHeatmapKeysHtml(
-  t: YearHeatmapTranslate,
-  showGoalKey: boolean,
-): string {
+function yearHeatmapDayKeysHtml(t: YearHeatmapTranslate, showGoalKey: boolean): string {
   const none = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--none"></span>${escapeHtml(String(t('dash.chartKeyNone')))}</span>`;
   const active = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--active"></span>${escapeHtml(String(t('dash.chartKeyActive')))}</span>`;
   const goal = showGoalKey
     ? `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--goal"></span>${escapeHtml(String(t('dash.chartKeyGoal')))}</span>`
     : '';
   return `${none}${active}${goal}`;
+}
+
+/** Centered legend under the year heatmap (tile colors only). */
+export function yearHeatmapLegendHtml(t: YearHeatmapTranslate, _showGoalKey = false): string {
+  return `<div class="year-hm-keys-row">${yearHeatmapDayKeysHtml(t, false)}</div>`;
+}
+
+/** @deprecated Use {@link yearHeatmapLegendHtml} */
+export function defaultYearHeatmapKeysHtml(
+  t: YearHeatmapTranslate,
+  showGoalKey: boolean,
+): string {
+  return yearHeatmapDayKeysHtml(t, showGoalKey);
 }
 
 export function yearHeatmapCellMarkup(
@@ -145,6 +155,7 @@ export interface YearHeatmapHtmlOptions {
   /** Panel uses external cal-header for year navigation. */
   hideYearNav?: boolean;
   backToYearLabel?: string;
+  flawlessYearBadgeLabel?: string;
 }
 
 export function yearHeatmapBackButtonHtml(backLabel: string): string {
@@ -157,11 +168,15 @@ export function yearHeatmapBackButtonHtml(backLabel: string): string {
 function yearHeatmapNavHtml(opts: YearHeatmapHtmlOptions): string {
   const backBtn =
     opts.backToYearLabel ? yearHeatmapBackButtonHtml(opts.backToYearLabel) : '';
+  const flawlessBadge =
+    opts.grid.isAllGreenYear && opts.flawlessYearBadgeLabel
+      ? `<span class="year-hm-flawless-badge">${escapeHtml(opts.flawlessYearBadgeLabel)}</span>`
+      : '';
   const yearInner =
     opts.hideYearNav
       ? ''
       : `<button type="button" class="secondary year-hm-prev" aria-label="${escapeAttr(opts.navPrevLabel)}">‹</button>
-        <span class="year-hm-year">${opts.grid.year}</span>
+        <span class="year-hm-year">${opts.grid.year}</span>${flawlessBadge}
         <button type="button" class="secondary year-hm-next" aria-label="${escapeAttr(opts.navNextLabel)}">›</button>`;
   if (!yearInner && !backBtn) return '';
   return `
@@ -194,8 +209,12 @@ export function yearHeatmapSectionHtml(opts: YearHeatmapHtmlOptions): string {
         ${labels
           .map((m, monthIndex) => {
             const ym = `${opts.grid.year}-${String(monthIndex + 1).padStart(2, '0')}`;
-            const diamond = opts.grid.diamondMonthKeys.has(ym) ? ' year-hm-month--diamond' : '';
-            return `<span class="year-hm-month${diamond}" style="grid-column:${m.weekCol + 2};grid-row:1">${escapeHtml(m.label)}</span>`;
+            const diamond = opts.grid.diamondMonthKeys.has(ym);
+            const diamondClass = diamond ? ' year-hm-month--diamond' : '';
+            const diamondMark = diamond
+              ? '<span class="year-hm-month-flawless" aria-hidden="true">◆</span>'
+              : '';
+            return `<span class="year-hm-month${diamondClass}" style="grid-column:${m.weekCol + 2};grid-row:1">${escapeHtml(m.label)}${diamondMark}</span>`;
           })
           .join('')}
       </div>`;

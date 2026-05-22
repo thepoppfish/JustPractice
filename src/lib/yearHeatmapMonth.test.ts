@@ -48,6 +48,14 @@ describe('isGoldenMonth', () => {
   });
 });
 
+describe('formatMonthCellTime', () => {
+  it('uses 0 only for today when under a full minute', () => {
+    expect(formatMonthCellTime(45)).toBe('');
+    expect(formatMonthCellTime(45, true)).toBe('0');
+    expect(formatMonthCellTime(0, true)).toBe('0');
+  });
+});
+
 describe('buildMonthDetailGrid', () => {
   it('includes time labels on every day cell', () => {
     const grid = buildMonthDetailGrid({

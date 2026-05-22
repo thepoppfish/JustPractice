@@ -14,8 +14,8 @@ import {
 import { escapeHtml } from '../lib/htmlEscape';
 import { isLegacyLevelTag, isJlptTag, isCefrTag } from '../lib/levelTags';
 import {
-  defaultYearHeatmapKeysHtml,
   defaultYearHeatmapStatusLabel,
+  yearHeatmapLegendHtml,
 } from '../lib/yearHeatmapHtml';
 import type { YearHeatmapDisplayColor } from '../lib/yearHeatmapCalendar';
 
@@ -138,10 +138,7 @@ export function yearHeatmapStatusLabel(
 }
 
 export function yearHeatmapKeysHtml(t: DashTranslate, showGoalKey: boolean): string {
-  const base = defaultYearHeatmapKeysHtml((key, params) => t(key, params), showGoalKey);
-  const diamond = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--diamond"></span>${escapeHtml(t('dash.chartKeyDiamondMonth'))}</span>`;
-  const allGreen = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--all-green"></span>${escapeHtml(t('dash.chartKeyAllGreenYear'))}</span>`;
-  return `${base}${diamond}${allGreen}`;
+  return yearHeatmapLegendHtml((key, params) => t(key, params), showGoalKey);
 }
 
 /** Weekly = daily×7; monthly = daily×days in this local calendar month (matches month progress sum). */

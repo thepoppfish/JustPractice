@@ -353,10 +353,10 @@ export function watchPanelShadowCss(): string {
         border: 1px solid rgba(232, 184, 74, 0.38);
       }
       .cal-day-num { font-weight: 600; color: #eee; line-height: 1.2; }
-      .cal-day-min { font-size: 9px; line-height: 1.1; margin-top: 2px; }
-      .cal-cell--none .cal-day-min { color: #e88888; }
-      .cal-cell--active .cal-day-min { color: #7bdc9e; }
-      .cal-cell--goal .cal-day-min { color: #e8c878; }
+      .cal-day-min { font-size: 9px; line-height: 1.1; margin-top: 2px; color: #fff; }
+      .cal-cell--none .cal-day-min,
+      .cal-cell--active .cal-day-min,
+      .cal-cell--goal .cal-day-min { color: #fff; }
       .cal-cell--neutral {
         opacity: 0.55;
         background: rgba(255, 255, 255, 0.04);
@@ -410,19 +410,21 @@ export function watchPanelShadowCss(): string {
       .year-hm-cell--active { background: #42c66f; }
       .year-hm-cell--goal { background: #e8b84a; }
       .year-hm-cell--today { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.85); }
-      .year-hm-keys {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 10px;
-        margin: 0;
-        font-size: 9px;
-        color: #666;
-      }
+      .year-hm-keys { display: flex; justify-content: center; margin: 0; font-size: 9px; color: #666; }
+      .year-hm-keys-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; }
+      .month-hm-legend { margin: 4px 0 0; justify-content: center; }
       .year-hm-key { display: inline-flex; align-items: center; gap: 4px; }
       .year-hm-key-dot { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
       .year-hm-key-dot--none { background: #e04d4d; }
       .year-hm-key-dot--active { background: #42c66f; }
       .year-hm-key-dot--goal { background: #e8b84a; }
+      .year-hm-key-icon--flawless-month { font-size: 10px; color: #c4b5fd; }
+      .year-hm-key-icon--flawless-year { width: 9px; height: 9px; border-radius: 2px; border: 2px solid rgba(255,204,51,0.85); background: transparent; box-sizing: border-box; }
+      .year-hm-month-flawless { margin-left: 1px; font-size: 8px; color: #c4b5fd; vertical-align: super; }
+      .month-hm-legend { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0 0 6px; font-size: 8px; color: #666; }
+      .month-hm-legend-mark { font-weight: 700; color: #eee; }
+      .month-hm-legend-swatch { width: 8px; height: 8px; border-radius: 2px; background: rgba(88,108,138,0.55); border: 1px solid rgba(128,158,198,0.55); }
+      .year-hm-month-goal-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; font-size: 8px; color: #f5d76e; border: 1px solid rgba(232,184,74,0.45); border-radius: 3px; background: rgba(232,184,74,0.15); }
       .calendar-section:has(.year-hm--month-open) .cal-legend {
         display: none;
       }
@@ -430,6 +432,21 @@ export function watchPanelShadowCss(): string {
       .year-hm-year-layer[hidden], .year-hm-month-layer[hidden] { display: none !important; }
       .year-hm-cell--month-hover { filter: brightness(1.35); box-shadow: 0 0 0 1px rgba(255,255,255,0.45); }
       .year-hm-cell { cursor: pointer; border: none; padding: 0; }
+      .year-hm-month-carousel { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; }
+      .year-hm-month-carousel-track { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; min-width: 0; }
+      .year-hm-month-nav {
+        flex-shrink: 0; width: 28px; height: 28px; padding: 0; font-size: 16px; line-height: 1;
+        color: #eee; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 6px; cursor: pointer;
+      }
+      .year-hm-month-nav:disabled { opacity: 0.28; cursor: default; }
+      .year-hm-month-slot-scale { width: 100%; transform-origin: center center; transition: transform 0.2s ease, opacity 0.2s ease; }
+      .year-hm-month-slot--center { flex: 0 0 200px; width: 200px; }
+      .year-hm-month-slot--prev, .year-hm-month-slot--next { flex: 0 0 128px; width: 128px; cursor: pointer; }
+      .year-hm-month-slot--prev .year-hm-month-slot-scale, .year-hm-month-slot--next .year-hm-month-slot-scale { transform: scale(0.72); opacity: 0.38; }
+      .year-hm-month-slot--center .year-hm-month-slot-scale { transform: scale(1); opacity: 1; }
+      .year-hm-month-detail--peek .month-hm-time, .year-hm-month-detail--peek .month-hm-total { display: none; }
+      .year-hm-month-slot--empty { width: 0; opacity: 0; pointer-events: none; overflow: hidden; }
       .year-hm-month-detail { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; border-radius: 6px; background: rgba(255,255,255,0.04); }
       .year-hm-month-detail--golden {
         background: linear-gradient(165deg, rgba(232,184,74,0.28), rgba(232,184,74,0.1) 50%, rgba(255,255,255,0.04));
@@ -456,10 +473,17 @@ export function watchPanelShadowCss(): string {
       .month-hm-cell--empty { visibility: hidden; pointer-events: none; }
       .month-hm-cell--blank { background: rgba(120,120,128,0.45); }
       .month-hm-cell--none { background: rgba(224,77,77,0.2); border: 1px solid rgba(224,77,77,0.4); }
+      .month-hm-cell--none.month-hm-cell--no-practice { background: rgba(150,42,52,0.42); border: 1px solid rgba(195,72,82,0.62); }
+      .month-hm-cell--none.month-hm-cell--today-open { background: rgba(88,108,138,0.3); border: 1px solid rgba(128,158,198,0.55); }
       .month-hm-cell--active { background: rgba(66,198,111,0.2); border: 1px solid rgba(66,198,111,0.4); }
       .month-hm-cell--goal { background: rgba(232,184,74,0.25); border: 1px solid rgba(232,184,74,0.45); }
       .month-hm-cell--today { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.75); }
       .month-hm-day-num { font-size: 9px; font-weight: 700; }
-      .month-hm-time { font-size: 8px; color: #aaa; font-variant-numeric: tabular-nums; }
+      .month-hm-time { font-size: 8px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+      .month-hm-cell--none .month-hm-time,
+      .month-hm-cell--active .month-hm-time,
+      .month-hm-cell--goal .month-hm-time { color: #fff; }
+      .month-hm-time--under, .month-hm-time--missed { font-size: 10px; font-weight: 500; }
+      .month-hm-time--missed { opacity: 0.55; }
       .month-hm-time--empty { opacity: 0.35; }`;
 }
