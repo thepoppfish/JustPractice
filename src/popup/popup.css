@@ -384,3 +384,21 @@ h1 {
   color: var(--muted);
   line-height: 1.4;
 }
+
+.settings .btn-spawn-watch-panel {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px 12px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: #1a66ff;
+  border: 1px solid rgba(61, 124, 255, 0.9);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.settings .btn-spawn-watch-panel + .help {
+  margin: 8px 0 0;
+}

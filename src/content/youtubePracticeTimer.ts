@@ -1,11 +1,12 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage } from '../lib/messages';
+import { STORAGE_SYNC_INTERVAL_MS } from '../lib/storageSyncPoll';
 
 /** 1s UI tick while practice intervals are active (counting adds seconds only when rules pass). */
 export const PRACTICE_COUNT_INTERVAL_MS = 1000;
 
 /** Background merge interval for `PRACTICE_TICK`. */
-export const PRACTICE_FLUSH_INTERVAL_MS = 15_000;
+export const PRACTICE_FLUSH_INTERVAL_MS = STORAGE_SYNC_INTERVAL_MS;
 
 /** Minimal video surface for eligibility checks. */
 export type PracticeCountEligibleVideo = Pick<HTMLVideoElement, 'paused' | 'ended'>;

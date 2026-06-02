@@ -1,13 +1,13 @@
 import { escapeHtml } from '../lib/htmlEscape';
 import {
   dateKeyFromTimestamp,
-  MIN_DAY_PRACTICE_CREDIT_SECONDS,
   missTrackingStartDateKey,
   type PracticeGoals,
 } from '../lib/storage';
 import {
-  CALENDAR_UNDER_MINUTE_MARK,
-  formatDuration,
+  calendarDayBottomLabel,
+  dayCountsAsPracticedForCalendar,
+  formatDurationMinutesOnly,
   practiceCalendarDayVisual,
   practiceStreakDays,
 } from '../lib/practiceStats';
@@ -24,6 +24,19 @@ import {
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
+}
+
+function panelCalendarBottomLabel(
+  vis: ReturnType<typeof practiceCalendarDayVisual>,
+  sec: number,
+  dateKey: string,
+  todayKey: string,
+): string {
+  if (dayCountsAsPracticedForCalendar(sec)) {
+    return formatDurationMinutesOnly(sec);
+  }
+  const bottom = calendarDayBottomLabel(vis, sec, dateKey, todayKey);
+  return bottom === '—' ? '' : bottom;
 }
 
 function dateKey(y: number, monthIndex: number, day: number): string {
@@ -60,14 +73,6 @@ export function streakAriaLabel(
 ): string {
   if (streak <= 0) return t('dash.streakAriaNone');
   return t('dash.streakAria', { n: String(streak) });
-}
-/** Whole minutes only (floor), aligned with {@link MIN_DAY_PRACTICE_CREDIT_SECONDS} for calendar color. */
-export function formatDayMinutes(sec: number): string {
-  if (!sec || sec <= 0) return '';
-  if (sec < MIN_DAY_PRACTICE_CREDIT_SECONDS) return CALENDAR_UNDER_MINUTE_MARK;
-  const m = Math.floor(sec / 60);
-  if (m >= 60) return `${Math.floor(m / 60)}h`;
-  return `${m}m`;
 }
 export function paintCalStreak(p: {
   shadowRoot: ShadowRoot | null;
@@ -128,7 +133,26 @@ function renderWatchPanelYearHeatmap(p: RenderWatchPanelCalendarParams): void {
     dateKey: string,
     seconds = 0,
     showTimeArg = false,
-  ) => defaultYearHeatmapStatusLabel((key, params) => p.panelT(key, params), display, dateKey, seconds, showTimeArg);
+  ) => {
+    const time = showTimeArg && seconds > 0 ? formatDurationMinutesOnly(seconds) : '';
+    const t = (key: string, params?: Record<string, string>) => p.panelT(key, params);
+    switch (display) {
+      case 'none':
+        return time
+          ? t('yearHeatmap.statusMissedTime', { date: dateKey, time })
+          : t('yearHeatmap.statusMissed', { date: dateKey });
+      case 'active':
+        return time
+          ? t('yearHeatmap.statusPracticedTime', { date: dateKey, time })
+          : t('yearHeatmap.statusPracticed', { date: dateKey });
+      case 'goal':
+        return time
+          ? t('yearHeatmap.statusGoalTime', { date: dateKey, time })
+          : t('yearHeatmap.statusGoal', { date: dateKey });
+      default:
+        return t('yearHeatmap.statusBlank', { date: dateKey });
+    }
+  };
 
   const backLabel = p.panelT('yearHeatmap.backToYear');
   const navMonth = p.shadowRoot.querySelector('[data-year-hm-nav-month]');
@@ -177,7 +201,7 @@ function renderWatchPanelYearHeatmap(p: RenderWatchPanelCalendarParams): void {
       navPrevMonthLabel: p.panelT('yearHeatmap.prevMonth'),
       navNextMonthLabel: p.panelT('yearHeatmap.nextMonth'),
       formatMonthTotal: (sec) =>
-        p.panelT('yearHeatmap.monthTotal', { duration: formatDuration(sec) }),
+        p.panelT('yearHeatmap.monthTotal', { duration: formatDurationMinutesOnly(sec) }),
       translate: (key, params) => p.panelT(key, params),
     });
   }
@@ -264,11 +288,12 @@ export function renderWatchPanelCalendar(p: RenderWatchPanelCalendarParams): voi
       (p.calendarYear === todayY && p.calendarMonth === todayM && day > todayD);
 
     const sec = isFuture ? 0 : (merged[key] ?? 0);
+    let vis: ReturnType<typeof practiceCalendarDayVisual> = 'future';
 
     if (isFuture) {
       cell.classList.add('cal-cell-future');
     } else {
-      const vis = practiceCalendarDayVisual(
+      vis = practiceCalendarDayVisual(
         key,
         sec,
         todayKey,
@@ -288,11 +313,18 @@ export function renderWatchPanelCalendar(p: RenderWatchPanelCalendarParams): voi
     mins.className = 'cal-day-min';
     // Panel month calendar always shows per-day practice time (independent of dashboard setting).
     const showTime = true;
-    mins.textContent = isFuture || !showTime ? '' : formatDayMinutes(sec);
+    if (isFuture || !showTime) {
+      mins.textContent = '';
+    } else {
+      const bottom = panelCalendarBottomLabel(vis, sec, key, todayKey);
+      mins.textContent = bottom;
+      if (bottom === 'X') mins.classList.add('cal-day-min--missed');
+      else if (bottom === '0') mins.classList.add('cal-day-min--under');
+    }
     cell.appendChild(mins);
 
     if (!isFuture && showTime && sec > 0) {
-      cell.title = formatDuration(sec);
+      cell.title = formatDurationMinutesOnly(sec);
     } else {
       cell.title = '';
     }

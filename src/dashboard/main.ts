@@ -1,6 +1,7 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage, GetStateResponse } from '../lib/messages';
 import { STORAGE_KEY, type LevelTag, type PersistedData } from '../lib/storage';
+import { startStorageSyncPoll } from '../lib/storageSyncPoll';
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import { escapeHtml } from '../lib/htmlEscape';
 import { createTranslator, resolveLocale } from '../i18n';
@@ -10,6 +11,7 @@ import {
   attachDashboardListeners,
   attachLibraryPanelListeners,
 } from './dashboardListeners';
+import { persistDashView, readPersistedDashView } from './dashViewPersistence';
 import {
   DASH_VIEWS,
   isDashSearchFocused,
@@ -26,7 +28,7 @@ const app = document.getElementById('app')!;
 
 let searchQuery = '';
 let libraryLevelFilter: '' | 'unset' | 'legacy' | LevelTag = '';
-let activeView: DashView = 'library';
+let activeView: DashView = readPersistedDashView();
 let yearHeatmapYear = new Date().getFullYear();
 let cachedData: PersistedData | null = null;
 let renderGeneration = 0;
@@ -119,6 +121,7 @@ function bindDashboardListeners(vm: ReturnType<typeof buildVm>): void {
 
 function switchView(view: DashView): void {
   activeView = view;
+  persistDashView(view);
   switchActiveView(app, view);
 }
 
@@ -282,5 +285,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes[STORAGE_KEY]) return;
   scheduleRenderFromStorage();
 });
+
+const stopStorageSyncPoll = startStorageSyncPoll(() => scheduleRenderFromStorage());
+window.addEventListener('pagehide', stopStorageSyncPoll);
 
 render();

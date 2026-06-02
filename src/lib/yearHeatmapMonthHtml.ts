@@ -32,13 +32,15 @@ function monthDayClass(cell: MonthDetailCell): string {
 
 function monthCellTimeHtml(cell: MonthDetailCell, peek: boolean): string {
   if (peek || cell.kind === 'pad') return '';
-  if (cell.timeLabel) {
-    const underMin = cell.timeLabel === CALENDAR_UNDER_MINUTE_MARK;
-    const cls = underMin ? 'month-hm-time month-hm-time--under' : 'month-hm-time';
-    return `<span class="${cls}">${escapeHtml(cell.timeLabel)}</span>`;
-  }
-  if (cell.display === 'none') {
+  const label = cell.timeLabel;
+  if (label === CALENDAR_MISSED_DAY_MARK || (cell.display === 'none' && !cell.isToday)) {
     return `<span class="month-hm-time month-hm-time--missed" aria-hidden="true">${CALENDAR_MISSED_DAY_MARK}</span>`;
+  }
+  if (label === CALENDAR_UNDER_MINUTE_MARK) {
+    return `<span class="month-hm-time month-hm-time--under" aria-hidden="true">${CALENDAR_UNDER_MINUTE_MARK}</span>`;
+  }
+  if (label) {
+    return `<span class="month-hm-time">${escapeHtml(label)}</span>`;
   }
   return '<span class="month-hm-time month-hm-time--empty" aria-hidden="true">—</span>';
 }
@@ -146,6 +148,7 @@ function buildDetail(
   monthIndex: number,
   data: YearHeatmapPracticeData,
   locale?: string,
+  minutesOnly = false,
 ): MonthDetailGrid {
   return buildMonthDetailGrid({
     year,
@@ -155,6 +158,7 @@ function buildDetail(
     dailyGoalSec: data.dailyGoalSec,
     monthlyGoalSec: data.monthlyGoalSec,
     locale,
+    minutesOnly,
   });
 }
 
@@ -174,9 +178,10 @@ export function monthCarouselLayerHtml(opts: MonthCarouselHtmlOptions): string {
   const canPrev = monthIndex > 0;
   const canNext = monthIndex < 11;
 
-  const centerDetail = buildDetail(year, monthIndex, data, locale);
-  const prevDetail = canPrev ? buildDetail(year, monthIndex - 1, data, locale) : null;
-  const nextDetail = canNext ? buildDetail(year, monthIndex + 1, data, locale) : null;
+  const minutesOnly = opts.variant === 'panel';
+  const centerDetail = buildDetail(year, monthIndex, data, locale, minutesOnly);
+  const prevDetail = canPrev ? buildDetail(year, monthIndex - 1, data, locale, minutesOnly) : null;
+  const nextDetail = canNext ? buildDetail(year, monthIndex + 1, data, locale, minutesOnly) : null;
 
   const prevSlot =
     prevDetail

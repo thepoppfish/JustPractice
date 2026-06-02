@@ -367,6 +367,11 @@ describe('ensureSettingsShape', () => {
     expect(ensureSettingsShape({ levelFramework: 'custom' }).levelFramework).toBe('custom');
   });
 
+  it('defaults watchPanelXpToastsEnabled to true', () => {
+    expect(ensureSettingsShape({}).watchPanelXpToastsEnabled).toBe(true);
+    expect(ensureSettingsShape({ watchPanelXpToastsEnabled: false }).watchPanelXpToastsEnabled).toBe(false);
+  });
+
   it('defaults jlpt/auto and clamps bad settings values', () => {
     expect(ensureSettingsShape({}).levelFramework).toBe('jlpt');
     expect(ensureSettingsShape({}).uiLocale).toBe('auto');

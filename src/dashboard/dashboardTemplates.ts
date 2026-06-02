@@ -21,6 +21,7 @@ import {
   streakCaption,
   streakAriaLabel,
   goalRingCardHtml,
+  progressXpGuideHtml,
   yearHeatmapKeysHtml,
   yearHeatmapStatusLabel,
 } from './dashboardFormatters';
@@ -433,8 +434,10 @@ export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
 
   return `
           <section class="${vm.viewPanelClass('progress')} dash-section-center" data-view-panel="progress" aria-label="${escapeHtml(vm.t('nav.progress'))}">
-            <p class="progress-journey-lead dash-section-sub">${escapeHtml(vm.t('progress.journeySubtitle'))}</p>
-            <div class="progress-journey-card">
+            <div class="progress-hero">
+              <p class="progress-journey-lead">${escapeHtml(vm.t('progress.journeySubtitle'))}</p>
+              ${progressXpGuideHtml(vm.t)}
+              <div class="progress-journey-card">
               <div class="progress-journey-card__glow" aria-hidden="true"></div>
               <div class="progress-journey-card__mesh" aria-hidden="true"></div>
               <div class="progress-journey-card__inner">
@@ -516,6 +519,7 @@ export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
                   </article>
                 </div>
               </div>
+            </div>
             </div>
             <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('progress.achievementsTitle'))}</h2>
             <p class="row-sub row-sub--tight">${escapeHtml(vm.t('progress.achievementsIntro'))}</p>
@@ -667,12 +671,16 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
                   <option value="custom" ${vm.fw === 'custom' ? 'selected' : ''}>${escapeHtml(vm.t('framework.custom'))}</option>
                 </select>
               </div>
-              <div class="settings-block" id="custom-levels-block" ${vm.fw === 'custom' ? '' : 'hidden'}>
+              ${
+                vm.fw === 'custom'
+                  ? `<div class="settings-block" id="custom-levels-block">
                 <label for="custom-levels-lines">${escapeHtml(vm.t('settings.customLevelsLabel'))}</label>
                 <textarea id="custom-levels-lines" rows="8" spellcheck="false" placeholder="${escapeAttr(vm.t('settings.customLevelsPlaceholder'))}">${escapeHtml(vm.customLevels.join('\n'))}</textarea>
                 <p class="help">${escapeHtml(vm.t('settings.customLevelsHelp'))}</p>
                 <button type="button" class="btn-save-goals" id="save-custom-levels">${escapeHtml(vm.t('settings.saveCustomLevels'))}</button>
-              </div>
+              </div>`
+                  : ''
+              }
               <div class="settings-block">
                 <label for="setting-ui-locale">${escapeHtml(vm.t('settings.language'))}</label>
                 <select id="setting-ui-locale">
@@ -694,6 +702,19 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               </label>
               <p class="help">${escapeHtml(vm.t('settings.pauseHelp'))}</p>
             </div>
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.watchPanelTitle'))}</h2>
+            <div class="settings-block">
+              <button type="button" class="btn-save-goals" id="spawn-watch-panel">${escapeHtml(vm.t('settings.showWatchPanel'))}</button>
+              <p class="help">${escapeHtml(vm.t('settings.showWatchPanelHelp'))}</p>
+            </div>
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.learningFocusTitle'))}</h2>
+            <div class="settings-block">
+              <label>
+                <input type="checkbox" id="learning-focus-hide-recs" ${vm.data.settings.learningFocusHideRecommendations !== false ? 'checked' : ''} />
+                <span>${escapeHtml(vm.t('settings.learningFocusHideRecs'))}</span>
+              </label>
+              <p class="help">${escapeHtml(vm.t('settings.learningFocusHideRecsHelp'))}</p>
+            </div>
             <div class="settings-block">
               <label>
                 <input type="checkbox" id="calendar-show-practice-time" ${vm.data.settings.calendarShowPracticeTime ? 'checked' : ''} />
@@ -705,12 +726,19 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               <strong>${escapeHtml(vm.t('settings.howCounted'))}:</strong> ${escapeHtml(vm.t('settings.howCountedBody'))}
             </p>
 
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.notificationsTitle'))}</h2>
+            <p class="help dash-section-sub">${escapeHtml(vm.t('settings.notificationsIntro'))}</p>
             <div class="settings-block">
-              <label>
+              <label class="settings-notif-option">
+                <input type="checkbox" id="watch-panel-xp-toasts" ${vm.data.settings.watchPanelXpToastsEnabled !== false ? 'checked' : ''} />
+                <span>${escapeHtml(vm.t('settings.watchPanelXpToasts'))}</span>
+              </label>
+              <p class="help settings-notif-option-help">${escapeHtml(vm.t('settings.watchPanelXpToastsHelp'))}</p>
+              <label class="settings-notif-option settings-notif-option--spaced">
                 <input type="checkbox" id="xp-notifications" ${vm.data.settings.xpNotificationsEnabled !== false ? 'checked' : ''} />
                 <span>${escapeHtml(vm.t('settings.xpNotifications'))}</span>
               </label>
-              <p class="help">${escapeHtml(vm.t('settings.xpNotificationsHelp'))}</p>
+              <p class="help settings-notif-option-help">${escapeHtml(vm.t('settings.xpNotificationsHelp'))}</p>
             </div>
             <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.dataTitle'))}</h2>
             <p class="help dash-section-sub">${escapeHtml(vm.t('settings.dataHint'))}</p>

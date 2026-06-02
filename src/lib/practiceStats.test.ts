@@ -4,6 +4,7 @@ import {
   calendarDayBottomLabel,
   chartDayTier,
   formatDuration,
+  formatDurationMinutesOnly,
   lastNDaysBuckets,
   practiceCalendarDayVisual,
   practiceStreakDays,
@@ -68,6 +69,14 @@ describe('formatDuration', () => {
   });
 });
 
+describe('formatDurationMinutesOnly', () => {
+  it('floors to whole minutes without seconds', () => {
+    expect(formatDurationMinutesOnly(45)).toBe('0m');
+    expect(formatDurationMinutesOnly(125)).toBe('2m');
+    expect(formatDurationMinutesOnly(3725)).toBe('1h 2m');
+  });
+});
+
 describe('chartDayTier', () => {
   it('maps seconds and optional daily goal to bar colors (≥1 min counts as practice)', () => {
     expect(chartDayTier(0, 600)).toBe('none');
@@ -86,6 +95,7 @@ describe('calendarDayBottomLabel', () => {
   it('shows 0 on today and X on past missed days', () => {
     expect(calendarDayBottomLabel('none', 0, today, today)).toBe('0');
     expect(calendarDayBottomLabel('none', 0, '2026-05-13', today)).toBe('X');
+    expect(calendarDayBottomLabel('none', 45, '2026-05-13', today)).toBe('X');
   });
 
   it('shows duration when at least one minute practiced', () => {

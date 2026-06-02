@@ -6,8 +6,12 @@ export default defineManifest({
   version: '1.0.0',
   description:
     'Track YouTube practice time and a local library. Tag videos with JLPT (N5–N1), CEFR (A1–C2), or custom levels, goals, reminders — stored locally in Chrome.',
-  permissions: ['storage', 'contextMenus', 'alarms', 'notifications'],
-  host_permissions: ['https://www.youtube.com/*', 'https://m.youtube.com/*'],
+  permissions: ['storage', 'contextMenus', 'alarms', 'notifications', 'scripting'],
+  host_permissions: [
+    'https://www.youtube.com/*',
+    'https://youtube.com/*',
+    'https://m.youtube.com/*',
+  ],
   action: {
     default_popup: 'src/popup/index.html',
     default_title: 'JustPractice',
@@ -20,11 +24,5 @@ export default defineManifest({
     service_worker: 'src/background/index.ts',
     type: 'module',
   },
-  content_scripts: [
-    {
-      matches: ['https://www.youtube.com/*', 'https://m.youtube.com/*'],
-      js: ['src/content/youtube.ts'],
-      run_at: 'document_idle',
-    },
-  ],
+  // YouTube: dist-only content_scripts via scripts/patch-crx-build.mjs (see vite-plugin-youtube-bundle.ts).
 });

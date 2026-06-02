@@ -1,5 +1,6 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage, GetStateResponse } from '../lib/messages';
+import { requestWatchPanelSpawn } from '../lib/youtubeTabMessaging';
 import { APP_NAME } from '../lib/branding';
 import {
   STORAGE_KEY,
@@ -11,6 +12,7 @@ import {
   type LibraryItem,
   type PersistedData,
 } from '../lib/storage';
+import { startStorageSyncPoll } from '../lib/storageSyncPoll';
 import { tagsForFramework, isLegacyLevelTag, isJlptTag, isCefrTag } from '../lib/levelTags';
 import { thumbnailUrlForVideoId } from '../lib/youtubeMeta';
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
@@ -240,6 +242,13 @@ async function renderAsync(): Promise<void> {
             <span>${escapeHtml(t('popup.pauseUnfocused'))}</span>
           </label>
           <p class="help">${escapeHtml(t('popup.pauseHelp'))}</p>
+          <label>
+            <input type="checkbox" id="learning-focus-hide-recs" ${data.settings.learningFocusHideRecommendations !== false ? 'checked' : ''} />
+            <span>${escapeHtml(t('popup.learningFocusHideRecs'))}</span>
+          </label>
+          <p class="help">${escapeHtml(t('popup.learningFocusHideRecsHelp'))}</p>
+          <button type="button" class="btn-spawn-watch-panel" id="spawn-watch-panel">${escapeHtml(t('settings.showWatchPanel'))}</button>
+          <p class="help">${escapeHtml(t('settings.showWatchPanelHelp'))}</p>
         </div>
       </div>
     </div>
@@ -285,6 +294,24 @@ async function renderAsync(): Promise<void> {
     await send({
       type: MSG.SET_SETTINGS,
       payload: { pauseWhenUnfocused: pauseEl.checked },
+    });
+    render();
+  });
+
+  app.querySelector('#spawn-watch-panel')?.addEventListener('click', async () => {
+    const res = await requestWatchPanelSpawn();
+    if (res.status === 'no_youtube_tabs') {
+      window.alert(t('settings.showWatchPanelNoTab'));
+    } else if (res.status === 'needs_refresh') {
+      window.alert(t('settings.showWatchPanelNeedsRefresh'));
+    }
+  });
+
+  const learningFocusEl = app.querySelector<HTMLInputElement>('#learning-focus-hide-recs');
+  learningFocusEl?.addEventListener('change', async () => {
+    await send({
+      type: MSG.SET_SETTINGS,
+      payload: { learningFocusHideRecommendations: learningFocusEl.checked },
     });
     render();
   });
@@ -342,5 +369,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes[STORAGE_KEY]) return;
   scheduleRenderFromStorage();
 });
+
+const stopStorageSyncPoll = startStorageSyncPoll(() => scheduleRenderFromStorage());
+window.addEventListener('pagehide', stopStorageSyncPoll);
 
 render();

@@ -66,12 +66,37 @@ export function attachYoutubePlayerDomHooks(onPlayerShellMaybeChanged: () => voi
 }
 
 export function attachYoutubeNavHooks(onSpaNavigation: () => void): void {
-  document.addEventListener('yt-navigate-finish', () => {
+  const schedule = (): void => {
     window.setTimeout(() => onSpaNavigation(), 0);
-  });
-  document.addEventListener('yt-page-data-updated', () => {
-    window.setTimeout(() => onSpaNavigation(), 0);
-  });
+  };
+
+  document.addEventListener('yt-navigate-finish', schedule);
+  document.addEventListener('yt-page-data-updated', schedule);
+  window.addEventListener('popstate', schedule);
+
+  try {
+    const { pushState, replaceState } = history;
+    history.pushState = function (this: History, ...args: Parameters<History['pushState']>) {
+      const r = pushState.apply(this, args);
+      schedule();
+      return r;
+    };
+    history.replaceState = function (this: History, ...args: Parameters<History['replaceState']>) {
+      const r = replaceState.apply(this, args);
+      schedule();
+      return r;
+    };
+  } catch {
+    /* ignore */
+  }
+
+  let lastHref = typeof location !== 'undefined' ? location.href : '';
+  window.setInterval(() => {
+    if (typeof location === 'undefined') return;
+    if (location.href === lastHref) return;
+    lastHref = location.href;
+    schedule();
+  }, 800);
 }
 
 export interface HomeFeedPointerPickOptions {

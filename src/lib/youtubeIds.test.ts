@@ -2,7 +2,14 @@
  * @vitest-environment jsdom
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { parseYoutubeVideoId, resolveYoutubeVideoIdFromPage } from './youtubeIds';
+import {
+  isYoutubeClassicWatchPage,
+  isYoutubeClassicWatchPath,
+  isYoutubeWatchLikePage,
+  isYoutubeWatchLikePath,
+  parseYoutubeVideoId,
+  resolveYoutubeVideoIdFromPage,
+} from './youtubeIds';
 
 describe('parseYoutubeVideoId', () => {
   const validId = 'dQw4w9WgXcQ';
@@ -30,6 +37,43 @@ describe('parseYoutubeVideoId', () => {
     expect(parseYoutubeVideoId('https://www.youtube.com/watch')).toBeNull();
     expect(parseYoutubeVideoId('https://www.youtube.com/watch?v=too-short')).toBeNull();
     expect(parseYoutubeVideoId('not a url')).toBeNull();
+  });
+});
+
+describe('isYoutubeClassicWatchPath', () => {
+  it('matches /watch only, not shorts or embed', () => {
+    expect(isYoutubeClassicWatchPath('/watch')).toBe(true);
+    expect(isYoutubeClassicWatchPath('/watch/')).toBe(true);
+    expect(isYoutubeClassicWatchPath('/shorts/abcdefghijk')).toBe(false);
+    expect(isYoutubeClassicWatchPath('/embed/abc')).toBe(false);
+    expect(isYoutubeClassicWatchPath('/')).toBe(false);
+  });
+});
+
+describe('isYoutubeClassicWatchPage', () => {
+  it('uses href when provided', () => {
+    expect(isYoutubeClassicWatchPage('https://www.youtube.com/watch?v=x')).toBe(true);
+    expect(isYoutubeClassicWatchPage('https://www.youtube.com/shorts/x')).toBe(false);
+  });
+});
+
+describe('isYoutubeWatchLikePath', () => {
+  it('matches watch, shorts, live, and embed paths', () => {
+    expect(isYoutubeWatchLikePath('/watch')).toBe(true);
+    expect(isYoutubeWatchLikePath('/watch?v=abc')).toBe(true);
+    expect(isYoutubeWatchLikePath('/shorts/abcdefghijk')).toBe(true);
+    expect(isYoutubeWatchLikePath('/shorts')).toBe(true);
+    expect(isYoutubeWatchLikePath('/live/abc')).toBe(true);
+    expect(isYoutubeWatchLikePath('/embed/abc')).toBe(true);
+    expect(isYoutubeWatchLikePath('/')).toBe(false);
+    expect(isYoutubeWatchLikePath('/feed/subscriptions')).toBe(false);
+  });
+});
+
+describe('isYoutubeWatchLikePage', () => {
+  it('uses href when provided', () => {
+    expect(isYoutubeWatchLikePage('https://www.youtube.com/watch?v=x')).toBe(true);
+    expect(isYoutubeWatchLikePage('https://www.youtube.com/')).toBe(false);
   });
 });
 
@@ -65,13 +109,28 @@ describe('resolveYoutubeVideoIdFromPage', () => {
     expect(resolveYoutubeVideoIdFromPage('https://www.youtube.com/')).toBe(validId);
   });
 
-  it('prefers mini-player over ytd-watch-flexy when bar has no v', () => {
+  it('prefers mini-player over ytd-watch-flexy on home when bar has no v', () => {
     document.body.innerHTML = `
       <ytd-watch-flexy video-id="${otherId}"></ytd-watch-flexy>
       <ytd-miniplayer active>
         <span selected><a href="/watch?v=${validId}">mini</a></span>
       </ytd-miniplayer>
     `;
+    expect(resolveYoutubeVideoIdFromPage('https://www.youtube.com/')).toBe(validId);
+  });
+
+  it('prefers ytd-watch-flexy over mini-player on watch when bar has no v', () => {
+    document.body.innerHTML = `
+      <ytd-watch-flexy video-id="${otherId}"></ytd-watch-flexy>
+      <ytd-miniplayer active>
+        <span selected><a href="/watch?v=${validId}">mini</a></span>
+      </ytd-miniplayer>
+    `;
+    expect(resolveYoutubeVideoIdFromPage('https://www.youtube.com/watch')).toBe(otherId);
+  });
+
+  it('reads ytd-watch-flexy video-id when bar has no v', () => {
+    document.body.innerHTML = `<ytd-watch-flexy video-id="${validId}"></ytd-watch-flexy>`;
     expect(resolveYoutubeVideoIdFromPage('https://www.youtube.com/')).toBe(validId);
   });
 

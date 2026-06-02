@@ -11,6 +11,7 @@ import {
   getPrestigeXpMultiplier,
   awardDailyGoalXpBonus,
   awardFirstCompleteXpBonus,
+  awardPracticeXp,
   awardStreakDayXpBonus,
   backfillXpFromDailySeconds,
   getPracticeXpMultiplier,
@@ -62,11 +63,27 @@ describe('account level curve', () => {
   });
 });
 
+const WEEKDAY_NOON = new Date(2026, 4, 18, 12, 0, 0, 0).getTime();
+
 describe('practice XP', () => {
   it('awards 1 XP per full minute only', () => {
-    expect(practiceXpFromSeconds(59).xp).toBe(0);
-    expect(practiceXpFromSeconds(60).xp).toBe(1);
-    expect(practiceXpFromSeconds(125).xp).toBe(2);
+    expect(practiceXpFromSeconds(59, WEEKDAY_NOON).xp).toBe(0);
+    expect(practiceXpFromSeconds(60, WEEKDAY_NOON).xp).toBe(1);
+    expect(practiceXpFromSeconds(125, WEEKDAY_NOON).xp).toBe(2);
+  });
+
+  it('banks sub-minute seconds across practice ticks (15s flush batches)', () => {
+    const pp = defaultPlayerProgress();
+    const mon = WEEKDAY_NOON;
+    expect(awardPracticeXp(pp, 15, mon).xpGained).toBe(0);
+    expect(pp.practiceXpCarrySeconds).toBe(15);
+    expect(awardPracticeXp(pp, 15, mon).xpGained).toBe(0);
+    expect(pp.practiceXpCarrySeconds).toBe(30);
+    expect(awardPracticeXp(pp, 15, mon).xpGained).toBe(0);
+    expect(pp.practiceXpCarrySeconds).toBe(45);
+    expect(awardPracticeXp(pp, 15, mon).xpGained).toBe(1);
+    expect(pp.practiceXpCarrySeconds).toBe(0);
+    expect(pp.totalXp).toBe(1);
   });
 
   it('doubles on local weekend days', () => {

@@ -10,6 +10,7 @@ import {
   type PersistedData,
   defaultSettings,
 } from '../lib/storage';
+import { startStorageSyncPoll } from '../lib/storageSyncPoll';
 import type { VideoMeta } from './feedCards';
 import {
   isPlaceholderYoutubePageTitle,
@@ -46,21 +47,39 @@ import {
 import {
   applyNoVideoHomePanelLayout,
   clearWatchPanelLibraryBanner,
+  applyDefaultWatchPanelHostStyle,
+  clampWatchPanelHostToViewport,
+  forceWatchPanelHostVisible,
   ensureWatchPanelIfAbsent,
+  setWatchPanelHostVisible,
   needsHomeFeedPanelAttention,
+  shouldKeepWatchPanelVisibleWithoutVideoId,
   updateHomeFeedAttentionStrip as updateHomeFeedAttentionStripUi,
   updateWatchPanelHint,
   type WatchPanelDebugHooks,
 } from './youtubePanelMount';
-import { parseYoutubeVideoId, resolveYoutubeVideoIdFromPage } from '../lib/youtubeIds';
+import {
+  isYoutubeWatchLikePage,
+  parseYoutubeVideoId,
+  resolveYoutubeVideoIdFromPage,
+} from '../lib/youtubeIds';
 import { createTranslator, resolveLocale, type ResolvedLocale } from '../i18n';
 import {
   refreshWatchPanelCalendarSnapshot,
   runWatchPanelAfterJpPracticeStorageChange,
 } from './youtubeWatchLifecycle';
+import { jpXpLogContent } from '../lib/xpDebug';
+import { PRACTICE_FLUSH_INTERVAL_MS } from './youtubePracticeTimer';
 import { createJpWatchPanelDebugStrip, jpWatchDebugEnabled, jpWatchLog } from './youtubeDebug';
 import { createWatchPanelCompletionController } from './youtubeWatchPanelCompletion';
+import { syncLearningFocusMode } from './learningFocusMode';
 import { runWatchPanelVideoChangedFlow } from './youtubeWatchPanelVideoFlow';
+import {
+  omitWatchPanelPosition,
+  persistWatchPanelSpawnDefaults,
+  removeWatchPanelHost,
+} from './watchPanelSpawn';
+import { isWatchPanelHostLive } from './watchPanelBoot';
 
 const PANEL_HOST_ID = 'jp-practice-yt-panel-host';
 
@@ -99,9 +118,23 @@ let extensionInstallDateKey = dateKeyFromTimestamp(Date.now());
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
 
+let videoIdRetryGeneration = 0;
+
+function scheduleVideoIdResolutionRetries(): void {
+  if (!isYoutubeWatchLikePage()) return;
+  const gen = ++videoIdRetryGeneration;
+  for (const ms of [50, 150, 400, 1000, 2500]) {
+    window.setTimeout(() => {
+      if (gen !== videoIdRetryGeneration) return;
+      if (getVideoIdFromUrl()) fireAsyncWatch(onWatchPanelVideoChanged());
+    }, ms);
+  }
+}
+
 const completion = createWatchPanelCompletionController({
   getShadowRoot: () => shadowRoot,
   getPanelT: () => panelT,
+  getInLibrary: () => inLibrary,
   getLibraryItemForCurrentVideo: () => libraryItemForCurrentVideo,
   getCurrentVideoId: () => currentVideoId,
   getVideoIdFromUrl,
@@ -114,7 +147,18 @@ const completion = createWatchPanelCompletionController({
     resetTimers();
   },
   syncWatchPanelLabels,
+  applyXpFromResponse: (res) => {
+    if (!res.ok || !('xpGained' in res)) return;
+    applyXpFromPracticeResponse(res);
+  },
 });
+
+function syncLearningFocusFromState(): void {
+  syncLearningFocusMode({
+    settingEnabled: settingsCache.learningFocusHideRecommendations !== false,
+    inLibrary,
+  });
+}
 
 function getTodayPracticeSeconds(): number {
   const key = dateKeyFromTimestamp(Date.now());
@@ -175,6 +219,43 @@ function updatePlayerXpBar(totalXp?: number, prestigeLevel?: number): void {
   });
 }
 
+function applyXpFromPracticeResponse(res: {
+  xpGained: number;
+  levelUp: boolean;
+  newLevel: number;
+  totalXp?: number;
+}): void {
+  if (typeof res.totalXp === 'number' && Number.isFinite(res.totalXp)) {
+    cachedPlayerTotalXp = res.totalXp;
+  } else if (res.xpGained > 0) {
+    cachedPlayerTotalXp += res.xpGained;
+  }
+  updatePlayerXpBar();
+  jpXpLogContent('ui:applyXpResponse', {
+    xpGained: res.xpGained,
+    levelUp: res.levelUp,
+    newLevel: res.newLevel,
+    totalXp: res.totalXp ?? cachedPlayerTotalXp,
+    barUpdated: true,
+    flash: res.xpGained > 0 || res.levelUp,
+  });
+  if (jpWatchDebugEnabled()) {
+    jpWatchPanelDebugStrip.strip(
+      `XP ui +${res.xpGained} lvl=${res.newLevel}${res.levelUp ? ' UP' : ''}`,
+    );
+  }
+  if (!ui || (res.xpGained <= 0 && !res.levelUp)) return;
+  flashWatchPanelXpTick({
+    shadowRoot,
+    ui,
+    panelT,
+    xpGained: res.xpGained,
+    levelUp: res.levelUp,
+    newLevel: res.newLevel,
+    showRoutineXpFeedback: settingsCache.watchPanelXpToastsEnabled !== false,
+  });
+}
+
 function renderCalendar(dailySeconds: Record<string, number>): void {
   renderWatchPanelCalendar({
     shadowRoot,
@@ -194,6 +275,9 @@ function renderCalendar(dailySeconds: Record<string, number>): void {
 function applyPanelHostPosition(): void {
   const host = document.getElementById(PANEL_HOST_ID) as HTMLElement | null;
   if (!host) return;
+  if (isYoutubeWatchLikePage()) {
+    setWatchPanelHostVisible(PANEL_HOST_ID, true);
+  }
   const L = settingsCache.watchPanelLeft;
   const T = settingsCache.watchPanelTop;
   if (typeof L === 'number' && typeof T === 'number' && !Number.isNaN(L) && !Number.isNaN(T)) {
@@ -201,11 +285,9 @@ function applyPanelHostPosition(): void {
     host.style.top = `${T}px`;
     host.style.right = 'auto';
     host.style.bottom = 'auto';
+    requestAnimationFrame(() => clampWatchPanelHostToViewport(host));
   } else {
-    host.style.left = 'auto';
-    host.style.top = 'auto';
-    host.style.right = '16px';
-    host.style.bottom = '88px';
+    applyDefaultWatchPanelHostStyle(host);
   }
 }
 
@@ -256,6 +338,21 @@ function readChannel(): string {
   const meta = document.querySelector('link[itemprop="name"]');
   if (meta?.getAttribute('content')) return meta.getAttribute('content')!.trim();
   return 'Unknown channel';
+}
+
+/** Create/show panel chrome immediately so YouTube never depends on async GET_STATE first. */
+export function mountWatchPanelShellSync(): void {
+  try {
+    ensurePanel();
+    setWatchPanelHostVisible(PANEL_HOST_ID, true);
+    const host = document.getElementById(PANEL_HOST_ID) as HTMLElement | null;
+    if (host) forceWatchPanelHostVisible(host);
+    applyPanelHostPosition();
+    applyWatchPanelCollapsed();
+    document.documentElement.dataset.jpPracticeScript = '1';
+  } catch (err) {
+    console.error('[JustPractice] mountWatchPanelShellSync failed', err);
+  }
 }
 
 function ensurePanel(): void {
@@ -328,9 +425,14 @@ function ensurePanel(): void {
 }
 
 async function refreshCalendarOnly(): Promise<void> {
-  await refreshWatchPanelCalendarSnapshot((dailySeconds, installKey) => {
+  await refreshWatchPanelCalendarSnapshot((dailySeconds, installKey, playerProgress) => {
     lastDailySnapshot = { ...dailySeconds };
     extensionInstallDateKey = installKey;
+    if (playerProgress) {
+      cachedPlayerTotalXp = playerProgress.totalXp;
+      cachedPlayerPrestigeLevel = playerProgress.prestigeLevel ?? 0;
+      updatePlayerXpBar();
+    }
     renderCalendar(lastDailySnapshot);
     updateDailyGoalRing();
   });
@@ -360,6 +462,7 @@ async function refreshState(videoId: string | null): Promise<void> {
     inLibrary = false;
     await refreshCalendarOnly();
     syncWatchPanelLabels();
+    syncLearningFocusFromState();
     return;
   }
   await refreshWatchPanelLibraryUiFromRemoteState({
@@ -407,6 +510,7 @@ async function refreshState(videoId: string | null): Promise<void> {
       strip: (line) => jpWatchPanelDebugStrip.strip(line),
     },
   });
+  syncLearningFocusFromState();
 }
 
 function updateHint(): void {
@@ -493,35 +597,81 @@ function tickSecond(): void {
   }
 }
 
+function practiceCountingSnapshot(): {
+  counting: boolean;
+  paused: boolean;
+  ended: boolean;
+  visible: boolean;
+  focusOk: boolean;
+} {
+  const video = getVideoElement();
+  const counting = shouldCountPracticeTime({
+    practiceEnabled,
+    currentVideoId,
+    video,
+    visibilityState: document.visibilityState,
+    pauseWhenUnfocused: settingsCache.pauseWhenUnfocused,
+    documentHasFocus: document.hasFocus(),
+  });
+  return {
+    counting,
+    paused: Boolean(video?.paused),
+    ended: Boolean(video?.ended),
+    visible: document.visibilityState === 'visible',
+    focusOk: !settingsCache.pauseWhenUnfocused || document.hasFocus(),
+  };
+}
+
 export function flushWatchPanelPractice(): void {
   if (!currentVideoId) return;
   const pending = pendingSeconds;
   if (pending <= 0) return;
+  const videoId = currentVideoId;
+  const snap = practiceCountingSnapshot();
   pendingSeconds = 0;
+  jpXpLogContent('content:PRACTICE_TICK send', {
+    videoId,
+    deltaSeconds: pending,
+    flushIntervalMs: PRACTICE_FLUSH_INTERVAL_MS,
+    practiceEnabled,
+    inLibrary,
+    ...snap,
+  });
+  if (jpWatchDebugEnabled()) {
+    jpWatchPanelDebugStrip.strip(
+      `flush ${pending}s lib=${String(inLibrary)} count=${String(snap.counting)}`,
+    );
+  }
   void sendMsg<PracticeTickOkResponse>({
     type: MSG.PRACTICE_TICK,
     payload: {
-      videoId: currentVideoId,
+      videoId,
       deltaSeconds: pending,
       endedAtMs: Date.now(),
     },
   }).then((res) => {
-    if (!res?.ok || !('xpGained' in res)) return;
-    if (res.xpGained > 0) {
-      cachedPlayerTotalXp += res.xpGained;
-      updatePlayerXpBar();
-    } else if (res.levelUp) {
-      updatePlayerXpBar();
-    }
-    if (ui && (res.xpGained > 0 || res.levelUp)) {
-      flashWatchPanelXpTick({
-        ui,
-        panelT,
-        xpGained: res.xpGained,
-        levelUp: res.levelUp,
-        newLevel: res.newLevel,
+    if (!res?.ok || !('xpGained' in res)) {
+      jpXpLogContent('content:PRACTICE_TICK response ignored', {
+        videoId,
+        ok: res?.ok,
+        hasXp: res != null && typeof res === 'object' && 'xpGained' in res,
       });
+      return;
     }
+    const zeroWhy =
+      res.xpGained <= 0 && !res.levelUp ?
+        'no XP this flush (carry banks sub-minute; see background log for carry)'
+      : undefined;
+    jpXpLogContent('content:PRACTICE_TICK response', {
+      videoId,
+      deltaSeconds: pending,
+      xpGained: res.xpGained,
+      levelUp: res.levelUp,
+      newLevel: res.newLevel,
+      totalXp: res.totalXp,
+      ...(zeroWhy ? { zeroXpReason: zeroWhy } : {}),
+    });
+    applyXpFromPracticeResponse(res);
   });
 }
 
@@ -562,6 +712,7 @@ async function toggleWatchPanelCompletion(complete: boolean): Promise<void> {
 }
 
 export async function onWatchPanelVideoChanged(): Promise<void> {
+  videoIdRetryGeneration += 1;
   await runWatchPanelVideoChangedFlow({
     panelHostId: PANEL_HOST_ID,
     getVideoIdFromUrl,
@@ -589,7 +740,9 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
     updateHomeFeedAttentionStrip,
     updateHint,
     refreshCalendarOnly,
-    needsHomeFeedPanelAttention,
+    shouldKeepWatchPanelVisibleWithoutVideoId: () =>
+      shouldKeepWatchPanelVisibleWithoutVideoId(getVideoIdFromUrl, () => Boolean(getVideoElement())),
+    scheduleVideoIdResolutionRetries,
     applyNoVideoHomePanelLayout,
     readTitle,
     refreshState,
@@ -612,6 +765,9 @@ export function getWatchPanelPauseWhenUnfocused(): boolean {
 }
 
 export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void {
+  if (nv) {
+    applyPersistedPracticeSnapshotToPanel(nv);
+  }
   runWatchPanelAfterJpPracticeStorageChange(nv, {
     applyIncomingSettingsFromPersisted: (persisted) => {
       settingsCache = ensureSettingsShape({ ...defaultSettings(), ...persisted.settings });
@@ -620,6 +776,7 @@ export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void 
       applyPanelHostPosition();
       applyWatchPanelCollapsed();
       syncWatchPanelLabels();
+      syncLearningFocusFromState();
       updateHint();
       updateHomeFeedAttentionStrip();
     },
@@ -661,8 +818,51 @@ export function attachWatchPanelRuntimeHooks(): void {
     flush: flushWatchPanelPractice,
   });
   document.addEventListener('visibilitychange', () => completion.onDocumentVisibilityChange());
+  startStorageSyncPoll(() => {
+    fireAsyncWatch(refreshCalendarOnly());
+  });
 }
 
 export async function refreshWatchPanelCalendarOnVisible(): Promise<void> {
   await refreshCalendarOnly();
+}
+
+/** Drop panel DOM from a prior extension injection (broken listeners / hidden host). */
+export function purgeStaleWatchPanelHost(): void {
+  const host = document.getElementById(PANEL_HOST_ID) as HTMLElement | null;
+  if (host && !isWatchPanelHostLive(host)) {
+    host.remove();
+    shadowRoot = null;
+    ui = null;
+  }
+}
+
+/**
+ * Remount the watch panel at the default bottom-right position and expand it.
+ * Triggered from dashboard/popup or DevTools via {@link MSG.SHOW_WATCH_PANEL}.
+ */
+export async function spawnWatchPanel(): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    removeWatchPanelHost(PANEL_HOST_ID);
+    shadowRoot = null;
+    ui = null;
+    settingsCache = omitWatchPanelPosition(settingsCache);
+    await persistWatchPanelSpawnDefaults();
+    ensurePanel();
+    const host = document.getElementById(PANEL_HOST_ID) as HTMLElement | null;
+    if (host) forceWatchPanelHostVisible(host);
+    setWatchPanelHostVisible(PANEL_HOST_ID, true);
+    applyWatchPanelCollapsed();
+    await onWatchPanelVideoChanged();
+    jpWatchLog('spawnWatchPanel:done', {
+      href: location.href,
+      videoId: getVideoIdFromUrl(),
+      hostInDom: Boolean(document.getElementById(PANEL_HOST_ID)),
+    });
+    return { ok: true };
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    console.warn('[JustPractice:watch] spawnWatchPanel failed', err);
+    return { ok: false, error };
+  }
 }

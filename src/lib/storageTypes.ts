@@ -54,6 +54,11 @@ export interface AppSettings {
   /** When true, practice seconds only count if the YouTube tab/window has focus */
   pauseWhenUnfocused: boolean;
   /**
+   * On `/watch` only: hide sidebar recommendations when the current video is in the library.
+   * Does not apply to Shorts, theater, or mini player layouts.
+   */
+  learningFocusHideRecommendations?: boolean;
+  /**
    * When true (default), use the year heatmap on the watch panel instead of the month grid.
    * Kept for storage compatibility; there is no UI to turn this off.
    */
@@ -88,6 +93,11 @@ export interface AppSettings {
    * Phase 2+ UI may expose this toggle.
    */
   xpNotificationsEnabled?: boolean;
+  /**
+   * When true (default), show the watch-panel +XP toast and status flash each time practice XP is earned (~every minute).
+   * Rank-up feedback still shows when this is off.
+   */
+  watchPanelXpToastsEnabled?: boolean;
   /** Shown in dashboard greeting (Hello, {name}). */
   displayName?: string;
   /** User-authored lines mixed into daily motivation rotation. */
@@ -112,6 +122,8 @@ export interface PlayerProgress {
   lastStreakXpDateKey: string | null;
   /** videoIds that already received first-complete XP */
   completeXpAwarded: Record<string, true>;
+  /** Sub-minute practice seconds banked toward the next practice XP minute. */
+  practiceXpCarrySeconds: number;
 }
 
 export interface PersistedData {
@@ -221,6 +233,10 @@ export function ensureSettingsShape(raw: AppSettings | Partial<AppSettings> | un
     ...merged,
     pauseWhenUnfocused:
       typeof raw.pauseWhenUnfocused === 'boolean' ? raw.pauseWhenUnfocused : base.pauseWhenUnfocused,
+    learningFocusHideRecommendations:
+      typeof raw.learningFocusHideRecommendations === 'boolean'
+        ? raw.learningFocusHideRecommendations
+        : base.learningFocusHideRecommendations,
     yearHeatmapCalendar:
       typeof raw.yearHeatmapCalendar === 'boolean' ? raw.yearHeatmapCalendar : base.yearHeatmapCalendar,
     calendarShowPracticeTime:
@@ -241,6 +257,10 @@ export function ensureSettingsShape(raw: AppSettings | Partial<AppSettings> | un
       typeof raw.goalNotificationsEnabled === 'boolean' ? raw.goalNotificationsEnabled : false,
     xpNotificationsEnabled:
       typeof raw.xpNotificationsEnabled === 'boolean' ? raw.xpNotificationsEnabled : true,
+    watchPanelXpToastsEnabled:
+      typeof raw.watchPanelXpToastsEnabled === 'boolean'
+        ? raw.watchPanelXpToastsEnabled
+        : base.watchPanelXpToastsEnabled,
     goalNudgeHourLocal: nh,
     lastNotifiedGoalMetDate:
       typeof raw.lastNotifiedGoalMetDate === 'string' ? raw.lastNotifiedGoalMetDate : null,
@@ -255,6 +275,7 @@ export function ensureSettingsShape(raw: AppSettings | Partial<AppSettings> | un
 
 export const defaultSettings = (): AppSettings => ({
   pauseWhenUnfocused: true,
+  learningFocusHideRecommendations: true,
   yearHeatmapCalendar: true,
   calendarShowPracticeTime: false,
   goals: defaultGoals(),
@@ -266,6 +287,7 @@ export const defaultSettings = (): AppSettings => ({
   lastNotifiedGoalMetDate: null,
   lastNotifiedGoalNudgeDate: null,
   xpNotificationsEnabled: true,
+  watchPanelXpToastsEnabled: true,
   displayName: '',
   customDailyMessages: [],
   dailyMotivationEnabled: true,
@@ -301,6 +323,7 @@ export function defaultPlayerProgress(): PlayerProgress {
     lastDailyGoalXpDateKey: null,
     lastStreakXpDateKey: null,
     completeXpAwarded: {},
+    practiceXpCarrySeconds: 0,
   };
 }
 
@@ -360,6 +383,13 @@ export function normalizePlayerProgress(raw: unknown, priorSchema: number, daily
       ? Math.min(10, Math.floor(o.prestigeLevel))
       : 0;
 
+  const practiceXpCarrySeconds =
+    typeof o.practiceXpCarrySeconds === 'number' &&
+    Number.isFinite(o.practiceXpCarrySeconds) &&
+    o.practiceXpCarrySeconds >= 0
+      ? Math.min(59, Math.floor(o.practiceXpCarrySeconds))
+      : 0;
+
   return {
     totalXp,
     lifetimeXp,
@@ -369,6 +399,7 @@ export function normalizePlayerProgress(raw: unknown, priorSchema: number, daily
       typeof o.lastDailyGoalXpDateKey === 'string' ? o.lastDailyGoalXpDateKey : null,
     lastStreakXpDateKey: typeof o.lastStreakXpDateKey === 'string' ? o.lastStreakXpDateKey : null,
     completeXpAwarded,
+    practiceXpCarrySeconds,
   };
 }
 

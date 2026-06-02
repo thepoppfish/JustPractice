@@ -915,6 +915,14 @@ body {
   flex-shrink: 0;
 }
 
+.settings-notif-option--spaced {
+  margin-top: 18px;
+}
+
+.settings-notif-option-help {
+  margin-bottom: 0;
+}
+
 .settings-block .help {
   margin: 12px 0 0 30px;
   font-size: 12px;
@@ -1561,13 +1569,17 @@ body {
   justify-content: center;
 }
 
-.dash-section-center .settings-block,
+.dash-section-center .settings-block:not([hidden]),
 .dash-section-center .settings-profile,
 .dash-section-center .settings-framework,
 .dash-section-center .goals-form,
 .dash-section-center .btn-save-goals {
   display: block;
   margin-inline: auto;
+}
+
+#custom-levels-block[hidden] {
+  display: none !important;
 }
 
 .dash-section-center .settings-profile,
@@ -2142,6 +2154,33 @@ body {
 }
 
 /* ——— Progress tab (practice journey) ——— */
+.dash-section-center[data-view-panel='progress'] .progress-hero {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto 28px;
+  text-align: left;
+}
+
+.dash-section-center[data-view-panel='progress'] .progress-journey-lead {
+  margin: 0 0 14px;
+  max-width: none;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: left;
+}
+
+.dash-section-center[data-view-panel='progress'] .progress-journey-meta,
+.dash-section-center[data-view-panel='progress'] .progress-xp-bar-label,
+.dash-section-center[data-view-panel='progress'] .progress-total-xp,
+.dash-section-center[data-view-panel='progress'] .progress-lifetime-xp {
+  text-align: left;
+}
+
+.dash-section-center[data-view-panel='progress'] .progress-journey-meta__head {
+  justify-content: flex-start;
+}
+
 .progress-journey-lead {
   margin: 0 0 18px;
   max-width: 52ch;
@@ -2150,9 +2189,164 @@ body {
   color: var(--muted);
 }
 
+.progress-xp-guide {
+  margin: 0 0 16px;
+  border: 1px solid rgba(255, 107, 38, 0.4);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 107, 38, 0.12) 0%, rgba(12, 12, 12, 0.85) 100%);
+  box-shadow: 0 0 0 1px rgba(255, 107, 38, 0.08) inset;
+  text-align: left;
+  overflow: hidden;
+}
+
+.progress-xp-guide__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  margin: 0;
+  transition: background 0.15s ease;
+}
+
+.progress-xp-guide__summary:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.progress-xp-guide__summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.progress-xp-guide__summary::-webkit-details-marker {
+  display: none;
+}
+
+.progress-xp-guide__summary-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.progress-xp-guide__summary-label::before {
+  content: '';
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.progress-xp-guide[open] .progress-xp-guide__summary-label::before {
+  transform: rotate(90deg);
+}
+
+.progress-xp-guide__summary-action {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 107, 38, 0.45);
+  background: rgba(255, 107, 38, 0.12);
+}
+
+.progress-xp-guide__action-open {
+  display: none;
+}
+
+.progress-xp-guide__action-closed {
+  display: inline;
+}
+
+.progress-xp-guide[open] .progress-xp-guide__action-open {
+  display: inline;
+}
+
+.progress-xp-guide[open] .progress-xp-guide__action-closed {
+  display: none;
+}
+
+.progress-xp-guide__body {
+  padding: 0 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.progress-xp-guide__intro {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.progress-xp-guide__grid {
+  display: grid;
+  gap: 14px 20px;
+}
+
+@media (min-width: 600px) {
+  .progress-xp-guide__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.progress-xp-guide__block {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.progress-xp-guide__h {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.progress-xp-guide__list {
+  margin: 0;
+  padding-left: 1.15em;
+}
+
+.progress-xp-guide__list li {
+  margin-bottom: 5px;
+}
+
+.progress-xp-guide__list li:last-child {
+  margin-bottom: 0;
+}
+
+.progress-xp-guide__p {
+  margin: 0;
+}
+
+.progress-xp-guide__note {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 .progress-journey-card {
   position: relative;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   border-radius: 20px;
   border: 1px solid rgba(255, 107, 38, 0.22);
   background: linear-gradient(155deg, rgba(255, 107, 38, 0.1) 0%, rgba(18, 18, 18, 0.95) 42%, var(--surface) 100%);

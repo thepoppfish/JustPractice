@@ -1,6 +1,7 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage } from '../lib/messages';
 import { APP_NAME } from '../lib/branding';
+import { requestWatchPanelSpawn } from '../lib/youtubeTabMessaging';
 import {
   daysInCalendarMonth,
   normalizeCustomLevels,
@@ -9,7 +10,12 @@ import {
 } from '../lib/storage';
 import { isResolvedLocale } from '../i18n';
 import { formatDuration } from '../lib/practiceStats';
-import { parseGoalMinutes, parseNudgeHour, yearHeatmapStatusLabel } from './dashboardFormatters';
+import {
+  parseGoalMinutes,
+  parseNudgeHour,
+  writeProgressXpGuideOpen,
+  yearHeatmapStatusLabel,
+} from './dashboardFormatters';
 import { attachYearHeatmapInteractive } from '../lib/yearHeatmapInteractive';
 import { DASH_VIEWS } from './dashboardDomUpdate';
 import type { DashView, DashboardViewModel } from './dashboardViewModel';
@@ -149,6 +155,8 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
   listen(root.querySelector('#setting-level-framework'), 'change', async (e) => {
     const v = (e.target as HTMLSelectElement).value;
     if (v !== 'jlpt' && v !== 'cefr' && v !== 'custom') return;
+    const block = root.querySelector<HTMLElement>('#custom-levels-block');
+    if (block) block.hidden = v !== 'custom';
     await send({
       type: MSG.SET_SETTINGS,
       payload: { levelFramework: v },
@@ -269,6 +277,20 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     });
   });
 
+  listen(root.querySelector('#watch-panel-xp-toasts'), 'change', async (e) => {
+    suppressStorageRender();
+    const checked = (e.target as HTMLInputElement).checked;
+    await send({
+      type: MSG.SET_SETTINGS,
+      payload: { watchPanelXpToastsEnabled: checked },
+    });
+  });
+
+  const xpGuide = root.querySelector<HTMLDetailsElement>('.progress-xp-guide');
+  if (xpGuide) {
+    listen(xpGuide, 'toggle', () => writeProgressXpGuideOpen(xpGuide.open));
+  }
+
   listen(root.querySelector('#enter-prestige'), 'click', async () => {
     const ok = confirm(vm.t('progress.confirmPrestige'));
     if (!ok) return;
@@ -366,6 +388,32 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     await send({
       type: MSG.SET_SETTINGS,
       payload: { calendarShowPracticeTime: calTimeEl.checked },
+    });
+  });
+
+  listen(root.querySelector('#spawn-watch-panel'), 'click', async () => {
+    const res = await requestWatchPanelSpawn();
+    if (res.status === 'no_youtube_tabs') {
+      window.alert(vm.t('settings.showWatchPanelNoTab'));
+    } else if (res.status === 'needs_refresh') {
+      window.alert(vm.t('settings.showWatchPanelNeedsRefresh'));
+    } else if (res.tabsMessaged > 0 && res.tabsMessaged < res.youtubeTabCount) {
+      window.alert(
+        vm.t('settings.showWatchPanelPartial', {
+          ok: res.tabsMessaged,
+          failed: res.youtubeTabCount - res.tabsMessaged,
+        }),
+      );
+    }
+  });
+
+  const learningFocusEl = root.querySelector<HTMLInputElement>('#learning-focus-hide-recs');
+  listen(learningFocusEl, 'change', async () => {
+    if (!learningFocusEl) return;
+    suppressStorageRender();
+    await send({
+      type: MSG.SET_SETTINGS,
+      payload: { learningFocusHideRecommendations: learningFocusEl.checked },
     });
   });
 

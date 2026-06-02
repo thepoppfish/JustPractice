@@ -1,4 +1,8 @@
-import { formatGoalPairLine, formatGoalSlash, ringDasharrayFromProgress } from '../lib/goalFormat';
+import {
+  formatGoalPairLineLive,
+  formatGoalSlashLive,
+  ringDasharrayFromProgress,
+} from '../lib/goalFormat';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { matchesActiveFramework, isLegacyLevelTag, tagsForFramework } from '../lib/levelTags';
 import {
@@ -162,8 +166,48 @@ export function updateDailyGoalRing(p: {
   const pct = Math.min(1, done / target);
   fg.setAttribute('stroke-dasharray', ringDasharrayFromProgress(pct));
   fg.style.strokeDashoffset = '0';
-  label.textContent = formatGoalSlash(done, target);
-  wrap.title = `Daily goal: ${formatGoalPairLine(done, target)} (${Math.round(pct * 100)}%).`;
+  label.textContent = formatGoalSlashLive(done, target);
+  wrap.title = `Daily goal: ${formatGoalPairLineLive(done, target)} (${Math.round(pct * 100)}%).`;
+}
+
+let xpToastTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Brief +XP / rank-up floater on the rank block (live feedback without relying on status line). */
+export function showWatchPanelXpToast(p: {
+  shadowRoot: ShadowRoot | null;
+  panelT: (k: string, params?: Record<string, string | number>) => string;
+  xpGained: number;
+  levelUp: boolean;
+  newLevel: number;
+}): void {
+  if (!p.shadowRoot) return;
+  const toast = p.shadowRoot.querySelector('[part="player-xp-toast"]') as HTMLElement | null;
+  if (!toast) return;
+
+  if (xpToastTimer != null) {
+    clearTimeout(xpToastTimer);
+    xpToastTimer = null;
+  }
+
+  if (p.levelUp) {
+    toast.textContent = p.panelT('panel.flashRankUp', { level: String(p.newLevel) });
+    toast.className = 'player-xp-toast player-xp-toast--rank-up is-visible';
+  } else if (p.xpGained > 0) {
+    toast.textContent = p.panelT('panel.flashXp', { xp: String(p.xpGained) });
+    toast.className = 'player-xp-toast is-visible';
+  } else {
+    toast.hidden = true;
+    return;
+  }
+
+  toast.hidden = false;
+  xpToastTimer = setTimeout(() => {
+    toast.classList.remove('is-visible');
+    xpToastTimer = setTimeout(() => {
+      toast.hidden = true;
+      xpToastTimer = null;
+    }, 350);
+  }, 2200);
 }
 
 export function updatePlayerXpBar(p: {
@@ -177,6 +221,8 @@ export function updatePlayerXpBar(p: {
   const prestigeEl = p.shadowRoot.querySelector('[part="player-prestige-badge"]') as HTMLElement | null;
   const fill = p.shadowRoot.querySelector('[part="player-xp-fill"]') as HTMLElement | null;
   const wrap = p.shadowRoot.querySelector('[part="player-xp"]') as HTMLElement | null;
+  const progressLine = p.shadowRoot.querySelector('[part="player-xp-progress"]') as HTMLElement | null;
+  const remainingLine = p.shadowRoot.querySelector('[part="player-xp-remaining"]') as HTMLElement | null;
   if (!badge || !fill || !wrap) return;
 
   const level = levelFromTotalXp(p.totalXp);
@@ -184,11 +230,34 @@ export function updatePlayerXpBar(p: {
   const maxLevel = level >= MAX_ACCOUNT_LEVEL;
   badge.textContent = p.panelT('panel.rankShort', { level: String(level) });
   fill.style.width = `${maxLevel ? 100 : bar.progressPercent}%`;
+
+  if (progressLine) {
+    if (maxLevel) {
+      progressLine.textContent = p.panelT('progress.maxLevel');
+      if (remainingLine) remainingLine.hidden = true;
+    } else {
+      const remaining = Math.max(0, bar.xpNeededForNext - bar.xpIntoLevel);
+      progressLine.textContent = p.panelT('panel.xpBarProgress', {
+        current: String(bar.xpIntoLevel),
+        needed: String(bar.xpNeededForNext),
+      });
+      if (remainingLine) {
+        remainingLine.hidden = false;
+        remainingLine.textContent = p.panelT('panel.xpToRankUp', { remaining: String(remaining) });
+      }
+    }
+  }
+
   wrap.setAttribute(
     'aria-label',
     maxLevel
       ? p.panelT('progress.maxLevel')
-      : p.panelT('progress.rank', { level: String(level) }),
+      : p.panelT('panel.xpBarAria', {
+          level: String(level),
+          current: String(bar.xpIntoLevel),
+          needed: String(bar.xpNeededForNext),
+          remaining: String(Math.max(0, bar.xpNeededForNext - bar.xpIntoLevel)),
+        }),
   );
   if (prestigeEl) {
     const pl = p.prestigeLevel ?? 0;

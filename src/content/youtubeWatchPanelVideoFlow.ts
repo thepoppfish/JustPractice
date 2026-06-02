@@ -1,4 +1,5 @@
 import { APP_NAME } from '../lib/branding';
+import { setWatchPanelHostVisible } from './youtubePanelMount';
 import { runWatchPanelOnVideoChanged } from './youtubeWatchLifecycle';
 
 export interface WatchPanelVideoFlowDeps {
@@ -18,7 +19,8 @@ export interface WatchPanelVideoFlowDeps {
   updateHomeFeedAttentionStrip: () => void;
   updateHint: () => void;
   refreshCalendarOnly: () => Promise<void>;
-  needsHomeFeedPanelAttention: (getVideoId: () => string | null) => boolean;
+  shouldKeepWatchPanelVisibleWithoutVideoId: () => boolean;
+  scheduleVideoIdResolutionRetries: () => void;
   applyNoVideoHomePanelLayout: (shadowRoot: ShadowRoot | null, show: boolean) => void;
   readTitle: () => string;
   refreshState: (videoId: string | null) => Promise<void>;
@@ -55,18 +57,18 @@ export async function runWatchPanelVideoChangedFlow(deps: WatchPanelVideoFlowDep
       deps.updateHint();
       deps.fireAsyncWatch(deps.refreshCalendarOnly());
 
-      const host = document.getElementById(deps.panelHostId) as HTMLElement | null;
-      if (deps.needsHomeFeedPanelAttention(deps.getVideoIdFromUrl)) {
-        if (host) (host as HTMLElement).style.display = '';
+      const keep = deps.shouldKeepWatchPanelVisibleWithoutVideoId();
+      setWatchPanelHostVisible(deps.panelHostId, keep);
+      if (keep) {
+        if (!deps.getVideoIdFromUrl()) deps.scheduleVideoIdResolutionRetries();
       } else {
         deps.applyNoVideoHomePanelLayout(deps.getShadowRoot(), false);
-        if (host) (host as HTMLElement).style.display = 'none';
       }
     },
     runHasVideoFlow: async (videoId) => {
       deps.ensurePanel();
+      setWatchPanelHostVisible(deps.panelHostId, true);
       const shadowRoot = deps.getShadowRoot();
-      if (shadowRoot?.host) (shadowRoot.host as HTMLElement).style.display = '';
       deps.updateHomeFeedAttentionStrip();
       const titleEl = shadowRoot?.querySelector('[part="title"]') as HTMLElement | undefined;
       if (titleEl) {

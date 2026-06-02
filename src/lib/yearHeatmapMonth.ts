@@ -1,6 +1,7 @@
 import {
-  CALENDAR_UNDER_MINUTE_MARK,
+  calendarDayBottomLabel,
   dayCountsAsPracticedForCalendar,
+  formatDurationMinutesOnly,
   practiceCalendarDayVisual,
   type PracticeCalendarVisual,
 } from './practiceStats';
@@ -47,18 +48,19 @@ export interface MonthDetailGrid {
   isMonthComplete: boolean;
 }
 
-/** Compact duration for month grid cells. “0” only on today; other missed days use X in markup. */
-export function formatMonthCellTime(sec: number, isToday = false): string {
-  if (!dayCountsAsPracticedForCalendar(sec)) {
-    return isToday ? CALENDAR_UNDER_MINUTE_MARK : '';
+/** Compact bottom label for month grid cells (aligned with stats chart / year heatmap). */
+export function formatMonthCellTime(
+  vis: PracticeCalendarVisual,
+  sec: number,
+  dateKey: string,
+  todayKey: string,
+  minutesOnly = false,
+): string {
+  if (minutesOnly && dayCountsAsPracticedForCalendar(sec)) {
+    return formatDurationMinutesOnly(sec);
   }
-  const m = Math.floor(sec / 60);
-  if (m >= 60) {
-    const h = Math.floor(m / 60);
-    const rm = m % 60;
-    return rm > 0 ? `${h}h ${rm}m` : `${h}h`;
-  }
-  return `${m}m`;
+  const label = calendarDayBottomLabel(vis, sec, dateKey, todayKey);
+  return label === '—' ? '' : label;
 }
 
 /** Last local day of the month is strictly before today. */
@@ -105,6 +107,8 @@ export function buildMonthDetailGrid(p: {
   monthlyGoalSec: number | null;
   locale?: string;
   nowMs?: number;
+  /** YouTube panel: omit seconds in practiced-day cell labels. */
+  minutesOnly?: boolean;
 }): MonthDetailGrid {
   const nowMs = p.nowMs ?? Date.now();
   const todayKey = dateKeyFromTimestamp(nowMs);
@@ -153,7 +157,7 @@ export function buildMonthDetailGrid(p: {
       dayOfMonth: day,
       display: yearHeatmapDisplayColor(vis),
       seconds: sec,
-      timeLabel: formatMonthCellTime(sec, isToday),
+      timeLabel: formatMonthCellTime(vis, sec, dateKey, todayKey, p.minutesOnly === true),
       isToday,
     });
   }

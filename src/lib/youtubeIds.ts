@@ -1,3 +1,39 @@
+/** Standard watch page only (`/watch?v=…`), not Shorts / live / embed. */
+export function isYoutubeClassicWatchPath(pathname: string): boolean {
+  return pathname === '/watch' || pathname.startsWith('/watch/');
+}
+
+export function isYoutubeClassicWatchPage(href?: string): boolean {
+  const bar =
+    href ?? (typeof location !== 'undefined' && location.href ? location.href : '');
+  try {
+    return isYoutubeClassicWatchPath(new URL(bar, 'https://www.youtube.com').pathname);
+  } catch {
+    return false;
+  }
+}
+
+/** Watch / Shorts / live / embed surfaces where the panel should stay visible while the id resolves. */
+export function isYoutubeWatchLikePath(pathname: string): boolean {
+  return (
+    pathname.startsWith('/watch') ||
+    pathname === '/shorts' ||
+    pathname.startsWith('/shorts/') ||
+    pathname.startsWith('/live/') ||
+    pathname.startsWith('/embed/')
+  );
+}
+
+export function isYoutubeWatchLikePage(href?: string): boolean {
+  const bar =
+    href ?? (typeof location !== 'undefined' && location.href ? location.href : '');
+  try {
+    return isYoutubeWatchLikePath(new URL(bar, 'https://www.youtube.com').pathname);
+  } catch {
+    return false;
+  }
+}
+
 /** Parse an 11-char YouTube video id from watch, shorts, or youtu.be URLs (absolute or relative). */
 export function parseYoutubeVideoId(urlStr: string): string | null {
   try {
@@ -35,6 +71,17 @@ function idFromAnchorHref(el: Element | null): string | null {
  * (YouTube SPA, mini-player, etc.). Order: address bar, then active mini-player link,
  * HTML5 player title link, `link[rel="canonical"]`, `og:url`, `ytd-watch-flexy[video-id]`.
  */
+function readWatchFlexyVideoId(): string | null {
+  try {
+    const flexy = document.querySelector('ytd-watch-flexy') as HTMLElement | null;
+    const raw = flexy?.getAttribute('video-id')?.trim();
+    if (raw && /^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 export function resolveYoutubeVideoIdFromPage(href?: string): string | null {
   const bar =
     href ??
@@ -44,12 +91,11 @@ export function resolveYoutubeVideoIdFromPage(href?: string): string | null {
 
   if (typeof document === 'undefined') return null;
 
-  try {
-    const miniA = document.querySelector('ytd-miniplayer[active] [selected] a');
-    const fromMini = idFromAnchorHref(miniA);
-    if (fromMini) return fromMini;
-  } catch {
-    /* ignore */
+  const watchLike = isYoutubeWatchLikePage(bar);
+
+  if (watchLike) {
+    const fromFlexy = readWatchFlexyVideoId();
+    if (fromFlexy) return fromFlexy;
   }
 
   try {
@@ -82,12 +128,24 @@ export function resolveYoutubeVideoIdFromPage(href?: string): string | null {
     /* ignore */
   }
 
-  try {
-    const flexy = document.querySelector('ytd-watch-flexy') as HTMLElement | null;
-    const raw = flexy?.getAttribute('video-id')?.trim();
-    if (raw && /^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
-  } catch {
-    /* ignore */
+  if (!watchLike) {
+    try {
+      const miniA = document.querySelector('ytd-miniplayer[active] [selected] a');
+      const fromMini = idFromAnchorHref(miniA);
+      if (fromMini) return fromMini;
+    } catch {
+      /* ignore */
+    }
+    const fromFlexy = readWatchFlexyVideoId();
+    if (fromFlexy) return fromFlexy;
+  } else {
+    try {
+      const miniA = document.querySelector('ytd-miniplayer[active] [selected] a');
+      const fromMini = idFromAnchorHref(miniA);
+      if (fromMini) return fromMini;
+    } catch {
+      /* ignore */
+    }
   }
 
   return null;

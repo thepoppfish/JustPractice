@@ -70,6 +70,11 @@ ${watchPanelShadowCss()}
             <div class="player-xp-track" aria-hidden="true">
               <div class="player-xp-fill" part="player-xp-fill"></div>
             </div>
+            <span class="player-xp-label" part="player-xp-label">
+              <span class="player-xp-progress" part="player-xp-progress">—</span>
+              <span class="player-xp-remaining" part="player-xp-remaining" hidden></span>
+            </span>
+            <span class="player-xp-toast" part="player-xp-toast" hidden aria-live="polite"></span>
           </div>
           <div class="daily-goal-ring" part="daily-goal-ring" role="img" aria-hidden="true">
             <svg class="daily-ring-svg" viewBox="0 0 36 36" aria-hidden="true">

@@ -1,6 +1,9 @@
 ﻿/** Shadow-DOM styles for the watch-page floating panel. */
 export function watchPanelShadowCss(): string {
-  return `      :host { all: initial; }
+  return `      :host {
+        display: block;
+        box-sizing: border-box;
+      }
       .wrap {
         background: rgba(15, 15, 15, 0.94);
         color: #eee;
@@ -130,12 +133,41 @@ export function watchPanelShadowCss(): string {
         font-weight: 600;
       }
       .player-xp-mini {
+        position: relative;
         flex-shrink: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 3px;
-        min-width: 52px;
+        min-width: 72px;
+        max-width: 96px;
+      }
+      .player-xp-toast {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.85);
+        z-index: 2;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        color: #fff;
+        background: linear-gradient(135deg, #ff6b26, #ffb347);
+        border: 1px solid rgba(255, 200, 120, 0.55);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s ease, transform 0.35s ease;
+      }
+      .player-xp-toast.is-visible {
+        opacity: 1;
+        transform: translate(-50%, -72%) scale(1);
+      }
+      .player-xp-toast--rank-up {
+        background: linear-gradient(135deg, #ffd966, #ff6b26);
+        color: #1a1208;
       }
       .player-level-badge {
         font-size: 9px;
@@ -155,7 +187,8 @@ export function watchPanelShadowCss(): string {
         display: none !important;
       }
       .player-xp-track {
-        width: 52px;
+        width: 100%;
+        min-width: 72px;
         height: 4px;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.12);
@@ -167,6 +200,30 @@ export function watchPanelShadowCss(): string {
         background: linear-gradient(90deg, #ff6b26, #ffb347);
         width: 0%;
         transition: width 0.35s ease;
+      }
+      .player-xp-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        width: 100%;
+        text-align: center;
+        line-height: 1.2;
+      }
+      .player-xp-progress {
+        font-size: 8px;
+        font-weight: 700;
+        color: #ccc;
+        white-space: nowrap;
+      }
+      .player-xp-remaining {
+        font-size: 7px;
+        font-weight: 600;
+        color: #888;
+        white-space: nowrap;
+      }
+      .player-xp-remaining[hidden] {
+        display: none !important;
       }
       .row[hidden] {
         display: none !important;
@@ -354,6 +411,8 @@ export function watchPanelShadowCss(): string {
       }
       .cal-day-num { font-weight: 600; color: #eee; line-height: 1.2; }
       .cal-day-min { font-size: 9px; line-height: 1.1; margin-top: 2px; color: #fff; }
+      .cal-day-min--missed { font-size: 10px; font-weight: 500; opacity: 0.55; }
+      .cal-day-min--under { font-size: 10px; font-weight: 500; }
       .cal-cell--none .cal-day-min,
       .cal-cell--active .cal-day-min,
       .cal-cell--goal .cal-day-min { color: #fff; }

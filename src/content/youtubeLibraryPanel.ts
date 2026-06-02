@@ -11,6 +11,7 @@ import {
 import { sendMsg } from './youtubeMessaging';
 import type { WatchPanelDebugHooks, WatchPanelUiRefs } from './youtubePanelMount';
 import { setWatchPanelStatusFlash, showWatchPanelLibraryBanner } from './youtubePanelMount';
+import { showWatchPanelXpToast } from './youtubePanelUi';
 import { populateLevelSelect as populateLevelSelectUi } from './youtubePanelUi';
 
 export interface WatchPanelGetStateMutators {
@@ -144,13 +145,24 @@ export function flashWatchPanelAfterLibraryWrite(p: {
 }
 
 export function flashWatchPanelXpTick(p: {
+  shadowRoot: ShadowRoot | null;
   ui: WatchPanelUiRefs;
   panelT: Translator;
   xpGained: number;
   levelUp: boolean;
   newLevel: number;
+  /** When false, skip routine +XP toast/flash (rank-up still shows). */
+  showRoutineXpFeedback?: boolean;
 }): void {
   if (p.xpGained <= 0 && !p.levelUp) return;
+  if (!p.levelUp && p.showRoutineXpFeedback === false) return;
+  showWatchPanelXpToast({
+    shadowRoot: p.shadowRoot,
+    panelT: p.panelT,
+    xpGained: p.xpGained,
+    levelUp: p.levelUp,
+    newLevel: p.newLevel,
+  });
   if (p.levelUp) {
     setWatchPanelStatusFlash(
       p.ui.statusEl,
@@ -251,6 +263,8 @@ export async function setWatchPanelLibraryCompletion(p: {
   readChannel: () => string;
   panelT: Translator;
   getUi: () => WatchPanelUiRefs | null;
+  shadowRoot: ShadowRoot | null;
+  applyXpFromResponse: (res: ExtensionResponse) => void;
   afterPersist: (videoId: string) => Promise<void>;
 }): Promise<void> {
   const videoId = p.getVideoId();
@@ -276,6 +290,9 @@ export async function setWatchPanelLibraryCompletion(p: {
     setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedComplete'));
   } else {
     setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedIncomplete'));
+  }
+  if (res.ok && 'xpGained' in res) {
+    p.applyXpFromResponse(res);
   }
   await p.afterPersist(videoId);
 }

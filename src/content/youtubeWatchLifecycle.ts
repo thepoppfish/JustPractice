@@ -1,6 +1,6 @@
 import { MSG } from '../lib/messages';
 import type { GetStateResponse } from '../lib/messages';
-import type { PersistedData } from '../lib/storage';
+import type { PersistedData, PlayerProgress } from '../lib/storage';
 import { sendMsg } from './youtubeMessaging';
 
 /** GET_STATE → apply daily snapshot + repaint calendar / goal ring (watch panel only). */
@@ -8,12 +8,17 @@ export async function refreshWatchPanelCalendarSnapshot(
   applyFetchedPracticeSnapshot: (
     dailySeconds: Record<string, number>,
     extensionInstalledDateKey: string,
+    playerProgress: PlayerProgress | null,
   ) => void,
 ): Promise<void> {
   try {
     const res = (await sendMsg<GetStateResponse>({ type: MSG.GET_STATE })) as GetStateResponse;
     if (res?.ok && 'data' in res) {
-      applyFetchedPracticeSnapshot(res.data.dailySeconds, res.data.extensionInstalledDateKey);
+      applyFetchedPracticeSnapshot(
+        res.data.dailySeconds,
+        res.data.extensionInstalledDateKey,
+        res.data.playerProgress ?? null,
+      );
     }
   } catch {
     /* ignore */

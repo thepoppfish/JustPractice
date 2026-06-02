@@ -11,7 +11,7 @@ import {
   formatGoalSlash,
   ringDasharrayFromProgress,
 } from '../lib/goalFormat';
-import { escapeHtml } from '../lib/htmlEscape';
+import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { isLegacyLevelTag, isJlptTag, isCefrTag } from '../lib/levelTags';
 import {
   defaultYearHeatmapStatusLabel,
@@ -186,6 +186,75 @@ export function goalRingCardHtml(
       </div>
       <span class="goal-ring-fraction">${escapeHtml(formatGoalFraction(doneSec, targetSec, t))}</span>
     </div>`;
+}
+
+const PROGRESS_XP_GUIDE_OPEN_KEY = 'jp-progress-xp-guide-open';
+
+/** Default open so rules are visible; user collapse is remembered across dashboard refreshes. */
+export function readProgressXpGuideOpen(): boolean {
+  try {
+    return sessionStorage.getItem(PROGRESS_XP_GUIDE_OPEN_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+export function writeProgressXpGuideOpen(open: boolean): void {
+  try {
+    sessionStorage.setItem(PROGRESS_XP_GUIDE_OPEN_KEY, open ? 'true' : 'false');
+  } catch {
+    /* private mode / blocked storage */
+  }
+}
+
+export function progressXpGuideHtml(t: DashTranslate): string {
+  const open = readProgressXpGuideOpen();
+  const li = (key: string) => `<li>${escapeHtml(t(key))}</li>`;
+  const block = (headingKey: string, inner: string) => `
+        <section class="progress-xp-guide__block">
+          <h3 class="progress-xp-guide__h">${escapeHtml(t(headingKey))}</h3>
+          ${inner}
+        </section>`;
+  return `
+    <details class="progress-xp-guide"${open ? ' open' : ''}>
+      <summary class="progress-xp-guide__summary" aria-label="${escapeAttr(t('progress.xpGuideSummary'))}">
+        <span class="progress-xp-guide__summary-label">${escapeHtml(t('progress.xpGuideSummary'))}</span>
+        <span class="progress-xp-guide__summary-action" aria-hidden="true">
+          <span class="progress-xp-guide__action-open">${escapeHtml(t('progress.xpGuideCollapse'))}</span>
+          <span class="progress-xp-guide__action-closed">${escapeHtml(t('progress.xpGuideExpand'))}</span>
+        </span>
+      </summary>
+      <div class="progress-xp-guide__body">
+        <p class="progress-xp-guide__intro">${escapeHtml(t('progress.xpGuideIntro'))}</p>
+        <div class="progress-xp-guide__grid">
+          ${block(
+            'progress.xpGuideEarnHeading',
+            `<ul class="progress-xp-guide__list">
+              ${li('progress.xpGuideEarnPractice')}
+              ${li('progress.xpGuideEarnDaily')}
+              ${li('progress.xpGuideEarnStreak')}
+              ${li('progress.xpGuideEarnComplete')}
+            </ul>`,
+          )}
+          ${block(
+            'progress.xpGuideMultiHeading',
+            `<ul class="progress-xp-guide__list">
+              ${li('progress.xpGuideMultiWeekend')}
+              ${li('progress.xpGuideMultiPrestige')}
+            </ul>`,
+          )}
+          ${block(
+            'progress.xpGuideRankHeading',
+            `<p class="progress-xp-guide__p">${escapeHtml(t('progress.xpGuideRankBody'))}</p>`,
+          )}
+          ${block(
+            'progress.xpGuideCycleHeading',
+            `<p class="progress-xp-guide__p">${escapeHtml(t('progress.xpGuideCycleBody'))}</p>`,
+          )}
+        </div>
+        <p class="progress-xp-guide__note">${escapeHtml(t('progress.xpGuideAchievementsNote'))}</p>
+      </div>
+    </details>`;
 }
 
 export function formatCompletedDate(ms: number, locale: string): string {

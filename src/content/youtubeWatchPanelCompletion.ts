@@ -1,5 +1,6 @@
 import type { LibraryItem } from '../lib/storage';
 import type { Translator } from '../i18n';
+import type { ExtensionResponse } from '../lib/messages';
 import {
   attachVideoCompletionPromptListener,
   getVideoElement,
@@ -15,6 +16,7 @@ import { setWatchPanelLibraryCompletion } from './youtubeLibraryPanel';
 export interface WatchPanelCompletionDeps {
   getShadowRoot: () => ShadowRoot | null;
   getPanelT: () => Translator;
+  getInLibrary: () => boolean;
   getLibraryItemForCurrentVideo: () => LibraryItem | null;
   getCurrentVideoId: () => string | null;
   getVideoIdFromUrl: () => string | null;
@@ -30,6 +32,7 @@ export interface WatchPanelCompletionDeps {
   } | null;
   afterCompletionPersist: (videoId: string) => Promise<void>;
   syncWatchPanelLabels: () => void;
+  applyXpFromResponse: (res: ExtensionResponse) => void;
 }
 
 export interface WatchPanelCompletionController {
@@ -53,13 +56,23 @@ export function createWatchPanelCompletionController(
   let completionPromptDismissedForVideoId: string | null = null;
   let detachCompletionPromptListener: (() => void) | null = null;
 
+  /** End-of-video prompt only applies to videos saved in the library. */
+  function canOfferCompletionPrompt(): boolean {
+    const currentVideoId = deps.getCurrentVideoId();
+    if (!currentVideoId) return false;
+    if (!deps.getInLibrary()) return false;
+    if (deps.getLibraryItemForCurrentVideo()?.completedAt != null) return false;
+    if (completionPromptDismissedForVideoId === currentVideoId) return false;
+    return true;
+  }
+
   function hideEndedPrompt(): void {
     endedPromptVisible = false;
     setWatchPanelEndedPromptVisible({ shadowRoot: deps.getShadowRoot(), visible: false });
   }
 
   function showEndedPrompt(): void {
-    if (deps.getLibraryItemForCurrentVideo()?.completedAt != null) return;
+    if (!canOfferCompletionPrompt()) return;
     if (document.hidden) return;
     endedPromptVisible = true;
     syncWatchPanelEndedPromptLabels({ shadowRoot: deps.getShadowRoot(), panelT: deps.getPanelT() });
@@ -82,9 +95,7 @@ export function createWatchPanelCompletionController(
 
   function maybeShowCompletionPrompt(): void {
     const currentVideoId = deps.getCurrentVideoId();
-    if (!currentVideoId) return;
-    if (deps.getLibraryItemForCurrentVideo()?.completedAt != null) return;
-    if (completionPromptDismissedForVideoId === currentVideoId) return;
+    if (!canOfferCompletionPrompt()) return;
     completionPromptShownForVideoId = currentVideoId;
     showEndedPrompt();
   }
@@ -103,12 +114,7 @@ export function createWatchPanelCompletionController(
       hideEndedPrompt();
       return;
     }
-    if (
-      currentVideoId &&
-      completionPromptShownForVideoId === currentVideoId &&
-      completionPromptDismissedForVideoId !== currentVideoId &&
-      deps.getLibraryItemForCurrentVideo()?.completedAt == null
-    ) {
+    if (currentVideoId && completionPromptShownForVideoId === currentVideoId && canOfferCompletionPrompt()) {
       showEndedPrompt();
     }
   }
@@ -120,6 +126,7 @@ export function createWatchPanelCompletionController(
       detachCompletionPromptListener = null;
     }
     if (!currentVideoId) return;
+    if (!deps.getInLibrary()) return;
     if (completionPromptDismissedForVideoId === currentVideoId) return;
     const video = getVideoElement();
     if (!video) return;
@@ -146,6 +153,8 @@ export function createWatchPanelCompletionController(
       readChannel: deps.readChannel,
       panelT: deps.getPanelT(),
       getUi: deps.getUi,
+      shadowRoot: deps.getShadowRoot(),
+      applyXpFromResponse: deps.applyXpFromResponse,
       afterPersist: deps.afterCompletionPersist,
     });
   }
@@ -170,7 +179,7 @@ export function createWatchPanelCompletionController(
     }
     setWatchPanelEndedPromptVisible({
       shadowRoot: deps.getShadowRoot(),
-      visible: endedPromptVisible && libraryItem?.completedAt == null,
+      visible: endedPromptVisible && deps.getInLibrary() && libraryItem?.completedAt == null,
     });
   }
 

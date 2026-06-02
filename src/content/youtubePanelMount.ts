@@ -1,6 +1,8 @@
 import type { LevelFramework } from '../lib/storage';
+import { isYoutubeWatchLikePage } from '../lib/youtubeIds';
 import { watchPanelShadowInnerHtml } from './youtubePanelHtml';
 import { attachPanelDrag, levelSelectOptionsHtml } from './youtubePanelUi';
+import { isWatchPanelHostLive, WATCH_PANEL_BOOT_TOKEN } from './watchPanelBoot';
 
 export interface WatchPanelUiRefs {
   root: HTMLElement;
@@ -42,22 +44,87 @@ export interface EnsureWatchPanelOptions {
   onAfterAppend: () => void;
 }
 
+export function setWatchPanelHostVisible(panelHostId: string, visible: boolean): void {
+  const host = document.getElementById(panelHostId) as HTMLElement | null;
+  if (!host) return;
+  host.style.display = visible ? '' : 'none';
+}
+
+/** Keep a dragged panel on-screen (custom left/top only). */
+export function clampWatchPanelHostToViewport(host: HTMLElement, pad = 8): void {
+  if (host.style.left === 'auto' || host.style.top === 'auto') return;
+  const left = Number.parseFloat(host.style.left);
+  const top = Number.parseFloat(host.style.top);
+  if (!Number.isFinite(left) || !Number.isFinite(top)) return;
+
+  const rect = host.getBoundingClientRect();
+  const w = rect.width > 0 ? rect.width : host.offsetWidth;
+  const h = rect.height > 0 ? rect.height : host.offsetHeight;
+  const maxL = Math.max(pad, window.innerWidth - w - pad);
+  const maxT = Math.max(pad, window.innerHeight - h - pad);
+  const nextL = Math.min(Math.max(pad, left), maxL);
+  const nextT = Math.min(Math.max(pad, top), maxT);
+  if (nextL !== left) host.style.left = `${nextL}px`;
+  if (nextT !== top) host.style.top = `${nextT}px`;
+}
+
+export function applyDefaultWatchPanelHostStyle(host: HTMLElement): void {
+  host.style.setProperty('position', 'fixed', 'important');
+  host.style.setProperty('z-index', '2147483646', 'important');
+  host.style.setProperty('font-family', 'system-ui, Segoe UI, Roboto, sans-serif', 'important');
+  host.style.setProperty('font-size', '13px', 'important');
+  host.style.setProperty('max-width', '300px', 'important');
+  host.style.setProperty('display', 'block', 'important');
+  host.style.setProperty('visibility', 'visible', 'important');
+  host.style.setProperty('opacity', '1', 'important');
+  host.style.setProperty('pointer-events', 'auto', 'important');
+  host.style.left = 'auto';
+  host.style.top = 'auto';
+  host.style.right = '16px';
+  host.style.bottom = '88px';
+}
+
+/** Ensure the panel host is on top and in the viewport (after spawn or drag). */
+export function forceWatchPanelHostVisible(host: HTMLElement): void {
+  applyDefaultWatchPanelHostStyle(host);
+  if (!host.isConnected) {
+    (document.body ?? document.documentElement).appendChild(host);
+  } else {
+    (document.body ?? document.documentElement).appendChild(host);
+  }
+  requestAnimationFrame(() => clampWatchPanelHostToViewport(host));
+}
+
+export function extractWatchPanelUiFromShadow(sr: ShadowRoot): WatchPanelUiRefs {
+  return {
+    root: sr.querySelector('.wrap') as HTMLElement,
+    practiceToggle: sr.querySelector('[part="practice"]') as HTMLInputElement,
+    difficultySelect: sr.querySelector('[part="difficulty"]') as HTMLSelectElement,
+    addBtn: sr.querySelector('[part="add"]') as HTMLButtonElement,
+    statusEl: sr.querySelector('[part="status"]') as HTMLElement,
+    hintEl: sr.querySelector('[part="hint"]') as HTMLElement,
+  };
+}
+
 /** Creates the floating host + shadow panel once; wires static listeners. */
 export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
-  if (document.getElementById(opts.panelHostId)) return;
+  const existing = document.getElementById(opts.panelHostId) as HTMLElement | null;
+  if (existing && isWatchPanelHostLive(existing)) {
+    opts.onMounted({
+      host: existing,
+      shadowRoot: existing.shadowRoot!,
+      ui: extractWatchPanelUiFromShadow(existing.shadowRoot!),
+    });
+    opts.onAfterAppend();
+    return;
+  }
+  existing?.remove();
 
   const host = document.createElement('div');
   host.id = opts.panelHostId;
   host.setAttribute('data-jp-practice', '1');
-  Object.assign(host.style, {
-    position: 'fixed',
-    right: '16px',
-    bottom: '88px',
-    zIndex: '99999',
-    fontFamily: 'system-ui, Segoe UI, Roboto, sans-serif',
-    fontSize: '13px',
-    maxWidth: '300px',
-  });
+  host.dataset.jpBootToken = WATCH_PANEL_BOOT_TOKEN;
+  applyDefaultWatchPanelHostStyle(host);
 
   const sr = host.attachShadow({ mode: 'open' });
   const fw = opts.getLevelFramework();
@@ -72,15 +139,10 @@ export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
     markIncomplete: tmpl.markIncomplete,
   });
 
-  const root = sr.querySelector('.wrap') as HTMLElement;
-  const addBtn = sr.querySelector('[part="add"]') as HTMLButtonElement;
+  const ui = extractWatchPanelUiFromShadow(sr);
   const completeBtn = sr.querySelector('[part="complete-btn"]') as HTMLButtonElement;
   const completePromptYes = sr.querySelector('[part="complete-prompt-yes"]') as HTMLButtonElement;
   const completePromptNo = sr.querySelector('[part="complete-prompt-no"]') as HTMLButtonElement;
-  const difficultySelect = sr.querySelector('[part="difficulty"]') as HTMLSelectElement;
-  const practiceToggle = sr.querySelector('[part="practice"]') as HTMLInputElement;
-  const statusEl = sr.querySelector('[part="status"]') as HTMLElement;
-  const hintEl = sr.querySelector('[part="hint"]') as HTMLElement;
   const dragHandle = sr.querySelector('[part="drag-handle"]') as HTMLElement;
   const collapseBtn = sr.querySelector('[part="collapse"]') as HTMLButtonElement;
   const calPrev = sr.querySelector('[part="cal-prev"]') as HTMLButtonElement;
@@ -93,22 +155,13 @@ export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
     h.onCollapseClick();
   });
 
-  const ui: WatchPanelUiRefs = {
-    root,
-    practiceToggle,
-    difficultySelect,
-    addBtn,
-    statusEl,
-    hintEl,
-  };
-
-  addBtn.addEventListener('click', () => h.onAddClick());
+  ui.addBtn.addEventListener('click', () => h.onAddClick());
   completeBtn.addEventListener('click', () => h.onCompleteClick());
   completePromptYes.addEventListener('click', () => h.onCompletePromptYes());
   completePromptNo.addEventListener('click', () => h.onCompletePromptNo());
-  difficultySelect.addEventListener('change', () => h.onDifficultyChange(difficultySelect.value));
-  practiceToggle.addEventListener('change', () => {
-    h.onPracticeToggleChange(practiceToggle.checked);
+  ui.difficultySelect.addEventListener('change', () => h.onDifficultyChange(ui.difficultySelect.value));
+  ui.practiceToggle.addEventListener('change', () => {
+    h.onPracticeToggleChange(ui.practiceToggle.checked);
   });
 
   calPrev.addEventListener('click', () => h.onCalPrev());
@@ -118,7 +171,8 @@ export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
 
   opts.onMounted({ host, shadowRoot: sr, ui });
 
-  document.documentElement.appendChild(host);
+  (document.body ?? document.documentElement).appendChild(host);
+  forceWatchPanelHostVisible(host);
   opts.onAfterAppend();
 }
 
@@ -229,6 +283,16 @@ export function needsHomeFeedPanelAttention(getVideoIdFromUrl: () => string | nu
   const path = location.pathname;
   if (path.startsWith('/watch') || path.startsWith('/shorts/')) return false;
   return getVideoIdFromUrl() === null;
+}
+
+/** Keep the floating panel on-screen when id resolution is still in flight (SPA / DOM lag). */
+export function shouldKeepWatchPanelVisibleWithoutVideoId(
+  getVideoIdFromUrl: () => string | null,
+  hasVideoElement: () => boolean,
+): boolean {
+  if (needsHomeFeedPanelAttention(getVideoIdFromUrl)) return true;
+  if (isYoutubeWatchLikePage()) return true;
+  return hasVideoElement();
 }
 
 let prevHomeFeedAttentionShown = false;

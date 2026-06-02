@@ -1,9 +1,25 @@
-/** Set `localStorage.setItem(JP_PRACTICE_DEBUG_LS_KEY,'1')` on youtube.com, reload; panel shows a green log strip + extra console lines. */
-export const JP_PRACTICE_DEBUG_LS_KEY = 'jpPracticeDebug';
+import { JP_PRACTICE_DEBUG_LS_KEY, JP_XP_DEBUG_LS_KEY } from '../lib/xpDebug';
+
+/** Re-export for content callers; canonical definition in `lib/xpDebug.ts`. */
+export { JP_PRACTICE_DEBUG_LS_KEY };
+
+/** Set `localStorage.setItem(JP_PRACTICE_DEBUG_LS_KEY,'1')` on youtube.com, reload; panel shows a green log strip + extra console lines. XP-only: `jp-debug-xp` (see `lib/xpDebug.ts`). */
 
 export function jpWatchDebugEnabled(): boolean {
   try {
     return typeof localStorage !== 'undefined' && localStorage.getItem(JP_PRACTICE_DEBUG_LS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function jpXpDebugEnabled(): boolean {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    return (
+      localStorage.getItem(JP_XP_DEBUG_LS_KEY) === '1' ||
+      localStorage.getItem(JP_PRACTICE_DEBUG_LS_KEY) === '1'
+    );
   } catch {
     return false;
   }
@@ -51,7 +67,7 @@ export function createJpWatchPanelDebugStrip(getShadowRoot: () => ShadowRoot | n
     stripEl.hidden = false;
     if (!stripEl.textContent?.trim()) {
       stripEl.textContent =
-        'Debug ON (jpPracticeDebug=1). Console filter: JustPractice:watch\nOff: localStorage.removeItem("jpPracticeDebug"); reload';
+        'Debug ON (jpPracticeDebug=1). Console: JustPractice:watch, [JP XP]\nXP only: localStorage.setItem("jp-debug-xp","1"); reload\nOff: remove jpPracticeDebug / jp-debug-xp; reload';
     }
   }
 

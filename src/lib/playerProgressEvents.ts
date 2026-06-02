@@ -19,6 +19,7 @@ export interface XpEventResult {
   newAchievements: string[];
   levelUp: boolean;
   newLevel: number;
+  totalXp: number;
 }
 
 function sumXpGained(...deltas: Array<XpDelta | null>): number {
@@ -50,6 +51,7 @@ function finalizeXpEvent(
     newAchievements,
     levelUp: levelUpFromDeltas || levelAfter > levelBefore,
     newLevel: levelAfter,
+    totalXp: progress.totalXp,
   };
 }
 

@@ -20,6 +20,16 @@ export function formatDuration(totalSec: number): string {
   return `${s}s`;
 }
 
+/** Whole minutes only (floored) — used in the compact YouTube watch panel. */
+export function formatDurationMinutesOnly(totalSec: number): string {
+  const sec = Math.max(0, Math.floor(totalSec));
+  const totalMin = Math.floor(sec / 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  return `${totalMin}m`;
+}
+
 /** HH:MM style for top-bar “hours practiced” (hours + minutes within current hour). */
 export function formatHoursMinutesClock(totalSec: number): string {
   const h = Math.floor(totalSec / 3600);
@@ -74,7 +84,6 @@ export function calendarDayBottomLabel(
   if (dayCountsAsPracticedForCalendar(seconds)) return formatDuration(seconds);
   if (dateKey === todayKey) return CALENDAR_UNDER_MINUTE_MARK;
   if (vis === 'none') return CALENDAR_MISSED_DAY_MARK;
-  if (seconds > 0) return CALENDAR_UNDER_MINUTE_MARK;
   return '—';
 }
 

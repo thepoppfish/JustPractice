@@ -49,10 +49,15 @@ describe('isGoldenMonth', () => {
 });
 
 describe('formatMonthCellTime', () => {
-  it('uses 0 only for today when under a full minute', () => {
-    expect(formatMonthCellTime(45)).toBe('');
-    expect(formatMonthCellTime(45, true)).toBe('0');
-    expect(formatMonthCellTime(0, true)).toBe('0');
+  const today = '2026-05-14';
+
+  it('uses 0 only for today when under a full minute; X on past missed days', () => {
+    expect(formatMonthCellTime('none', 45, '2026-05-13', today)).toBe('X');
+    expect(formatMonthCellTime('none', 0, '2026-05-13', today)).toBe('X');
+    expect(formatMonthCellTime('none', 45, today, today)).toBe('0');
+    expect(formatMonthCellTime('none', 0, today, today)).toBe('0');
+    expect(formatMonthCellTime('active', 125, '2026-05-13', today)).toBe('2m 5s');
+    expect(formatMonthCellTime('active', 125, '2026-05-13', today, true)).toBe('2m');
   });
 });
 
@@ -70,7 +75,7 @@ describe('buildMonthDetailGrid', () => {
     const day = grid.cells.find((c) => c.kind === 'day' && c.dateKey === '2025-01-15');
     expect(day?.kind).toBe('day');
     if (day?.kind === 'day') {
-      expect(day.timeLabel).toBe(formatMonthCellTime(125));
+      expect(day.timeLabel).toBe(formatMonthCellTime('active', 125, '2025-01-15', '2025-06-01'));
     }
   });
 

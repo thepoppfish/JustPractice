@@ -12,6 +12,8 @@ export const MSG = {
   CLEAR_ALL_EXTENSION_DATA: 'CLEAR_ALL_EXTENSION_DATA',
   RESTORE_EXTENSION_STORAGE: 'RESTORE_EXTENSION_STORAGE',
   PRESTIGE: 'PRESTIGE',
+  /** Content script: remount / show the YouTube watch panel at the default position. */
+  SHOW_WATCH_PANEL: 'SHOW_WATCH_PANEL',
 } as const;
 
 export type MessageType = (typeof MSG)[keyof typeof MSG];
@@ -62,9 +64,19 @@ export interface PracticeTickMessage {
   };
 }
 
+/** `null` for watch panel position fields clears saved drag coordinates. */
+export type SetSettingsPayload = Omit<Partial<AppSettings>, 'watchPanelLeft' | 'watchPanelTop'> & {
+  watchPanelLeft?: number | null;
+  watchPanelTop?: number | null;
+};
+
 export interface SetSettingsMessage {
   type: typeof MSG.SET_SETTINGS;
-  payload: Partial<AppSettings>;
+  payload: SetSettingsPayload;
+}
+
+export interface ShowWatchPanelMessage {
+  type: typeof MSG.SHOW_WATCH_PANEL;
 }
 
 export interface EnrichLibraryMetaMessage {
@@ -97,7 +109,8 @@ export type ExtensionMessage =
   | EnrichLibraryMetaMessage
   | ClearAllExtensionDataMessage
   | RestoreExtensionStorageMessage
-  | PrestigeMessage;
+  | PrestigeMessage
+  | ShowWatchPanelMessage;
 
 export interface GetStateResponse {
   ok: true;
@@ -114,6 +127,8 @@ export interface XpAwardFields {
   newAchievements: string[];
   levelUp: boolean;
   newLevel: number;
+  /** Cycle XP after the mutation (source of truth for rank bar). */
+  totalXp: number;
 }
 
 export interface PracticeTickOkResponse extends OkResponse, XpAwardFields {}

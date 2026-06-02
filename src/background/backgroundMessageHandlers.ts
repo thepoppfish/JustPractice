@@ -21,6 +21,7 @@ import {
   processPrestigeEvent,
 } from '../lib/playerProgressEvents';
 import { canPrestige, levelFromTotalXp } from '../lib/playerProgress';
+import { explainPracticeXpZero, jpXpLogBackground } from '../lib/xpDebug';
 import { maybeNotifyXpEvents, maybeNotifyPrestigeUp } from '../lib/xpNotifications';
 import { enrichLibraryItemFromOEmbed } from './backgroundOEmbed';
 import { rebuildContextMenusFromStorage } from './backgroundContextMenus';
@@ -134,7 +135,14 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
           completedAt: now,
         });
       } else {
-        return { ok: true, xpGained: 0, newAchievements: [], levelUp: false, newLevel: levelFromTotalXp(p.playerProgress.totalXp) };
+        return {
+          ok: true,
+          xpGained: 0,
+          newAchievements: [],
+          levelUp: false,
+          newLevel: levelFromTotalXp(p.playerProgress.totalXp),
+          totalXp: p.playerProgress.totalXp,
+        };
       }
       let xpResult = {
         xpGained: 0,
@@ -158,21 +166,49 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
     case MSG.PRACTICE_TICK: {
       let { deltaSeconds } = message.payload;
       if (deltaSeconds <= 0) {
+        const empty = await readPersisted();
+        void jpXpLogBackground('bg:PRACTICE_TICK skip', {
+          reason: 'deltaSeconds<=0',
+          videoId: message.payload.videoId,
+        });
         return {
           ok: true,
           xpGained: 0,
           newAchievements: [],
           levelUp: false,
-          newLevel: levelFromTotalXp((await readPersisted()).playerProgress.totalXp),
+          newLevel: levelFromTotalXp(empty.playerProgress.totalXp),
+          totalXp: empty.playerProgress.totalXp,
         };
       }
       if (deltaSeconds > MAX_TICK_SECONDS) deltaSeconds = MAX_TICK_SECONDS;
       const p = await readPersisted();
       const { videoId, endedAtMs } = message.payload;
+      const carryIn = Math.max(0, Math.floor(p.playerProgress.practiceXpCarrySeconds ?? 0));
+      const inLibrary = p.library.some((x) => x.videoId === videoId);
       const key = dateKeyFromTimestamp(endedAtMs);
       p.dailySeconds[key] = (p.dailySeconds[key] ?? 0) + deltaSeconds;
       p.videoSeconds[videoId] = (p.videoSeconds[videoId] ?? 0) + deltaSeconds;
       const xpResult = processPracticeTickXpEvent(p, deltaSeconds, endedAtMs);
+      const carryOut = Math.max(0, Math.floor(p.playerProgress.practiceXpCarrySeconds ?? 0));
+      const zeroXpReason = explainPracticeXpZero({
+        deltaSeconds,
+        carryIn,
+        carryOut,
+        xpGained: xpResult.xpGained,
+      });
+      void jpXpLogBackground('bg:PRACTICE_TICK', {
+        videoId,
+        deltaSeconds,
+        inLibrary,
+        carryIn,
+        carryOut,
+        xpGained: xpResult.xpGained,
+        totalXp: xpResult.totalXp,
+        levelUp: xpResult.levelUp,
+        newLevel: xpResult.newLevel,
+        dailySecondsToday: p.dailySeconds[key] ?? 0,
+        ...(zeroXpReason ? { zeroXpReason } : {}),
+      });
       await writePersisted(p);
       void maybeNotifyDailyGoalMet(p);
       void maybeNotifyXpEvents(p, xpResult);
@@ -181,8 +217,16 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
     case MSG.SET_SETTINGS: {
       const p = await readPersisted();
       const inc = message.payload;
-      const { goals, ...rest } = inc;
+      const { goals, watchPanelLeft, watchPanelTop, ...rest } = inc;
       p.settings = ensureSettingsShape({ ...p.settings, ...rest });
+      if (watchPanelLeft === null) delete p.settings.watchPanelLeft;
+      else if (typeof watchPanelLeft === 'number' && !Number.isNaN(watchPanelLeft)) {
+        p.settings.watchPanelLeft = watchPanelLeft;
+      }
+      if (watchPanelTop === null) delete p.settings.watchPanelTop;
+      else if (typeof watchPanelTop === 'number' && !Number.isNaN(watchPanelTop)) {
+        p.settings.watchPanelTop = watchPanelTop;
+      }
       if (goals !== undefined && goals !== null && typeof goals === 'object' && !Array.isArray(goals)) {
         p.settings.goals = {
           ...p.settings.goals,
@@ -238,6 +282,7 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
         newAchievements: xpResult.newAchievements,
         levelUp: false,
         newLevel: levelFromTotalXp(p.playerProgress.totalXp),
+        totalXp: p.playerProgress.totalXp,
         prestigeUp: true,
         prestigeLevel: xpResult.prestigeLevel,
       };

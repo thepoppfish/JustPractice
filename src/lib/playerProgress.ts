@@ -129,8 +129,14 @@ export function awardPracticeXp(
   deltaSeconds: number,
   nowMs: number = Date.now(),
 ): XpDelta & { multiplier: number; prestigeMultiplier: number } {
+  const carryIn = Math.max(0, Math.floor(progress.practiceXpCarrySeconds ?? 0));
+  const added = Math.max(0, Math.floor(deltaSeconds));
+  const pooled = carryIn + added;
+  const billableSeconds = Math.floor(pooled / 60) * 60;
+  progress.practiceXpCarrySeconds = pooled % 60;
+
   const { xp, multiplier, prestigeMultiplier } = practiceXpFromSeconds(
-    deltaSeconds,
+    billableSeconds,
     nowMs,
     progress.prestigeLevel,
   );
@@ -211,6 +217,7 @@ export function applyPrestige(progress: PlayerProgress): PrestigeResult {
   }
   progress.prestigeLevel += 1;
   progress.totalXp = 0;
+  progress.practiceXpCarrySeconds = 0;
   return {
     applied: true,
     prestigeLevel: progress.prestigeLevel,
