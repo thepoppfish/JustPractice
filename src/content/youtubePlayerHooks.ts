@@ -1,17 +1,133 @@
 import { pickFeedCardFromInteractionTarget, type VideoMeta } from './feedCards';
 
-/** Best-effort primary `<video>` on watch / Shorts / flexy surfaces. */
+/** Minimum rendered size to treat a `<video>` as the main watch player (not a hover preview). */
+const MIN_MAIN_PLAYER_VIDEO_PX = 120;
+
+const WATCH_PLAYER_ROOT_SELECTORS = [
+  '#movie_player',
+  'ytd-watch-flexy #primary',
+  'ytd-watch-flexy #player-container',
+  'ytd-watch-flexy #player',
+  'ytd-shorts #player-container',
+  'ytd-reel-video-renderer',
+  'ytd-short #player',
+  '.html5-video-player',
+] as const;
+
+const FEED_PREVIEW_ANCESTOR_SELECTORS = [
+  'ytd-compact-video-renderer',
+  'ytd-video-renderer',
+  'ytd-rich-item-renderer',
+  'ytd-grid-video-renderer',
+  'ytd-channel-video-renderer',
+  'ytd-playlist-panel-video-renderer',
+] as const;
+
+export interface WatchVideoCandidateScoreInput {
+  paused: boolean;
+  ended: boolean;
+  currentTime: number;
+  width: number;
+  height: number;
+  inMoviePlayer: boolean;
+  inWatchPrimary: boolean;
+  inPlayerContainer: boolean;
+  inShortsPlayer: boolean;
+  isFeedPreview: boolean;
+}
+
+/** Collect `<video>` nodes under a root, including open shadow roots. */
+export function collectVideosDeep(root: Element | ShadowRoot, out: HTMLVideoElement[]): void {
+  root.querySelectorAll('video').forEach((node) => {
+    if (node instanceof HTMLVideoElement) out.push(node);
+  });
+  root.querySelectorAll('*').forEach((el) => {
+    if (el.shadowRoot) collectVideosDeep(el.shadowRoot, out);
+  });
+}
+
+export function isFeedHoverPreviewVideo(video: Element): boolean {
+  return FEED_PREVIEW_ANCESTOR_SELECTORS.some((sel) => Boolean(video.closest(sel)));
+}
+
+/** Score for choosing the main watch-page player among several `<video>` elements. */
+export function scoreWatchPageVideoCandidate(input: WatchVideoCandidateScoreInput): number {
+  if (input.isFeedPreview) return -1;
+  if (input.width < MIN_MAIN_PLAYER_VIDEO_PX || input.height < MIN_MAIN_PLAYER_VIDEO_PX) return -1;
+
+  let score = input.width * input.height;
+  if (input.inMoviePlayer) score += 1e12;
+  if (input.inWatchPrimary) score += 1e11;
+  if (input.inPlayerContainer) score += 1e10;
+  if (input.inShortsPlayer) score += 1e10;
+  if (!input.paused && !input.ended) score += 1e9;
+  if (input.currentTime > 0) score += 1e6;
+  return score;
+}
+
+function scoreVideoElement(video: HTMLVideoElement): number {
+  const rect = video.getBoundingClientRect();
+  return scoreWatchPageVideoCandidate({
+    paused: video.paused,
+    ended: video.ended,
+    currentTime: video.currentTime,
+    width: rect.width,
+    height: rect.height,
+    inMoviePlayer: Boolean(video.closest('#movie_player')),
+    inWatchPrimary: Boolean(video.closest('ytd-watch-flexy #primary')),
+    inPlayerContainer: Boolean(video.closest('ytd-watch-flexy #player-container, ytd-watch-flexy #player')),
+    inShortsPlayer: Boolean(
+      video.closest('ytd-shorts #player-container, ytd-reel-video-renderer, ytd-short'),
+    ),
+    isFeedPreview: isFeedHoverPreviewVideo(video),
+  });
+}
+
+function pickBestVideo(candidates: Iterable<HTMLVideoElement>): HTMLVideoElement | null {
+  let best: HTMLVideoElement | null = null;
+  let bestScore = -1;
+  for (const video of candidates) {
+    const score = scoreVideoElement(video);
+    if (score > bestScore) {
+      bestScore = score;
+      best = video;
+    }
+  }
+  return best;
+}
+
+function getWatchPlayerRoots(): Element[] {
+  const seen = new Set<Element>();
+  const roots: Element[] = [];
+  for (const sel of WATCH_PLAYER_ROOT_SELECTORS) {
+    const el = document.querySelector(sel);
+    if (el && !seen.has(el)) {
+      seen.add(el);
+      roots.push(el);
+    }
+  }
+  return roots;
+}
+
+/**
+ * Best-effort primary `<video>` on watch / Shorts surfaces.
+ * Prefers the main player (including shadow DOM), never a sidebar hover-preview tile.
+ */
 export function getVideoElement(): HTMLVideoElement | null {
-  const movie = document.querySelector('#movie_player video');
-  if (movie instanceof HTMLVideoElement) return movie;
-  const shorts = document.querySelector(
-    'ytd-shorts #player-container video, ytd-reel-video-renderer video, ytd-short video',
-  );
-  if (shorts instanceof HTMLVideoElement) return shorts;
-  const watchFlexy = document.querySelector('ytd-watch-flexy #player-container video');
-  if (watchFlexy instanceof HTMLVideoElement) return watchFlexy;
-  const v = document.querySelector('video');
-  return v instanceof HTMLVideoElement ? v : null;
+  const roots = getWatchPlayerRoots();
+  const candidates: HTMLVideoElement[] = [];
+
+  if (roots.length > 0) {
+    for (const root of roots) {
+      collectVideosDeep(root, candidates);
+    }
+    const best = pickBestVideo(candidates);
+    if (best) return best;
+  }
+
+  // Last resort: scan document but still reject feed previews and tiny tiles.
+  collectVideosDeep(document.documentElement, candidates);
+  return pickBestVideo(candidates);
 }
 
 function elementTouchesPlayerShell(el: Element | null): boolean {

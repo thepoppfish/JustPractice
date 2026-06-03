@@ -504,22 +504,24 @@ Achievement **ids** match the table above (e.g. `lib_25`, `watch_100h`, `level_1
 
 ### Feature: practice time counting
 
-**Eligibility:** `youtubePracticeTimer.ts` → `shouldCountPracticeTime` (toggle on, `currentVideoId`, video playing, visible, optional focus).
+**Eligibility:** `practicePlaybackMeter.ts` + `youtubePracticeTimer.ts` — practice on, `currentVideoId`, main `<video>` present, tab visible, not ended. The meter does **not** use `video.paused` (YouTube reports false pauses during theater mode).
 
-**Orchestration:** `youtubeWatchPanelRuntime.ts` — `pendingSeconds`, `createPracticeIntervalController`, `flushPendingPracticeSeconds` → `PRACTICE_TICK`.
+**Measurement:** `practicePlaybackMeter.ts` accumulates **`currentTime` deltas** on `timeupdate` / `playing` (not `setInterval` +1). Seeks and jumps `> 2.5s` are ignored.
 
-**Intervals:** count **1000 ms** (`PRACTICE_COUNT_INTERVAL_MS`); flush **15 s** (`PRACTICE_FLUSH_INTERVAL_MS`) + `visibilitychange` / `blur` / `beforeunload`. Background clamps each tick to **120 s** max (`MAX_TICK_SECONDS`).
+**Orchestration:** `youtubeWatchPanelRuntime.ts` — `createPracticePlaybackMeter`, `createPracticeFlushScheduler`, `flushWatchPanelPractice` → `PRACTICE_TICK`.
 
-**When a second counts** (all must hold):
+**Persist:** batch flush every **30 s** (`PRACTICE_FLUSH_INTERVAL_MS`) when pending > 0, plus `visibilitychange` (hidden), `pagehide`, `beforeunload`, video pause, practice off, and video change. Background clamps each message to **120 s** max (`MAX_TICK_SECONDS`).
+
+**When time accrues** (all must hold):
 
 1. Practice toggle on and `currentVideoId` set.
-2. `<video>` exists and is playing (not paused/ended).
+2. Bound main player `<video>` exists.
 3. `document.visibilityState === 'visible'`.
-4. If `settings.pauseWhenUnfocused`, `document.hasFocus()` must be true.
+4. Forward `currentTime` advancement (not seeking / not ended).
 
-**UI feedback:** Each counted second may refresh the daily goal ring and calendar when the visible month includes today (`calendarViewIncludesToday` in panel UI). XP flashes use `flashWatchPanelXpTick` after tick responses with `xpGained > 0`.
+**UI feedback:** Meter accumulation refreshes the daily goal ring and calendar when the visible month includes today. XP flashes use `flashWatchPanelXpTick` after tick responses with `xpGained > 0`.
 
-**AI debugging:** Bugs = time drift, double count, ticks after unload — check `createPracticeIntervalController.reset()` on video change and page flush listeners.
+**AI debugging:** `localStorage jpPracticeDebug=1` — debug strip shows `media +X.XXs · pending Ns`. The meter samples `video.currentTime` on a 1s interval (`practiceMeter.start/stop/rebind`), so counting no longer depends on YouTube firing `timeupdate`. Check `practiceMeter.rebind()` on player DOM changes and flush on lifecycle.
 
 ---
 

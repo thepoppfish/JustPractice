@@ -6,7 +6,6 @@ import { isWatchPanelHostLive, WATCH_PANEL_BOOT_TOKEN } from './watchPanelBoot';
 
 export interface WatchPanelUiRefs {
   root: HTMLElement;
-  practiceToggle: HTMLInputElement;
   difficultySelect: HTMLSelectElement;
   addBtn: HTMLButtonElement;
   statusEl: HTMLElement;
@@ -21,7 +20,6 @@ export interface WatchPanelEventHandlers {
   onCompletePromptYes: () => void;
   onCompletePromptNo: () => void;
   onDifficultyChange: (value: string) => void;
-  onPracticeToggleChange: (checked: boolean) => void;
   onCalPrev: () => void;
   onCalNext: () => void;
   onDragCommit: (left: number, top: number) => void;
@@ -35,7 +33,6 @@ export interface EnsureWatchPanelOptions {
     dragToMove: string;
     level: string;
     saveToLibrary: string;
-    countPracticeTime: string;
     markComplete: string;
     markIncomplete: string;
   };
@@ -98,7 +95,6 @@ export function forceWatchPanelHostVisible(host: HTMLElement): void {
 export function extractWatchPanelUiFromShadow(sr: ShadowRoot): WatchPanelUiRefs {
   return {
     root: sr.querySelector('.wrap') as HTMLElement,
-    practiceToggle: sr.querySelector('[part="practice"]') as HTMLInputElement,
     difficultySelect: sr.querySelector('[part="difficulty"]') as HTMLSelectElement,
     addBtn: sr.querySelector('[part="add"]') as HTMLButtonElement,
     statusEl: sr.querySelector('[part="status"]') as HTMLElement,
@@ -110,10 +106,11 @@ export function extractWatchPanelUiFromShadow(sr: ShadowRoot): WatchPanelUiRefs 
 export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
   const existing = document.getElementById(opts.panelHostId) as HTMLElement | null;
   if (existing && isWatchPanelHostLive(existing)) {
+    const sr = existing.shadowRoot!;
     opts.onMounted({
       host: existing,
-      shadowRoot: existing.shadowRoot!,
-      ui: extractWatchPanelUiFromShadow(existing.shadowRoot!),
+      shadowRoot: sr,
+      ui: extractWatchPanelUiFromShadow(sr),
     });
     opts.onAfterAppend();
     return;
@@ -134,7 +131,6 @@ export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
     dragToMove: tmpl.dragToMove,
     level: tmpl.level,
     saveToLibrary: tmpl.saveToLibrary,
-    countPracticeTime: tmpl.countPracticeTime,
     markComplete: tmpl.markComplete,
     markIncomplete: tmpl.markIncomplete,
   });
@@ -160,9 +156,6 @@ export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
   completePromptYes.addEventListener('click', () => h.onCompletePromptYes());
   completePromptNo.addEventListener('click', () => h.onCompletePromptNo());
   ui.difficultySelect.addEventListener('change', () => h.onDifficultyChange(ui.difficultySelect.value));
-  ui.practiceToggle.addEventListener('change', () => {
-    h.onPracticeToggleChange(ui.practiceToggle.checked);
-  });
 
   calPrev.addEventListener('click', () => h.onCalPrev());
   calNext.addEventListener('click', () => h.onCalNext());

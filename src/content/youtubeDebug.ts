@@ -3,7 +3,7 @@ import { JP_PRACTICE_DEBUG_LS_KEY, JP_XP_DEBUG_LS_KEY } from '../lib/xpDebug';
 /** Re-export for content callers; canonical definition in `lib/xpDebug.ts`. */
 export { JP_PRACTICE_DEBUG_LS_KEY };
 
-/** Set `localStorage.setItem(JP_PRACTICE_DEBUG_LS_KEY,'1')` on youtube.com, reload; panel shows a green log strip + extra console lines. XP-only: `jp-debug-xp` (see `lib/xpDebug.ts`). */
+/** Set `localStorage.setItem(JP_PRACTICE_DEBUG_LS_KEY,'1')` on youtube.com, reload; panel shows a green log strip + extra console lines. While practice is on, the strip logs `media +X.XXs · pending Ns` every 5s from the playback meter. XP-only: `jp-debug-xp` (see `lib/xpDebug.ts`). */
 
 export function jpWatchDebugEnabled(): boolean {
   try {

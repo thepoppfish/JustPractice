@@ -1,14 +1,10 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage } from '../lib/messages';
-import { STORAGE_SYNC_INTERVAL_MS } from '../lib/storageSyncPoll';
 
-/** 1s UI tick while practice intervals are active (counting adds seconds only when rules pass). */
-export const PRACTICE_COUNT_INTERVAL_MS = 1000;
+/** Batched persist interval for `PRACTICE_TICK` (write batching only — not how seconds are measured). */
+export const PRACTICE_FLUSH_INTERVAL_MS = 30_000;
 
-/** Background merge interval for `PRACTICE_TICK`. */
-export const PRACTICE_FLUSH_INTERVAL_MS = STORAGE_SYNC_INTERVAL_MS;
-
-/** Minimal video surface for eligibility checks. */
+/** Minimal video surface for status / ended checks (not used to gate the playback meter). */
 export type PracticeCountEligibleVideo = Pick<HTMLVideoElement, 'paused' | 'ended'>;
 
 export interface ShouldCountPracticeTimeParams {
@@ -16,20 +12,49 @@ export interface ShouldCountPracticeTimeParams {
   currentVideoId: string | null;
   video: PracticeCountEligibleVideo | null;
   visibilityState: DocumentVisibilityState;
-  pauseWhenUnfocused: boolean;
-  documentHasFocus: boolean;
 }
 
-/**
- * Mirrors watch-page rules documented in ExplaneMe: practice on, video id, playing,
- * tab visible, and optional focus gate when `pauseWhenUnfocused` is set.
- */
+/** First gate that blocks counting; `null` when session gates pass (meter uses media delta). */
+export type PracticeCountBlockReason =
+  | 'practiceOff'
+  | 'noVideoId'
+  | 'noVideoElement'
+  | 'ended'
+  | 'hidden';
+
+const PRACTICE_COUNT_BLOCK_LABELS: Record<PracticeCountBlockReason, string> = {
+  practiceOff: 'practice off',
+  noVideoId: 'no video id',
+  noVideoElement: 'no player video',
+  ended: 'ended',
+  hidden: 'tab hidden',
+};
+
+export function explainWhyNotCountingPractice(
+  p: ShouldCountPracticeTimeParams,
+): PracticeCountBlockReason | null {
+  if (!p.practiceEnabled) return 'practiceOff';
+  if (!p.currentVideoId) return 'noVideoId';
+  if (!p.video) return 'noVideoElement';
+  if (p.video.ended) return 'ended';
+  if (p.visibilityState !== 'visible') return 'hidden';
+  return null;
+}
+
 export function shouldCountPracticeTime(p: ShouldCountPracticeTimeParams): boolean {
-  if (!p.practiceEnabled || !p.currentVideoId) return false;
-  if (!p.video || p.video.paused || p.video.ended) return false;
-  if (p.visibilityState !== 'visible') return false;
-  if (p.pauseWhenUnfocused && !p.documentHasFocus) return false;
-  return true;
+  return explainWhyNotCountingPractice(p) === null;
+}
+
+/** One-line status for the watch-panel debug strip. */
+export function formatPracticeCountDebugLine(
+  p: ShouldCountPracticeTimeParams,
+  pendingSeconds: number,
+): string {
+  const block = explainWhyNotCountingPractice(p);
+  if (block === null) {
+    return `Counting: yes · pending ${pendingSeconds}s`;
+  }
+  return `Counting: no — ${PRACTICE_COUNT_BLOCK_LABELS[block]} · pending ${pendingSeconds}s`;
 }
 
 export interface FlushPendingPracticeSecondsParams {
@@ -41,7 +66,6 @@ export interface FlushPendingPracticeSecondsParams {
 
 /**
  * If there is a bound video and positive pending seconds, clears pending and sends `PRACTICE_TICK`.
- * Same guards and payload shape as the legacy `flushPractice` in `youtube.ts`.
  */
 export function flushPendingPracticeSeconds(p: FlushPendingPracticeSecondsParams): void {
   if (!p.videoId) return;
@@ -58,58 +82,68 @@ export function flushPendingPracticeSeconds(p: FlushPendingPracticeSecondsParams
   });
 }
 
-export interface PracticeIntervalControllerOptions {
-  /** When false after a reset, no 1s / flush intervals are scheduled. */
-  getIntervalsActive: () => boolean;
-  /** Fired every {@link PRACTICE_COUNT_INTERVAL_MS} while intervals are running. */
-  onCountInterval: () => void;
-  /** Persist pending practice seconds (e.g. `PRACTICE_TICK`); also used on flush timer. */
+export interface PracticeFlushSchedulerOptions {
+  getActive: () => boolean;
+  getPendingSeconds: () => number;
   flush: () => void;
 }
 
 /**
- * Owns the two `setInterval` handles for practice counting + periodic flush.
- * Matches prior `youtube.ts` behavior: clear both → flush → restart if active.
+ * Periodic flush while practice is active (only when pending > 0).
  */
-export function createPracticeIntervalController(
-  options: PracticeIntervalControllerOptions,
-): { reset: () => void } {
-  let countTimer: ReturnType<typeof setInterval> | null = null;
+export function createPracticeFlushScheduler(
+  options: PracticeFlushSchedulerOptions,
+): { reset: () => void; stop: () => void; msUntilNextFlush: () => number } {
   let flushTimer: ReturnType<typeof setInterval> | null = null;
+  let lastFlushAt = Date.now();
 
-  function clearTimers(): void {
+  function clearTimer(): void {
     if (flushTimer !== null) {
       clearInterval(flushTimer);
       flushTimer = null;
     }
-    if (countTimer !== null) {
-      clearInterval(countTimer);
-      countTimer = null;
-    }
+  }
+
+  function startTimer(): void {
+    clearTimer();
+    lastFlushAt = Date.now();
+    flushTimer = setInterval(() => {
+      if (!options.getActive()) return;
+      if (options.getPendingSeconds() <= 0) return;
+      lastFlushAt = Date.now();
+      options.flush();
+    }, PRACTICE_FLUSH_INTERVAL_MS);
   }
 
   function reset(): void {
-    clearTimers();
     options.flush();
-    if (options.getIntervalsActive()) {
-      countTimer = setInterval(options.onCountInterval, PRACTICE_COUNT_INTERVAL_MS);
-      flushTimer = setInterval(options.flush, PRACTICE_FLUSH_INTERVAL_MS);
+    lastFlushAt = Date.now();
+    if (options.getActive()) {
+      startTimer();
+    } else {
+      clearTimer();
     }
   }
 
-  return { reset };
+  function stop(): void {
+    clearTimer();
+  }
+
+  function msUntilNextFlush(): number {
+    const elapsed = Date.now() - lastFlushAt;
+    return Math.max(0, PRACTICE_FLUSH_INTERVAL_MS - elapsed);
+  }
+
+  return { reset, stop, msUntilNextFlush };
 }
 
-/** Tab hide / blur / unload → flush pending practice (same hooks as legacy `youtube.ts`). */
+/** Tab hide / unload → flush pending practice. */
 export function attachPracticePageFlushListeners(opts: {
-  getPauseWhenUnfocused: () => boolean;
   flush: () => void;
 }): void {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') opts.flush();
   });
-  window.addEventListener('blur', () => {
-    if (opts.getPauseWhenUnfocused()) opts.flush();
-  });
+  window.addEventListener('pagehide', () => opts.flush());
   window.addEventListener('beforeunload', () => opts.flush());
 }

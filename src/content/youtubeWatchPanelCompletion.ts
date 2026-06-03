@@ -24,7 +24,6 @@ export interface WatchPanelCompletionDeps {
   readChannel: () => string;
   getUi: () => {
     root: HTMLElement;
-    practiceToggle: HTMLInputElement;
     difficultySelect: HTMLSelectElement;
     addBtn: HTMLButtonElement;
     statusEl: HTMLElement;

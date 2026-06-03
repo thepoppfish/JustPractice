@@ -18,9 +18,14 @@ import {
 } from '../lib/youtubePageTitle';
 import {
   attachPracticePageFlushListeners,
-  createPracticeIntervalController,
-  shouldCountPracticeTime,
+  createPracticeFlushScheduler,
+  explainWhyNotCountingPractice,
+  PRACTICE_FLUSH_INTERVAL_MS,
 } from './youtubePracticeTimer';
+import {
+  createPracticePlaybackMeter,
+  type PracticeMeterEligibility,
+} from './practicePlaybackMeter';
 import { fireAsyncWatch, sendMsg, sendMsgFireAndForget } from './youtubeMessaging';
 import {
   attachHomeFeedPointerPick,
@@ -69,7 +74,6 @@ import {
   runWatchPanelAfterJpPracticeStorageChange,
 } from './youtubeWatchLifecycle';
 import { jpXpLogContent } from '../lib/xpDebug';
-import { PRACTICE_FLUSH_INTERVAL_MS } from './youtubePracticeTimer';
 import { createJpWatchPanelDebugStrip, jpWatchDebugEnabled, jpWatchLog } from './youtubeDebug';
 import { createWatchPanelCompletionController } from './youtubeWatchPanelCompletion';
 import { syncLearningFocusMode } from './learningFocusMode';
@@ -94,7 +98,6 @@ const panelMountDebug: WatchPanelDebugHooks = {
 };
 let ui: {
   root: HTMLElement;
-  practiceToggle: HTMLInputElement;
   difficultySelect: HTMLSelectElement;
   addBtn: HTMLButtonElement;
   statusEl: HTMLElement;
@@ -103,7 +106,6 @@ let ui: {
 
 let currentVideoId: string | null = null;
 let practiceEnabled = false;
-let pendingSeconds = 0;
 let settingsCache: AppSettings = defaultSettings();
 let panelLocale: ResolvedLocale = resolveLocale(undefined);
 let panelT = createTranslator(panelLocale);
@@ -119,6 +121,143 @@ let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
 
 let videoIdRetryGeneration = 0;
+let practiceMeterDebugTick = 0;
+
+function practiceMeterEligibility(): PracticeMeterEligibility {
+  const video = getVideoElement();
+  return {
+    practiceEnabled,
+    currentVideoId,
+    visibilityState: document.visibilityState,
+    videoEnded: Boolean(video?.ended),
+  };
+}
+
+function practiceCountParams() {
+  const video = getVideoElement();
+  return {
+    practiceEnabled,
+    currentVideoId,
+    video,
+    visibilityState: document.visibilityState,
+  };
+}
+
+function refreshPracticeUiFromMeter(): void {
+  updateDailyGoalRing();
+  if (!shadowRoot) return;
+  if (calendarViewIncludesToday()) {
+    renderCalendar(lastDailySnapshot);
+  } else {
+    paintCalStreak(lastDailySnapshot);
+  }
+  if (jpWatchDebugEnabled() && practiceEnabled && currentVideoId) {
+    practiceMeterDebugTick += 1;
+    if (practiceMeterDebugTick % 5 === 0) {
+      jpWatchPanelDebugStrip.strip(
+        practiceMeter.formatDebugLine(practiceFlush.msUntilNextFlush()),
+      );
+    }
+  } else {
+    practiceMeterDebugTick = 0;
+  }
+}
+
+export function flushWatchPanelPractice(): void {
+  if (!currentVideoId) return;
+  const pending = practiceMeter.consumeWholeSeconds();
+  if (pending <= 0) return;
+  const videoId = currentVideoId;
+  const snap = practiceCountingSnapshot();
+  jpXpLogContent('content:PRACTICE_TICK send', {
+    videoId,
+    deltaSeconds: pending,
+    flushIntervalMs: PRACTICE_FLUSH_INTERVAL_MS,
+    practiceEnabled,
+    inLibrary,
+    ...snap,
+  });
+  if (jpWatchDebugEnabled()) {
+    const block =
+      snap.blockReason === null ? '' : ` block=${snap.blockReason}`;
+    jpWatchPanelDebugStrip.strip(
+      `flush ${pending}s lib=${String(inLibrary)} count=${String(snap.counting)}${block}`,
+    );
+  }
+  void sendMsg<PracticeTickOkResponse>({
+    type: MSG.PRACTICE_TICK,
+    payload: {
+      videoId,
+      deltaSeconds: pending,
+      endedAtMs: Date.now(),
+    },
+  }).then((res) => {
+    if (!res?.ok || !('xpGained' in res)) {
+      jpXpLogContent('content:PRACTICE_TICK response ignored', {
+        videoId,
+        ok: res?.ok,
+        hasXp: res != null && typeof res === 'object' && 'xpGained' in res,
+      });
+      return;
+    }
+    const zeroWhy =
+      res.xpGained <= 0 && !res.levelUp ?
+        'no XP this flush (carry banks sub-minute; see background log for carry)'
+      : undefined;
+    jpXpLogContent('content:PRACTICE_TICK response', {
+      videoId,
+      deltaSeconds: pending,
+      xpGained: res.xpGained,
+      levelUp: res.levelUp,
+      newLevel: res.newLevel,
+      totalXp: res.totalXp,
+      ...(zeroWhy ? { zeroXpReason: zeroWhy } : {}),
+    });
+    applyXpFromPracticeResponse(res);
+  });
+}
+
+const practiceMeter = createPracticePlaybackMeter({
+  getVideo: getVideoElement,
+  getEligibility: practiceMeterEligibility,
+  onAccumulated: refreshPracticeUiFromMeter,
+});
+
+const practiceFlush = createPracticeFlushScheduler({
+  getActive: () => practiceEnabled && Boolean(currentVideoId),
+  getPendingSeconds: () => practiceMeter.getPendingWholeSeconds(),
+  flush: flushWatchPanelPractice,
+});
+
+function resetTimers(): void {
+  practiceFlush.reset();
+  if (practiceEnabled && currentVideoId) {
+    practiceMeter.start();
+  } else {
+    practiceMeter.stop();
+    practiceMeter.reset();
+  }
+  updateDailyGoalRing();
+}
+
+function practiceCountingSnapshot(): {
+  counting: boolean;
+  blockReason: ReturnType<typeof explainWhyNotCountingPractice>;
+  paused: boolean;
+  ended: boolean;
+  visible: boolean;
+} {
+  const params = practiceCountParams();
+  const blockReason = explainWhyNotCountingPractice(params);
+  const video = params.video;
+  return {
+    counting: blockReason === null,
+    blockReason,
+    paused: Boolean(video?.paused),
+    ended: Boolean(video?.ended),
+    visible: document.visibilityState === 'visible',
+  };
+}
 
 function scheduleVideoIdResolutionRetries(): void {
   if (!isYoutubeWatchLikePage()) return;
@@ -163,7 +302,7 @@ function syncLearningFocusFromState(): void {
 function getTodayPracticeSeconds(): number {
   const key = dateKeyFromTimestamp(Date.now());
   const stored = lastDailySnapshot[key] ?? 0;
-  return stored + (practiceEnabled ? pendingSeconds : 0);
+  return stored + (practiceEnabled ? practiceMeter.getPendingWholeSeconds() : 0);
 }
 
 function calendarViewIncludesToday(): boolean {
@@ -364,7 +503,6 @@ function ensurePanel(): void {
       dragToMove: panelT('panel.dragToMove'),
       level: panelT('common.level'),
       saveToLibrary: panelT('panel.saveToLibrary'),
-      countPracticeTime: panelT('panel.countPractice'),
       markComplete: panelT('panel.markComplete'),
       markIncomplete: panelT('panel.markIncomplete'),
     }),
@@ -384,12 +522,6 @@ function ensurePanel(): void {
       onCompletePromptYes: () => fireAsyncWatch(toggleWatchPanelCompletion(true)),
       onCompletePromptNo: () => completion.dismissCompletionPromptForCurrentVideo(),
       onDifficultyChange: (value) => fireAsyncWatch(onDifficultyChange(value)),
-      onPracticeToggleChange: (checked) => {
-        practiceEnabled = checked;
-        updateHint();
-        resetTimers();
-        updateDailyGoalRing();
-      },
       onCalPrev: () => {
         calendarMonth -= 1;
         if (calendarMonth < 0) {
@@ -455,6 +587,19 @@ function applyPersistedPracticeSnapshotToPanel(persisted: PersistedData | undefi
   paintCalStreak(lastDailySnapshot);
 }
 
+/**
+ * Counting is automatic: a video accrues practice time iff it is saved to the library.
+ * (No user-facing toggle — `practiceEnabled` mirrors `inLibrary`.)
+ */
+function syncPracticeEnabledFromLibrary(): void {
+  const next = inLibrary;
+  if (next === practiceEnabled) return;
+  practiceEnabled = next;
+  practiceMeterDebugTick = 0;
+  resetTimers();
+  updateHint();
+}
+
 async function refreshState(videoId: string | null): Promise<void> {
   if (!ui) return;
   if (!videoId) {
@@ -462,6 +607,7 @@ async function refreshState(videoId: string | null): Promise<void> {
     inLibrary = false;
     await refreshCalendarOnly();
     syncWatchPanelLabels();
+    syncPracticeEnabledFromLibrary();
     syncLearningFocusFromState();
     return;
   }
@@ -491,9 +637,6 @@ async function refreshState(videoId: string | null): Promise<void> {
       setPanelT: (t) => {
         panelT = t;
       },
-      setPracticeEnabled: (v) => {
-        practiceEnabled = v;
-      },
     },
     fx: {
       applyPanelHostPosition,
@@ -510,6 +653,7 @@ async function refreshState(videoId: string | null): Promise<void> {
       strip: (line) => jpWatchPanelDebugStrip.strip(line),
     },
   });
+  syncPracticeEnabledFromLibrary();
   syncLearningFocusFromState();
 }
 
@@ -536,8 +680,6 @@ async function saveToLibrary(): Promise<void> {
     flash: flashAfterLibraryWrite,
     afterPersist: async (videoId) => {
       await refreshState(videoId);
-      updateHint();
-      resetTimers();
     },
   });
 }
@@ -574,118 +716,6 @@ function flashAfterLibraryWrite(
   });
 }
 
-function tickSecond(): void {
-  const video = getVideoElement();
-  if (
-    shouldCountPracticeTime({
-      practiceEnabled,
-      currentVideoId,
-      video,
-      visibilityState: document.visibilityState,
-      pauseWhenUnfocused: settingsCache.pauseWhenUnfocused,
-      documentHasFocus: document.hasFocus(),
-    })
-  ) {
-    pendingSeconds += 1;
-  }
-  updateDailyGoalRing();
-  if (!shadowRoot) return;
-  if (calendarViewIncludesToday()) {
-    renderCalendar(lastDailySnapshot);
-  } else {
-    paintCalStreak(lastDailySnapshot);
-  }
-}
-
-function practiceCountingSnapshot(): {
-  counting: boolean;
-  paused: boolean;
-  ended: boolean;
-  visible: boolean;
-  focusOk: boolean;
-} {
-  const video = getVideoElement();
-  const counting = shouldCountPracticeTime({
-    practiceEnabled,
-    currentVideoId,
-    video,
-    visibilityState: document.visibilityState,
-    pauseWhenUnfocused: settingsCache.pauseWhenUnfocused,
-    documentHasFocus: document.hasFocus(),
-  });
-  return {
-    counting,
-    paused: Boolean(video?.paused),
-    ended: Boolean(video?.ended),
-    visible: document.visibilityState === 'visible',
-    focusOk: !settingsCache.pauseWhenUnfocused || document.hasFocus(),
-  };
-}
-
-export function flushWatchPanelPractice(): void {
-  if (!currentVideoId) return;
-  const pending = pendingSeconds;
-  if (pending <= 0) return;
-  const videoId = currentVideoId;
-  const snap = practiceCountingSnapshot();
-  pendingSeconds = 0;
-  jpXpLogContent('content:PRACTICE_TICK send', {
-    videoId,
-    deltaSeconds: pending,
-    flushIntervalMs: PRACTICE_FLUSH_INTERVAL_MS,
-    practiceEnabled,
-    inLibrary,
-    ...snap,
-  });
-  if (jpWatchDebugEnabled()) {
-    jpWatchPanelDebugStrip.strip(
-      `flush ${pending}s lib=${String(inLibrary)} count=${String(snap.counting)}`,
-    );
-  }
-  void sendMsg<PracticeTickOkResponse>({
-    type: MSG.PRACTICE_TICK,
-    payload: {
-      videoId,
-      deltaSeconds: pending,
-      endedAtMs: Date.now(),
-    },
-  }).then((res) => {
-    if (!res?.ok || !('xpGained' in res)) {
-      jpXpLogContent('content:PRACTICE_TICK response ignored', {
-        videoId,
-        ok: res?.ok,
-        hasXp: res != null && typeof res === 'object' && 'xpGained' in res,
-      });
-      return;
-    }
-    const zeroWhy =
-      res.xpGained <= 0 && !res.levelUp ?
-        'no XP this flush (carry banks sub-minute; see background log for carry)'
-      : undefined;
-    jpXpLogContent('content:PRACTICE_TICK response', {
-      videoId,
-      deltaSeconds: pending,
-      xpGained: res.xpGained,
-      levelUp: res.levelUp,
-      newLevel: res.newLevel,
-      totalXp: res.totalXp,
-      ...(zeroWhy ? { zeroXpReason: zeroWhy } : {}),
-    });
-    applyXpFromPracticeResponse(res);
-  });
-}
-
-const practiceIntervals = createPracticeIntervalController({
-  getIntervalsActive: () => practiceEnabled && Boolean(currentVideoId),
-  onCountInterval: tickSecond,
-  flush: flushWatchPanelPractice,
-});
-
-function resetTimers(): void {
-  practiceIntervals.reset();
-  updateDailyGoalRing();
-}
-
 function clearLibraryBanner(reason = 'unknown'): void {
   clearWatchPanelLibraryBanner({ shadowRoot, reason, debug: panelMountDebug });
 }
@@ -719,10 +749,7 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
     flushPractice: flushWatchPanelPractice,
     resetPracticeToggleAndPending: () => {
       practiceEnabled = false;
-      if (ui) {
-        ui.practiceToggle.checked = false;
-      }
-      pendingSeconds = 0;
+      practiceMeter.reset();
     },
     clearCompletionPromptState: () => completion.clearCompletionPromptState(),
     detachCompletionListenerOnNoVideo: () => completion.detachCompletionListenerOnNoVideo(),
@@ -747,6 +774,10 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
     readTitle,
     refreshState,
     rebindCompletionPromptListener: () => completion.rebindCompletionPromptListener(),
+    runSameVideoFlow: () => {
+      completion.rebindCompletionPromptListener();
+      practiceMeter.rebind();
+    },
     fireAsyncWatch,
   });
 }
@@ -785,12 +816,11 @@ export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void 
         (async () => {
           applyPersistedPracticeSnapshotToPanel(nv);
           if (jpWatchDebugEnabled()) {
-            jpWatchLog('storage:onChanged:refreshState', { key: STORAGE_KEY });
-            jpWatchPanelDebugStrip.strip('storage changed → refreshState');
+            jpWatchLog('storage:onChanged:calendarSync', { key: STORAGE_KEY });
+            jpWatchPanelDebugStrip.strip('storage changed → calendar sync');
           }
-          await refreshState(getVideoIdFromUrl());
+          await refreshCalendarOnly();
           updateHint();
-          resetTimers();
         })(),
       );
     },
@@ -800,8 +830,10 @@ export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void 
 export function attachWatchPanelRuntimeHooks(): void {
   attachYoutubeNavHooks(() => fireAsyncWatch(onWatchPanelVideoChanged()));
   attachYoutubePlayerDomHooks(() => {
-    fireAsyncWatch(onWatchPanelVideoChanged());
     completion.rebindCompletionPromptListener();
+    if (practiceEnabled && currentVideoId) {
+      practiceMeter.rebind();
+    }
   });
   attachHomeFeedPointerPick({
     elementInOurUiShell: elementInWatchPanelUiShell,
@@ -814,7 +846,6 @@ export function attachWatchPanelRuntimeHooks(): void {
     },
   });
   attachPracticePageFlushListeners({
-    getPauseWhenUnfocused: getWatchPanelPauseWhenUnfocused,
     flush: flushWatchPanelPractice,
   });
   document.addEventListener('visibilitychange', () => completion.onDocumentVisibilityChange());

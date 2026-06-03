@@ -55,17 +55,25 @@ export interface WatchPanelOnVideoChangedSteps {
   clearLibraryBannerIfVideoChanged: (previousId: string | null, nextId: string | null) => void;
   runNoVideoFlow: () => Promise<void>;
   runHasVideoFlow: (videoId: string) => Promise<void>;
+  /** Same watch id (e.g. theater/fullscreen DOM churn) — skip heavy GET_STATE / timer reset. */
+  runSameVideoFlow?: (videoId: string) => void | Promise<void>;
 }
 
 /** SPA / feed-pick navigation: flush, reset local practice UI, rebind `currentVideoId`, refresh panel. */
 export async function runWatchPanelOnVideoChanged(steps: WatchPanelOnVideoChangedSteps): Promise<void> {
   const vid = steps.getVideoIdFromUrl();
   steps.flushPractice();
-  steps.resetPracticeToggleAndPending();
   const previousId = steps.commitVideoBinding(vid);
+  if (previousId !== vid) {
+    steps.resetPracticeToggleAndPending();
+  }
   steps.clearLibraryBannerIfVideoChanged(previousId, vid);
   if (!vid) {
     await steps.runNoVideoFlow();
+    return;
+  }
+  if (previousId === vid && steps.runSameVideoFlow) {
+    await steps.runSameVideoFlow(vid);
     return;
   }
   await steps.runHasVideoFlow(vid);

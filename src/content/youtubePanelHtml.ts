@@ -6,7 +6,6 @@ export interface WatchPanelLabels {
   dragToMove: string;
   level: string;
   saveToLibrary: string;
-  countPracticeTime: string;
   markComplete: string;
   markIncomplete: string;
 }
@@ -101,12 +100,9 @@ ${watchPanelShadowCss()}
                 transform="rotate(-90 18 18)"
               />
             </svg>
+            <svg class="daily-ring-fx" part="daily-ring-fx" viewBox="0 0 36 36" aria-hidden="true"></svg>
             <span class="daily-ring-label daily-ring-muted" part="daily-ring-label">—</span>
           </div>
-        </div>
-        <div class="row practice">
-          <input type="checkbox" id="jp-practice" part="practice" />
-          <label for="jp-practice" part="practice-label" style="text-transform:none; font-size:13px; color:#eee;">${escapeHtml(labels.countPracticeTime)}</label>
         </div>
         <div class="hint" part="hint"></div>
         <div class="calendar-section">

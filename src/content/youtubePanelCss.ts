@@ -53,7 +53,6 @@ export function watchPanelShadowCss(): string {
       .wrap--no-video .panel-main [part="save-row"],
       .wrap--no-video .panel-main [part="complete-row"],
       .wrap--no-video .panel-main .row.level-row,
-      .wrap--no-video .panel-main .row.practice,
       .wrap--no-video .panel-main .hint {
         display: none !important;
       }
@@ -101,6 +100,40 @@ export function watchPanelShadowCss(): string {
         width: 54px;
         height: 54px;
         position: relative;
+        transform-origin: center center;
+        overflow: visible;
+      }
+      .daily-goal-ring--celebrate {
+        animation: daily-ring-celebrate-glow 1.05s ease-out;
+      }
+      .daily-goal-ring--celebrate .daily-ring-fg {
+        filter: drop-shadow(0 0 6px rgba(125, 255, 168, 0.65));
+      }
+      @keyframes daily-ring-celebrate-glow {
+        0%, 100% { filter: none; }
+        28% {
+          filter: drop-shadow(0 0 10px rgba(125, 255, 168, 0.75))
+            drop-shadow(0 0 16px rgba(255, 221, 87, 0.35));
+        }
+        55% { filter: drop-shadow(0 0 4px rgba(125, 255, 168, 0.35)); }
+      }
+      .daily-ring-label--pop {
+        animation: daily-ring-label-pop 0.85s ease-out;
+      }
+      @keyframes daily-ring-label-pop {
+        0%, 100% { color: #eee; transform: translate(-50%, -50%) scale(1); }
+        35% { color: #b8ffd4; transform: translate(-50%, -50%) scale(1.18); }
+        60% { color: #ffdd99; transform: translate(-50%, -50%) scale(1.06); }
+      }
+      .daily-ring-fx {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 54px;
+        height: 54px;
+        pointer-events: none;
+        overflow: visible;
+        z-index: 1;
       }
       .daily-ring-svg {
         width: 54px;
@@ -127,6 +160,7 @@ export function watchPanelShadowCss(): string {
         line-height: 1.1;
         max-width: 46px;
         pointer-events: none;
+        z-index: 2;
       }
       .daily-ring-muted {
         color: #666;
@@ -242,13 +276,6 @@ export function watchPanelShadowCss(): string {
       button.secondary { background: #333; border-color: #555; }
       button.secondary.is-complete { background: rgba(66, 198, 111, 0.22); border-color: rgba(66, 198, 111, 0.55); color: #b8f0cc; }
       button:hover { filter: brightness(1.08); }
-      .practice {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 600;
-      }
-      input[type="checkbox"] { width: 18px; height: 18px; accent-color: #1a66ff; }
       .hint { font-size: 11px; color: #888; line-height: 1.35; margin-top: 6px; }
       .status { font-size: 11px; color: #9cf; min-height: 14px; }
       .library-banner[hidden] {

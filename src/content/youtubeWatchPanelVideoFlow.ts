@@ -25,6 +25,7 @@ export interface WatchPanelVideoFlowDeps {
   readTitle: () => string;
   refreshState: (videoId: string | null) => Promise<void>;
   rebindCompletionPromptListener: () => void;
+  runSameVideoFlow: (videoId: string) => void | Promise<void>;
   fireAsyncWatch: (p: Promise<unknown>) => void;
 }
 
@@ -78,6 +79,9 @@ export async function runWatchPanelVideoChangedFlow(deps: WatchPanelVideoFlowDep
       await deps.refreshState(videoId);
       deps.updateHint();
       deps.resetTimers();
+      deps.rebindCompletionPromptListener();
+    },
+    runSameVideoFlow: async () => {
       deps.rebindCompletionPromptListener();
     },
   });

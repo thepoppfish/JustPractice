@@ -13,6 +13,7 @@ import type { WatchPanelDebugHooks, WatchPanelUiRefs } from './youtubePanelMount
 import { setWatchPanelStatusFlash, showWatchPanelLibraryBanner } from './youtubePanelMount';
 import { showWatchPanelXpToast } from './youtubePanelUi';
 import { populateLevelSelect as populateLevelSelectUi } from './youtubePanelUi';
+import { playDailyGoalRingCompleteCelebration } from './watchPanelGoalRingCelebration';
 
 export interface WatchPanelGetStateMutators {
   setSettingsCache: (s: AppSettings) => void;
@@ -22,7 +23,6 @@ export interface WatchPanelGetStateMutators {
   setLibraryItemForCurrentVideo: (v: LibraryItem | null) => void;
   setPanelLocale: (l: ResolvedLocale) => void;
   setPanelT: (t: Translator) => void;
-  setPracticeEnabled: (v: boolean) => void;
 }
 
 export interface WatchPanelGetStateSideEffects {
@@ -40,7 +40,7 @@ export interface WatchPanelGetStateDebug {
   strip: (line: string) => void;
 }
 
-/** GET_STATE → panel settings, calendar, library row, difficulty select, practice toggle. */
+/** GET_STATE → panel settings, calendar, library row, difficulty select. */
 export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
   videoId: string;
   shadowRoot: ShadowRoot | null;
@@ -93,13 +93,8 @@ export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
 
     if (saveRowEl) saveRowEl.hidden = false;
 
-    if (item) {
-      p.mut.setPracticeEnabled(true);
-      p.ui.practiceToggle.checked = true;
-    } else {
-      p.mut.setPracticeEnabled(false);
-      p.ui.practiceToggle.checked = false;
-    }
+    // Counting is automatic and tied to library membership; the caller derives it from `inLibrary`.
+
     if (p.debug.enabled()) {
       p.debug.log('refreshState:done', {
         videoId: p.videoId,
@@ -288,6 +283,7 @@ export async function setWatchPanelLibraryCompletion(p: {
   }
   if (p.complete) {
     setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedComplete'));
+    playDailyGoalRingCompleteCelebration(p.shadowRoot);
   } else {
     setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedIncomplete'));
   }
