@@ -53,6 +53,8 @@ export interface TodayPathPlan {
     durationSec: number;
     allocatedSec: number;
     videoSecondsBaseline: number;
+    /** Practice/playback already on this video when the plan was built (counts toward the step). */
+    creditedSecAtBuild?: number;
   }[];
 }
 

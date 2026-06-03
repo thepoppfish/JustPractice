@@ -3004,6 +3004,18 @@ body {
   color: #fdb;
 }
 
+.path-header-sub--muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.path-section-hint {
+  margin-top: -8px;
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 420px;
+}
+
 .path-header-actions {
   display: flex;
   flex-wrap: wrap;

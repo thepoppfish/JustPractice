@@ -32,22 +32,25 @@ function pathNodeHtml(vm: DashboardViewModel, index: number): string {
     node.allocatedSec > 0
       ? Math.min(100, Math.round((node.practicedSecOnStep / node.allocatedSec) * 100))
       : 0;
-  const alreadyWatched =
+  const doneSec = Math.min(node.practicedSecOnStep, node.allocatedSec);
+  const alreadyInVideo =
     node.watchedSecAtBuild > 0 && node.watchedSecAtBuild < node.durationSec
-      ? `${escapeHtml(
-          vm.t('path.alreadyWatched', {
+      ? escapeHtml(
+          vm.t('path.alreadyInVideo', {
             duration: formatDuration(node.watchedSecAtBuild),
           }),
-        )} · `
+        )
       : '';
-  const meta = `${escapeHtml(lvl)} · ${alreadyWatched}${escapeHtml(
-    vm.t('path.nodeAllocated', {
-      done: formatDuration(Math.min(node.practicedSecOnStep, node.allocatedSec)),
+  const stepLine = escapeHtml(
+    vm.t('path.nodeStepForToday', {
+      done: formatDuration(doneSec),
       allocated: formatDuration(node.allocatedSec),
     }),
-  )} · ${escapeHtml(
-    vm.t('path.videoLength', { duration: formatDuration(node.durationSec) }),
-  )}`;
+  );
+  const videoLine = escapeHtml(
+    vm.t('path.videoLengthTotal', { duration: formatDuration(node.durationSec) }),
+  );
+  const meta = [escapeHtml(lvl), alreadyInVideo, stepLine, videoLine].filter(Boolean).join(' · ');
   const doneBadge =
     isDone && thumb ? `<span class="path-node-done-badge" aria-hidden="true">${icoCheck()}</span>` : '';
 
@@ -143,6 +146,9 @@ function pathHeaderHtml(vm: DashboardViewModel): string {
         vm.t('path.unknownDuration', { count: String(p.unknownDurationCount) }),
       )}</p>`;
     }
+    if (p.showStalePlanHint) {
+      sub += `<p class="path-header-sub path-header-sub--warn">${escapeHtml(vm.t('path.stalePlanHint'))}</p>`;
+    }
   }
 
   const actions = `
@@ -192,6 +198,11 @@ export function dashboardPathSectionHtml(vm: DashboardViewModel): string {
     <section class="${vm.viewPanelClass('path')} dash-section-center path-section" data-view-panel="path" aria-label="${escapeHtml(vm.t('path.mainAria'))}">
       <h1 class="row-title dash-section-head">${escapeHtml(vm.t('path.title'))}</h1>
       <p class="row-sub dash-section-sub">${escapeHtml(vm.t('path.subtitle'))}</p>
+      ${
+        p.nodes.length > 0 && !p.showNoGoal
+          ? `<p class="row-sub dash-section-sub path-section-hint">${escapeHtml(vm.t('path.stepsNotFullVideosHint'))}</p>`
+          : ''
+      }
       ${pathHeaderHtml(vm)}
       ${body}
     </section>`;

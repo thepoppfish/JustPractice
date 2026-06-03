@@ -32,8 +32,12 @@ export function normalizeTodayPathPlan(raw: unknown): TodayPathPlan | null {
       typeof st.videoSecondsBaseline === 'number' && Number.isFinite(st.videoSecondsBaseline)
         ? Math.max(0, st.videoSecondsBaseline)
         : 0;
+    const creditedSecAtBuild =
+      typeof st.creditedSecAtBuild === 'number' && Number.isFinite(st.creditedSecAtBuild)
+        ? Math.max(0, Math.min(allocatedSec, Math.floor(st.creditedSecAtBuild)))
+        : 0;
     if (durationSec <= 0 || allocatedSec <= 0) continue;
-    steps.push({ videoId, durationSec, allocatedSec, videoSecondsBaseline });
+    steps.push({ videoId, durationSec, allocatedSec, videoSecondsBaseline, creditedSecAtBuild });
   }
   if (steps.length === 0 && remainingSecAtBuild > 0) return null;
   return { dateKey, remainingSecAtBuild, builtAtMs, steps };

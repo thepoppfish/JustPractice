@@ -43,6 +43,8 @@ export interface TodayPathUiState {
   showEmptyCandidates: boolean;
   /** In-progress saves exist but none have durationSec yet. */
   showMissingDuration: boolean;
+  /** Library watch data changed since the plan was built. */
+  showStalePlanHint: boolean;
 }
 
 function pathCandidates(data: PersistedData): {
@@ -71,18 +73,26 @@ function planFromBuild(
   built: ReturnType<typeof buildTodayPath>,
   dateKey: string,
   remainingSec: number,
-  videoSeconds: Record<string, number>,
+  data: PersistedData,
 ): TodayPathPlan {
+  const playback = data.videoPlaybackPositionSec ?? {};
   return {
     dateKey,
     remainingSecAtBuild: remainingSec,
     builtAtMs: Date.now(),
-    steps: built.steps.map((s) => ({
-      videoId: s.videoId,
-      durationSec: s.durationSec,
-      allocatedSec: s.allocatedSec,
-      videoSecondsBaseline: videoSeconds[s.videoId] ?? 0,
-    })),
+    steps: built.steps.map((s) => {
+      const practice = data.videoSeconds[s.videoId] ?? 0;
+      const position = playback[s.videoId] ?? 0;
+      const watched = effectiveWatchedSec(s.durationSec, practice, position);
+      const creditedSecAtBuild = Math.min(s.allocatedSec, watched);
+      return {
+        videoId: s.videoId,
+        durationSec: s.durationSec,
+        allocatedSec: s.allocatedSec,
+        videoSecondsBaseline: practice,
+        creditedSecAtBuild,
+      };
+    }),
   };
 }
 
@@ -92,9 +102,29 @@ function isPlanStillValid(plan: TodayPathPlan, data: PersistedData, dateKey: str
   return plan.steps.every((s) => ids.has(s.videoId));
 }
 
-function practicedOnStep(step: TodayPathStep, videoSeconds: Record<string, number>): number {
-  const current = videoSeconds[step.videoId] ?? 0;
-  return Math.max(0, current - step.videoSecondsBaseline);
+/** Step progress: credit at plan build plus new practice since baseline (capped at allocated). */
+export function practicedSecOnPathStep(
+  step: TodayPathStep,
+  currentVideoSeconds: number,
+): number {
+  const credited = step.creditedSecAtBuild ?? 0;
+  const sincePlan = Math.max(0, currentVideoSeconds - step.videoSecondsBaseline);
+  return Math.min(step.allocatedSec, credited + sincePlan);
+}
+
+function isPathStale(plan: TodayPathPlan, data: PersistedData): boolean {
+  const ageMs = Date.now() - plan.builtAtMs;
+  if (ageMs > 2 * 3600 * 1000) return true;
+
+  const playback = data.videoPlaybackPositionSec ?? {};
+  for (const step of plan.steps) {
+    const practice = data.videoSeconds[step.videoId] ?? 0;
+    const position = playback[step.videoId] ?? 0;
+    const watchedNow = effectiveWatchedSec(step.durationSec, practice, position);
+    const credited = step.creditedSecAtBuild ?? 0;
+    if (watchedNow > credited + 60) return true;
+  }
+  return false;
 }
 
 function nodeSide(index: number, total: number): 'left' | 'right' | 'center' {
@@ -140,6 +170,7 @@ export function resolveTodayPathUi(
     showGoalMet: hasDailyGoal && dailyGoalMet,
     showEmptyCandidates: false,
     showMissingDuration: false,
+    showStalePlanHint: false,
   };
 
   if (!hasDailyGoal) return emptyBase;
@@ -181,7 +212,7 @@ export function resolveTodayPathUi(
           ? { sortMode: 'newestFirst' as const }
           : {};
     const built = buildTodayPath(withDuration, packRemainingSec, buildOptions);
-    plan = planFromBuild(built, todayKey, packRemainingSec, data.videoSeconds);
+    plan = planFromBuild(built, todayKey, packRemainingSec, data);
     planToPersist = plan;
   }
 
@@ -197,7 +228,7 @@ export function resolveTodayPathUi(
     const practice = data.videoSeconds[step.videoId] ?? 0;
     const position = (data.videoPlaybackPositionSec ?? {})[step.videoId] ?? 0;
     const watchedSecAtBuild = effectiveWatchedSec(d, practice, position);
-    const practicedSecOnStep = practicedOnStep(step, data.videoSeconds);
+    const practicedSecOnStep = practicedSecOnPathStep(step, data.videoSeconds[step.videoId] ?? 0);
     const stepDone = practicedSecOnStep >= step.allocatedSec - 1;
     let state: PathNodeState;
     if (stepDone) {
@@ -221,6 +252,8 @@ export function resolveTodayPathUi(
 
   const plannedTotalSec = plan.steps.reduce((a, s) => a + s.allocatedSec, 0);
   const shortfallSec = Math.max(0, packRemainingSec - plannedTotalSec);
+  const showStalePlanHint =
+    plan !== null && planToPersist === null && !forceRebuild && isPathStale(plan, data);
 
   return {
     todayKey,
@@ -238,5 +271,6 @@ export function resolveTodayPathUi(
     showGoalMet: dailyGoalMet && nodes.length === 0,
     showEmptyCandidates: nodes.length === 0 && withDuration.length === 0 && inProgressCount === 0,
     showMissingDuration: nodes.length === 0 && withDuration.length === 0 && unknownCount > 0,
+    showStalePlanHint,
   };
 }

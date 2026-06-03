@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { emptyPersisted } from './storage';
 import type { LibraryItem, PersistedData } from './storageTypes';
-import { resolveTodayPathUi } from './todayPath';
+import { practicedSecOnPathStep, resolveTodayPathUi } from './todayPath';
+import type { TodayPathPlan } from './todayPathPlan';
 
 function libItem(
   videoId: string,
@@ -100,6 +101,30 @@ describe('resolveTodayPathUi', () => {
     expect(ui.planToPersist).not.toBeNull();
   });
 
+  it('credits watch time that existed when the plan was built', () => {
+    const step: TodayPathPlan['steps'][number] = {
+      videoId: 'a',
+      durationSec: 2008,
+      allocatedSec: 905,
+      videoSecondsBaseline: 1103,
+      creditedSecAtBuild: 905,
+    };
+    expect(practicedSecOnPathStep(step, 1103)).toBe(905);
+    expect(practicedSecOnPathStep(step, 1200)).toBe(905);
+  });
+
+  it('shows prior watch on step when plan was built after partial viewing', () => {
+    const data = dataWithLibrary([libItem('a', 2008, 1)], {
+      ...threeHourGoal,
+      videoSeconds: { a: 1103 },
+    });
+    const ui = resolveTodayPathUi(data, todayKey, true);
+    const node = ui.nodes.find((n) => n.item.videoId === 'a')!;
+    expect(node.watchedSecAtBuild).toBe(1103);
+    expect(node.practicedSecOnStep).toBeGreaterThan(0);
+    expect(node.practicedSecOnStep).toBeLessThanOrEqual(node.allocatedSec);
+  });
+
   it('marks step complete from videoSeconds baseline delta', () => {
     const data = dataWithLibrary([libItem('a', 20 * 60, 1)], {
       videoSeconds: { a: 20 * 60 },
@@ -113,6 +138,7 @@ describe('resolveTodayPathUi', () => {
             durationSec: 20 * 60,
             allocatedSec: 20 * 60,
             videoSecondsBaseline: 0,
+            creditedSecAtBuild: 0,
           },
         ],
       },
