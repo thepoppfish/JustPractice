@@ -8,6 +8,8 @@ import {
   type LevelTag,
   type LibraryItem,
 } from '../lib/storage';
+import { readVideoDurationSec } from '../lib/videoDuration';
+import { getVideoElement } from './youtubePlayerHooks';
 import { sendMsg } from './youtubeMessaging';
 import type { WatchPanelDebugHooks, WatchPanelUiRefs } from './youtubePanelMount';
 import { setWatchPanelStatusFlash, showWatchPanelLibraryBanner } from './youtubePanelMount';
@@ -204,6 +206,7 @@ export async function saveWatchPanelVideoToLibrary(p: {
     return;
   }
 
+  const durationSec = readVideoDurationSec(getVideoElement());
   const res = (await sendMsg<ExtensionResponse>({
     type: MSG.ADD_OR_UPDATE_LIBRARY,
     payload: {
@@ -211,6 +214,7 @@ export async function saveWatchPanelVideoToLibrary(p: {
       title: p.readTitle(),
       channel: p.readChannel(),
       difficulty,
+      ...(durationSec !== null ? { durationSec } : {}),
     },
   })) as ExtensionResponse;
   p.flash(res, 'panel.flashSaved');
@@ -237,6 +241,7 @@ export async function applyWatchPanelDifficultyChange(p: {
       payload: { videoId, difficulty },
     });
   } else {
+    const durationSec = readVideoDurationSec(getVideoElement());
     const res = (await sendMsg<ExtensionResponse>({
       type: MSG.ADD_OR_UPDATE_LIBRARY,
       payload: {
@@ -244,6 +249,7 @@ export async function applyWatchPanelDifficultyChange(p: {
         title: p.readTitle(),
         channel: p.readChannel(),
         difficulty,
+        ...(durationSec !== null ? { durationSec } : {}),
       },
     })) as ExtensionResponse;
     p.flash(res, 'panel.flashSavedLevel');

@@ -1,6 +1,6 @@
 # Daily Path — Product & UX Design Spec
 
-**Status:** Design only (no implementation in this document)  
+**Status:** Phase B (MVP) implemented — polish in Phase C  
 **Last updated:** 2026-06-03 (rev 2 — dynamic today path)  
 **Audience:** Product, design, and engineering before building the dashboard tab  
 
@@ -565,12 +565,12 @@ Same checklist as rev 1 (`DashView` `path`, sidebar, templates, CSS, i18n) plus:
 
 **Phase B exit criteria**
 
-- [ ] Path length = greedy result, not full library
-- [ ] 30 min remainder + 17+15 min videos → 2 nodes
-- [ ] `remainingSec` decreases as user practices
-- [ ] Goal met → celebration + New path
-- [ ] `durationSec` stored for new saves
-- [ ] Unit tests for `pathBuilder.ts`
+- [x] Path length = greedy result, not full library
+- [x] 30 min remainder + 17+15 min videos → 2 nodes
+- [x] `remainingSec` decreases as user practices
+- [x] Goal met → celebration + New path (extra-practice rebuild on **New path**)
+- [x] `durationSec` stored for new saves (watch page + `SET_VIDEO_DURATION`)
+- [x] Unit tests for `pathBuilder.ts` and `todayPath.ts`
 
 ---
 

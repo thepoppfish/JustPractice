@@ -1,5 +1,9 @@
 import { MSG } from '../lib/messages';
-import type { ExtensionMessage, GetStateResponse } from '../lib/messages';
+import type {
+  BackfillLibraryDurationsOkResponse,
+  ExtensionMessage,
+  GetStateResponse,
+} from '../lib/messages';
 import { STORAGE_KEY, type LevelTag, type PersistedData } from '../lib/storage';
 import { startStorageSyncPoll } from '../lib/storageSyncPoll';
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
@@ -23,6 +27,7 @@ import {
   patchTopbarMetrics,
   switchActiveView,
 } from './dashboardDomUpdate';
+import { refreshPathTrailLayout } from './dashboardPathLayout';
 
 const app = document.getElementById('app')!;
 
@@ -30,11 +35,14 @@ let searchQuery = '';
 let libraryLevelFilter: '' | 'unset' | 'legacy' | LevelTag = '';
 let activeView: DashView = readPersistedDashView();
 let yearHeatmapYear = new Date().getFullYear();
+let pathForceRebuild = false;
+let pathRegenerateFromVideoIds: string[] = [];
 let cachedData: PersistedData | null = null;
 let renderGeneration = 0;
 let pendingFullRenderAfterSearch = false;
 let storageRenderSuppressUntil = 0;
 let dashboardListenerAbort: AbortController | null = null;
+let durationBackfillInFlight = false;
 
 async function send<T>(msg: ExtensionMessage): Promise<T> {
   return chrome.runtime.sendMessage(msg) as Promise<T>;
@@ -58,11 +66,70 @@ function buildVm(data: PersistedData) {
     searchQuery,
     activeView,
     yearHeatmapYear,
+    pathForceRebuild,
+    pathRegenerateFromVideoIds,
   });
+}
+
+async function regenerateTodayPath(): Promise<void> {
+  suppressStorageRender(2000);
+  let data: PersistedData;
+  try {
+    data = cachedData ?? (await loadData());
+  } catch {
+    return;
+  }
+  pathRegenerateFromVideoIds = data.todayPathPlan?.steps.map((s) => s.videoId) ?? [];
+  pathForceRebuild = true;
+  await send({ type: MSG.SET_TODAY_PATH_PLAN, payload: { plan: null } });
+  if (cachedData) cachedData = { ...cachedData, todayPathPlan: null };
+  await refreshAfterMutation(['path']);
+  pathRegenerateFromVideoIds = [];
+}
+
+async function persistPathPlanIfNeeded(vm: ReturnType<typeof buildVm>): Promise<void> {
+  const plan = vm.pathUi.planToPersist;
+  if (!plan) return;
+  await send({ type: MSG.SET_TODAY_PATH_PLAN, payload: { plan } });
+  pathForceRebuild = false;
 }
 
 function suppressStorageRender(ms = 450): void {
   storageRenderSuppressUntil = Date.now() + ms;
+}
+
+function countLibraryMissingDuration(data: PersistedData): number {
+  return data.library.filter(
+    (i) =>
+      i.completedAt === null &&
+      !(typeof i.durationSec === 'number' && Number.isFinite(i.durationSec) && i.durationSec > 0),
+  ).length;
+}
+
+async function requestLibraryDurationBackfill(): Promise<void> {
+  if (durationBackfillInFlight) return;
+  durationBackfillInFlight = true;
+  try {
+    for (let round = 0; round < 8; round += 1) {
+      const res = await send<BackfillLibraryDurationsOkResponse>({
+        type: MSG.BACKFILL_LIBRARY_DURATIONS,
+        payload: { limit: 6 },
+      });
+      if (!res.ok || res.attempted === 0) break;
+      if (res.updated > 0) {
+        pathForceRebuild = true;
+        await refreshAfterMutation(['path']);
+      }
+      if (res.updated === 0) break;
+    }
+  } finally {
+    durationBackfillInFlight = false;
+  }
+}
+
+function scheduleLibraryDurationBackfill(data: PersistedData): void {
+  if (countLibraryMissingDuration(data) === 0) return;
+  void requestLibraryDurationBackfill();
 }
 
 function requestLibraryMetaEnrich(data: PersistedData): void {
@@ -81,7 +148,7 @@ function requestLibraryMetaEnrich(data: PersistedData): void {
 }
 
 function defaultMutationPanels(): DashView[] {
-  const panels: DashView[] = ['library', 'completed'];
+  const panels: DashView[] = ['library', 'path', 'completed'];
   if (!panels.includes(activeView)) panels.push(activeView);
   return panels;
 }
@@ -115,6 +182,15 @@ function bindDashboardListeners(vm: ReturnType<typeof buildVm>): void {
     },
     setYearHeatmapYear: (y) => {
       yearHeatmapYear = y;
+    },
+    requestPathRebuild: () => {
+      pathForceRebuild = true;
+    },
+    regenerateTodayPath: () => {
+      void regenerateTodayPath();
+    },
+    scheduleDurationBackfill: () => {
+      if (cachedData) scheduleLibraryDurationBackfill(cachedData);
     },
   });
 }
@@ -173,6 +249,7 @@ async function refreshAfterMutation(panels: readonly DashView[] = defaultMutatio
   const needsChrome = panels.some((p) => p === 'settings');
   const needsTopbar =
     panels.includes('library') ||
+    panels.includes('path') ||
     panels.includes('completed') ||
     panels.includes('stats') ||
     panels.includes('progress') ||
@@ -184,7 +261,9 @@ async function refreshAfterMutation(panels: readonly DashView[] = defaultMutatio
   patchDashWelcome(app, vm);
   if (panels.length > 0) patchDashboardPanels(app, vm, panels);
   switchActiveView(app, activeView);
+  await persistPathPlanIfNeeded(vm);
   bindDashboardListeners(vm);
+  if (panels.includes('path')) refreshPathTrailLayout(app);
 }
 
 function afterLibraryDataChange(): void {
@@ -220,11 +299,14 @@ async function renderAsync(): Promise<void> {
   document.documentElement.setAttribute('dir', vm.resolvedLocale === 'he' ? 'rtl' : 'ltr');
 
   requestLibraryMetaEnrich(data);
+  scheduleLibraryDurationBackfill(data);
 
   const hasShell = Boolean(app.querySelector('.app-shell'));
   if (!hasShell) {
     app.innerHTML = dashboardShellHtml(vm, searchQuery);
+    await persistPathPlanIfNeeded(vm);
     bindDashboardListeners(vm);
+    refreshPathTrailLayout(app);
     return;
   }
 
@@ -233,6 +315,7 @@ async function renderAsync(): Promise<void> {
   patchDashboardPanels(app, vm, DASH_VIEWS);
   switchActiveView(app, activeView);
   bindDashboardListeners(vm);
+  if (activeView === 'path') refreshPathTrailLayout(app);
 }
 
 let storageRenderTimer: ReturnType<typeof setTimeout> | null = null;

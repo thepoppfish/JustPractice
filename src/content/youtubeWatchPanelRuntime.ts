@@ -26,6 +26,7 @@ import {
   createPracticePlaybackMeter,
   type PracticeMeterEligibility,
 } from './practicePlaybackMeter';
+import { readVideoDurationSec } from '../lib/videoDuration';
 import { fireAsyncWatch, sendMsg, sendMsgFireAndForget } from './youtubeMessaging';
 import {
   attachHomeFeedPointerPick,
@@ -655,6 +656,34 @@ async function refreshState(videoId: string | null): Promise<void> {
   });
   syncPracticeEnabledFromLibrary();
   syncLearningFocusFromState();
+  syncLibraryVideoDurationFromPlayer();
+  syncLibraryPlaybackPositionFromPlayer();
+}
+
+function syncLibraryVideoDurationFromPlayer(): void {
+  const videoId = currentVideoId;
+  if (!videoId || !inLibrary) return;
+  const durationSec = readVideoDurationSec(getVideoElement());
+  if (durationSec === null) return;
+  const known = libraryItemForCurrentVideo?.durationSec;
+  if (known === durationSec) return;
+  sendMsgFireAndForget({
+    type: MSG.SET_VIDEO_DURATION,
+    payload: { videoId, durationSec },
+  });
+}
+
+function syncLibraryPlaybackPositionFromPlayer(): void {
+  const videoId = currentVideoId;
+  if (!videoId || !inLibrary) return;
+  const video = getVideoElement();
+  if (!video) return;
+  const positionSec = Math.floor(video.currentTime);
+  if (!Number.isFinite(positionSec) || positionSec <= 0) return;
+  sendMsgFireAndForget({
+    type: MSG.SET_VIDEO_PLAYBACK_POSITION,
+    payload: { videoId, positionSec },
+  });
 }
 
 function updateHint(): void {

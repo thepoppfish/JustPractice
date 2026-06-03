@@ -1,4 +1,4 @@
-import type { AppSettings, LevelTag, PersistedData } from './storage';
+import type { AppSettings, LevelTag, PersistedData, TodayPathPlan } from './storage';
 
 export const MSG = {
   GET_STATE: 'GET_STATE',
@@ -14,6 +14,11 @@ export const MSG = {
   PRESTIGE: 'PRESTIGE',
   /** Content script: remount / show the YouTube watch panel at the default position. */
   SHOW_WATCH_PANEL: 'SHOW_WATCH_PANEL',
+  SET_VIDEO_DURATION: 'SET_VIDEO_DURATION',
+  SET_VIDEO_PLAYBACK_POSITION: 'SET_VIDEO_PLAYBACK_POSITION',
+  SET_TODAY_PATH_PLAN: 'SET_TODAY_PATH_PLAN',
+  /** Dashboard: fetch watch-page metadata for library rows missing durationSec. */
+  BACKFILL_LIBRARY_DURATIONS: 'BACKFILL_LIBRARY_DURATIONS',
 } as const;
 
 export type MessageType = (typeof MSG)[keyof typeof MSG];
@@ -29,7 +34,35 @@ export interface AddOrUpdateLibraryMessage {
     title: string;
     channel: string;
     difficulty?: LevelTag | null;
+    /** Whole seconds; captured from the watch-page player when saving. */
+    durationSec?: number | null;
   };
+}
+
+export interface SetVideoDurationMessage {
+  type: typeof MSG.SET_VIDEO_DURATION;
+  payload: { videoId: string; durationSec: number };
+}
+
+export interface SetVideoPlaybackPositionMessage {
+  type: typeof MSG.SET_VIDEO_PLAYBACK_POSITION;
+  payload: { videoId: string; positionSec: number };
+}
+
+export interface SetTodayPathPlanMessage {
+  type: typeof MSG.SET_TODAY_PATH_PLAN;
+  payload: { plan: TodayPathPlan | null };
+}
+
+export interface BackfillLibraryDurationsMessage {
+  type: typeof MSG.BACKFILL_LIBRARY_DURATIONS;
+  payload?: { limit?: number };
+}
+
+export interface BackfillLibraryDurationsOkResponse {
+  ok: true;
+  updated: number;
+  attempted: number;
 }
 
 export interface RemoveLibraryMessage {
@@ -110,7 +143,11 @@ export type ExtensionMessage =
   | ClearAllExtensionDataMessage
   | RestoreExtensionStorageMessage
   | PrestigeMessage
-  | ShowWatchPanelMessage;
+  | ShowWatchPanelMessage
+  | SetVideoDurationMessage
+  | SetVideoPlaybackPositionMessage
+  | SetTodayPathPlanMessage
+  | BackfillLibraryDurationsMessage;
 
 export interface GetStateResponse {
   ok: true;
@@ -156,4 +193,5 @@ export type ExtensionResponse =
   | SetLibraryCompletionOkResponse
   | PrestigeOkResponse
   | LibraryWriteOkResponse
+  | BackfillLibraryDurationsOkResponse
   | { ok: false; error: string };

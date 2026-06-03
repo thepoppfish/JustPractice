@@ -2960,3 +2960,344 @@ body {
   color: var(--muted);
   font-style: normal;
 }
+
+/* —— Today path tab —— */
+.path-section {
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+.path-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.path-header-ring {
+  flex: 0 0 auto;
+}
+
+.path-header-copy {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.path-header-sub {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.path-header-sub--celebrate {
+  color: #9cf;
+  font-weight: 600;
+}
+
+.path-header-sub--warn {
+  color: #fdb;
+}
+
+.path-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.path-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #9cf;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.path-canvas {
+  position: relative;
+  padding: 12px 8px 40px;
+  min-height: 120px;
+}
+
+.path-connectors {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+
+.path-connector {
+  stroke-width: 5;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.95;
+}
+
+.path-connector--done {
+  stroke: #ffc800;
+  filter: drop-shadow(0 0 6px rgba(255, 200, 0, 0.35));
+}
+
+.path-connector--active {
+  stroke: #58cc02;
+  filter: drop-shadow(0 0 6px rgba(88, 204, 2, 0.35));
+}
+
+.path-connector--upcoming {
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-dasharray: 6 8;
+  opacity: 0.85;
+}
+
+.path-trail {
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.path-trail-item {
+  position: relative;
+  max-width: min(100%, 320px);
+}
+
+.path-trail-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.path-trail-item--left {
+  align-self: flex-start;
+  margin-inline-start: 4%;
+}
+
+.path-trail-item--right {
+  align-self: flex-end;
+  margin-inline-end: 4%;
+}
+
+.path-trail-item--center {
+  align-self: center;
+}
+
+.path-start-callout {
+  position: relative;
+  margin-bottom: 8px;
+  padding: 5px 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #65e109, #58cc02);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  box-shadow: 0 3px 0 #46a302, 0 6px 14px rgba(88, 204, 2, 0.35);
+}
+
+.path-start-callout::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: #58cc02;
+  transform: rotate(45deg);
+  border-radius: 1px;
+}
+
+.path-node {
+  position: relative;
+  display: block;
+  width: min(100%, 176px);
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.22),
+    0 8px 20px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.path-node:hover {
+  transform: translateY(-2px);
+}
+
+.path-node:focus-visible {
+  outline: 2px solid #9cf;
+  outline-offset: 3px;
+}
+
+.path-node-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.08);
+  opacity: 0;
+}
+
+.path-node--active .path-node-ring,
+.path-node--available .path-node-ring {
+  opacity: 1;
+  background: linear-gradient(
+    to top,
+    rgba(88, 204, 2, 0.55) 0%,
+    rgba(88, 204, 2, 0.55) calc(var(--path-progress, 0) * 1%),
+    transparent calc(var(--path-progress, 0) * 1%),
+    transparent 100%
+  );
+}
+
+.path-node--stepCompleted .path-node-ring {
+  opacity: 1;
+  box-shadow: inset 0 0 0 3px #ffc800;
+}
+
+.path-node--active {
+  background: #58cc02;
+  box-shadow:
+    0 4px 0 #46a302,
+    0 8px 22px rgba(88, 204, 2, 0.4);
+}
+
+.path-node--stepCompleted {
+  background: #ffc800;
+  box-shadow:
+    0 4px 0 #e5a800,
+    0 8px 18px rgba(255, 200, 0, 0.28);
+}
+
+.path-node--available {
+  background: rgba(30, 30, 36, 0.95);
+  outline: 3px solid rgba(255, 255, 255, 0.14);
+  outline-offset: -3px;
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.2),
+    0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+.path-node-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.path-node-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 20, 26, 0.92);
+}
+
+.path-node-done-badge {
+  position: absolute;
+  inset: auto 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0 -2px -2px 0;
+  border-radius: 50%;
+  background: #ffc800;
+  color: #1a1a1a;
+  border: 2px solid #1a1a1a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.path-node-done-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.path-node-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.path-node-caption {
+  margin-top: 10px;
+  text-align: center;
+  max-width: 260px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.path-trail-item--left .path-node-caption,
+.path-trail-item--right .path-node-caption {
+  text-align: center;
+}
+
+.path-node-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  white-space: normal;
+}
+
+.path-node-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.path-trail-item--active-step .path-node-caption {
+  border-color: rgba(88, 204, 2, 0.35);
+  background: rgba(88, 204, 2, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .path-node {
+    transition: none;
+  }
+
+  .path-node:hover {
+    transform: none;
+  }
+}
+
+.path-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--muted);
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+}
+
+.path-empty-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--text);
+}

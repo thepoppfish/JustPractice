@@ -35,6 +35,9 @@ export interface AttachDashboardListenersInput {
   setSearchQuery: (q: string) => void;
   setLibraryLevelFilter: (f: '' | 'unset' | 'legacy' | LevelTag) => void;
   setYearHeatmapYear: (y: number) => void;
+  requestPathRebuild: () => void;
+  regenerateTodayPath: () => void;
+  scheduleDurationBackfill: () => void;
 }
 
 export interface AttachLibraryPanelListenersInput {
@@ -114,6 +117,9 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     setSearchQuery,
     setLibraryLevelFilter,
     setYearHeatmapYear,
+    requestPathRebuild,
+    regenerateTodayPath,
+    scheduleDurationBackfill,
   } = input;
 
   const listen = <K extends keyof HTMLElementEventMap>(
@@ -131,6 +137,35 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       if (!v) return;
       setActiveView(v);
       switchView(v);
+      if (v === 'path') {
+        scheduleDurationBackfill();
+        void refreshAfterMutation(['path']);
+      }
+    });
+  });
+
+  root.querySelectorAll<HTMLButtonElement>('[data-path-action]').forEach((btn) => {
+    listen(btn, 'click', () => {
+      const action = btn.getAttribute('data-path-action');
+      if (action === 'regenerate') {
+        if (!window.confirm(vm.t('path.regenerateConfirm'))) return;
+        regenerateTodayPath();
+        return;
+      }
+      if (action === 'new-path') {
+        requestPathRebuild();
+        void refreshAfterMutation(['path']);
+      }
+    });
+  });
+
+  root.querySelectorAll<HTMLButtonElement>('[data-path-goto]').forEach((btn) => {
+    listen(btn, 'click', () => {
+      const target = btn.getAttribute('data-path-goto');
+      if (target === 'goals') {
+        setActiveView('goals');
+        switchView('goals');
+      }
     });
   });
 

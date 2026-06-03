@@ -1,4 +1,5 @@
 import { dashWelcomeHtml } from './dashboardFormatters';
+import { dashboardPathSectionHtml } from './dashboardPathSection';
 import {
   dashboardCompletedSectionHtml,
   dashboardGoalsSectionHtml,
@@ -15,6 +16,7 @@ import type { DashView, DashboardViewModel } from './dashboardViewModel';
 
 export const DASH_VIEWS: readonly DashView[] = [
   'library',
+  'path',
   'completed',
   'stats',
   'progress',
@@ -102,6 +104,8 @@ function viewPanelHtml(vm: DashboardViewModel, view: DashView): string {
   switch (view) {
     case 'library':
       return dashboardLibrarySectionHtml(vm);
+    case 'path':
+      return dashboardPathSectionHtml(vm);
     case 'completed':
       return dashboardCompletedSectionHtml(vm);
     case 'stats':

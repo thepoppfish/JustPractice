@@ -27,6 +27,7 @@ import {
 } from './dashboardFormatters';
 import { buildYearHeatmapGridModel, yearHeatmapSectionHtml } from '../lib/yearHeatmapHtml';
 import type { DashboardViewModel } from './dashboardViewModel';
+import { dashboardPathSectionHtml } from './dashboardPathSection';
 import { ringDasharrayFromProgress } from '../lib/goalFormat';
 import { MAX_ACCOUNT_LEVEL } from '../lib/playerProgress';
 import {
@@ -58,6 +59,10 @@ export function dashboardSidebarHtml(vm: DashboardViewModel): string {
             <button type="button" class="${vm.navItemClass('library')}" data-view="library">
               <span class="nav-ico" aria-hidden="true">${icoLibrary()}</span>
               ${escapeHtml(vm.t('nav.library'))}
+            </button>
+            <button type="button" class="${vm.navItemClass('path')}" data-view="path">
+              <span class="nav-ico" aria-hidden="true">${icoClock()}</span>
+              ${escapeHtml(vm.t('nav.path'))}
             </button>
             <button type="button" class="${vm.navItemClass('completed')}" data-view="completed">
               <span class="nav-ico" aria-hidden="true">${icoCheck()}</span>
@@ -760,6 +765,7 @@ ${dashboardTopbarHtml(vm, searchQuery)}
 ${dashWelcomeHtml(vm.t, vm.displayName, vm.dailyMotivationMessage)}
         <main class="content">
 ${dashboardLibrarySectionHtml(vm)}
+${dashboardPathSectionHtml(vm)}
 ${dashboardCompletedSectionHtml(vm)}
 ${dashboardStatsSectionHtml(vm)}
 ${dashboardProgressSectionHtml(vm)}

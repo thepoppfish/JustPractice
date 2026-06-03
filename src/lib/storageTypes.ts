@@ -1,7 +1,7 @@
 /** Types, defaults, and date/goal helpers for persisted storage. */
 /** Persisted shape in chrome.storage.local */
 
-export const SCHEMA_VERSION = 10 as const;
+export const SCHEMA_VERSION = 12 as const;
 
 export const MAX_DISPLAY_NAME_LEN = 40 as const;
 export const MAX_CUSTOM_DAILY_MESSAGES = 10 as const;
@@ -39,6 +39,21 @@ export interface LibraryItem {
   difficulty: LevelTag | null;
   /** Unix ms when the user marked the video complete; null = not completed. */
   completedAt: number | null;
+  /** YouTube video length in seconds; null until captured on watch or enriched. */
+  durationSec: number | null;
+}
+
+/** Cached dashboard “Today” path for the current local day. */
+export interface TodayPathPlan {
+  dateKey: string;
+  remainingSecAtBuild: number;
+  builtAtMs: number;
+  steps: {
+    videoId: string;
+    durationSec: number;
+    allocatedSec: number;
+    videoSecondsBaseline: number;
+  }[];
 }
 
 export interface PracticeGoals {
@@ -135,8 +150,12 @@ export interface PersistedData {
   dailySeconds: Record<string, number>;
   /** videoId -> seconds (same metric as daily) */
   videoSeconds: Record<string, number>;
+  /** videoId -> farthest playback position seen on YouTube (seconds). */
+  videoPlaybackPositionSec: Record<string, number>;
   settings: AppSettings;
   playerProgress: PlayerProgress;
+  /** Today tab path plan; rebuilt on new day or regenerate. */
+  todayPathPlan?: TodayPathPlan | null;
 }
 
 export const STORAGE_KEY = 'jpPractice' as const;
@@ -309,8 +328,10 @@ export const emptyPersisted = (): PersistedData => {
     extensionInstalledDateKey: t,
     dailySeconds: {},
     videoSeconds: {},
+    videoPlaybackPositionSec: {},
     settings: defaultSettings(),
     playerProgress: defaultPlayerProgress(),
+    todayPathPlan: null,
   };
 };
 

@@ -1,3 +1,4 @@
+import { normalizeTodayPathPlan } from './todayPathPlan';
 import {
   SCHEMA_VERSION,
   CEFR_LEVELS,
@@ -35,6 +36,22 @@ function normalizeCompletedAt(x: unknown): number | null {
   return x;
 }
 
+function normalizeVideoPlaybackPositionSec(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out: Record<string, number> = {};
+  for (const [videoId, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!videoId || typeof v !== 'number' || !Number.isFinite(v) || v <= 0) continue;
+    out[videoId] = Math.floor(v);
+  }
+  return out;
+}
+
+function normalizeDurationSec(x: unknown): number | null {
+  if (x === null || x === undefined) return null;
+  if (typeof x !== 'number' || !Number.isFinite(x) || x <= 0) return null;
+  return Math.floor(x);
+}
+
 function normalizeLibraryItem(raw: unknown): LibraryItem {
   const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
   return {
@@ -44,6 +61,7 @@ function normalizeLibraryItem(raw: unknown): LibraryItem {
     addedAt: typeof o.addedAt === 'number' && Number.isFinite(o.addedAt) ? o.addedAt : Date.now(),
     difficulty: normalizeDifficulty(o.difficulty),
     completedAt: normalizeCompletedAt(o.completedAt),
+    durationSec: normalizeDurationSec(o.durationSec),
   };
 }
 
@@ -78,6 +96,9 @@ export function migrate(input: PersistedData): PersistedData {
     input.dailySeconds && typeof input.dailySeconds === 'object' ? { ...input.dailySeconds } : {};
   const videoSeconds =
     input.videoSeconds && typeof input.videoSeconds === 'object' ? { ...input.videoSeconds } : {};
+  const videoPlaybackPositionSec = normalizeVideoPlaybackPositionSec(
+    (input as PersistedData).videoPlaybackPositionSec,
+  );
 
   const settings = ensureSettingsShape({
     ...base.settings,
@@ -100,18 +121,22 @@ export function migrate(input: PersistedData): PersistedData {
       ? input.schemaVersion
       : 0;
 
+  const todayPathPlan = normalizeTodayPathPlan((input as PersistedData).todayPathPlan);
+
   return {
     schemaVersion: SCHEMA_VERSION,
     library,
     extensionInstalledDateKey,
     dailySeconds,
     videoSeconds,
+    videoPlaybackPositionSec,
     settings,
     playerProgress: normalizePlayerProgress(
       (input as PersistedData).playerProgress,
       priorSchema,
       dailySeconds,
     ),
+    todayPathPlan,
   };
 }
 

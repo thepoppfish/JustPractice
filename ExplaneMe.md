@@ -427,11 +427,10 @@ Runtime still owns: panel host + shadow root; URL vs `homePickMeta` binding; pra
 
 Built in `dashboardViewModel.ts`; HTML in `dashboardTemplates.ts`; events in `dashboardListeners.ts`.
 
-**Planned:** Duolingo-style **Today** tab — finite path sized to **remaining daily goal** (greedy video pack, not full library backlog); spec in [`docs/DAILY-PATH-DESIGN.md`](docs/DAILY-PATH-DESIGN.md) (design only; not implemented yet).
-
 | View | ID | Primary content |
 |------|-----|-----------------|
 | Library | `library` | In-progress saves (`inProgressLibraryItems`), search + level filter chips |
+| Today (path) | `path` | Finite **today path** to remaining daily goal (`buildTodayPath` / `resolveTodayPathUi`); see [`docs/DAILY-PATH-DESIGN.md`](docs/DAILY-PATH-DESIGN.md) |
 | Completed | `completed` | `completedLibraryItems` sorted by `completedAt`; mark incomplete |
 | Stats | `stats` | Aggregates, 7-day buckets, **year heatmap** with year navigation |
 | Progress | `progress` | Account level/XP bar, prestige button, achievements by category |

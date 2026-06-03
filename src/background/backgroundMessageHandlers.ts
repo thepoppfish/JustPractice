@@ -23,7 +23,9 @@ import {
 import { canPrestige, levelFromTotalXp } from '../lib/playerProgress';
 import { explainPracticeXpZero, jpXpLogBackground } from '../lib/xpDebug';
 import { maybeNotifyXpEvents, maybeNotifyPrestigeUp } from '../lib/xpNotifications';
+import { backfillLibraryDurations } from './backgroundDurationEnrich';
 import { enrichLibraryItemFromOEmbed } from './backgroundOEmbed';
+import { normalizeTodayPathPlan } from '../lib/todayPathPlan';
 import { rebuildContextMenusFromStorage } from './backgroundContextMenus';
 
 const MAX_TICK_SECONDS = 120;
@@ -42,7 +44,7 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
     }
     case MSG.ADD_OR_UPDATE_LIBRARY: {
       const p = await readPersisted();
-      const { videoId, title, channel, difficulty } = message.payload;
+      const { videoId, title, channel, difficulty, durationSec } = message.payload;
       const idx = p.library.findIndex((x) => x.videoId === videoId);
       const cleanTitle =
         title.trim() && title !== 'Unknown title' && !isPlaceholderYoutubePageTitle(title) ?
@@ -55,11 +57,16 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
 
       if (idx >= 0) {
         const prev = p.library[idx];
+        const nextDuration =
+          typeof durationSec === 'number' && Number.isFinite(durationSec) && durationSec > 0
+            ? Math.floor(durationSec)
+            : prev.durationSec;
         p.library[idx] = {
           ...prev,
           title: cleanTitle ?? prev.title,
           channel: cleanChannel ?? prev.channel,
           ...(difficulty !== undefined ? { difficulty } : {}),
+          durationSec: nextDuration,
         };
       } else {
         p.library.push({
@@ -69,6 +76,10 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
           addedAt: Date.now(),
           difficulty: difficulty ?? null,
           completedAt: null,
+          durationSec:
+            typeof durationSec === 'number' && Number.isFinite(durationSec) && durationSec > 0
+              ? Math.floor(durationSec)
+              : null,
         });
       }
       await writePersisted(p);
@@ -133,6 +144,7 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
           addedAt: now,
           difficulty: null,
           completedAt: now,
+          durationSec: null,
         });
       } else {
         return {
@@ -263,6 +275,48 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
           error: e instanceof Error ? e.message : 'Could not restore backup.',
         };
       }
+    }
+    case MSG.SET_VIDEO_DURATION: {
+      const p = await readPersisted();
+      const { videoId, durationSec } = message.payload;
+      if (!videoId || typeof durationSec !== 'number' || !Number.isFinite(durationSec) || durationSec <= 0) {
+        return { ok: false, error: 'Invalid duration' };
+      }
+      const item = p.library.find((x) => x.videoId === videoId);
+      if (!item) return { ok: false, error: 'Video not in library' };
+      item.durationSec = Math.floor(durationSec);
+      await writePersisted(p);
+      return { ok: true };
+    }
+    case MSG.SET_VIDEO_PLAYBACK_POSITION: {
+      const p = await readPersisted();
+      const { videoId, positionSec } = message.payload;
+      if (!videoId || typeof positionSec !== 'number' || !Number.isFinite(positionSec) || positionSec <= 0) {
+        return { ok: false, error: 'Invalid position' };
+      }
+      const item = p.library.find((x) => x.videoId === videoId);
+      if (!item) return { ok: false, error: 'Video not in library' };
+      const next = Math.floor(positionSec);
+      const prev = p.videoPlaybackPositionSec[videoId] ?? 0;
+      if (next > prev) {
+        p.videoPlaybackPositionSec[videoId] = next;
+        await writePersisted(p);
+      }
+      return { ok: true };
+    }
+    case MSG.SET_TODAY_PATH_PLAN: {
+      const p = await readPersisted();
+      p.todayPathPlan = normalizeTodayPathPlan(message.payload.plan);
+      await writePersisted(p);
+      return { ok: true };
+    }
+    case MSG.BACKFILL_LIBRARY_DURATIONS: {
+      const limit =
+        typeof message.payload?.limit === 'number' && message.payload.limit > 0
+          ? Math.floor(message.payload.limit)
+          : 8;
+      const result = await backfillLibraryDurations(limit);
+      return { ok: true, ...result };
     }
     case MSG.PRESTIGE: {
       const p = await readPersisted();

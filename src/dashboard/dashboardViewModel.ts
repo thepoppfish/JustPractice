@@ -51,8 +51,9 @@ import {
   matchesLibrarySearch,
   resolvedPracticeGoals,
 } from './dashboardFormatters';
+import { resolveTodayPathUi, type TodayPathUiState } from '../lib/todayPath';
 
-export type DashView = 'library' | 'completed' | 'stats' | 'progress' | 'goals' | 'settings';
+export type DashView = 'library' | 'completed' | 'stats' | 'progress' | 'goals' | 'settings' | 'path';
 
 export interface DashboardViewModel {
   data: PersistedData;
@@ -106,6 +107,8 @@ export interface DashboardViewModel {
 
   navItemClass: (view: DashView) => string;
   viewPanelClass: (view: DashView) => string;
+
+  pathUi: TodayPathUiState;
 }
 
 function compareCompletedLibraryRows(
@@ -126,6 +129,8 @@ export function buildDashboardViewModel(input: {
   searchQuery: string;
   activeView: DashView;
   yearHeatmapYear: number;
+  pathForceRebuild?: boolean;
+  pathRegenerateFromVideoIds?: string[];
 }): DashboardViewModel {
   const { data, searchQuery, activeView } = input;
   const st = ensureSettingsShape({ ...defaultSettings(), ...data.settings });
@@ -223,6 +228,10 @@ export function buildDashboardViewModel(input: {
       ? dailyMotivationForToday(st.customDailyMessages ?? [], t)
       : null;
 
+  const pathUi = resolveTodayPathUi(data, todayKey, input.pathForceRebuild === true, {
+    regenerateFromVideoIds: input.pathRegenerateFromVideoIds ?? [],
+  });
+
   return {
     data,
     st,
@@ -270,5 +279,6 @@ export function buildDashboardViewModel(input: {
     dailyMotivationMessage,
     navItemClass,
     viewPanelClass,
+    pathUi,
   };
 }
