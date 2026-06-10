@@ -1,4 +1,11 @@
-import type { AppSettings, LevelTag, PersistedData, TodayPathPlan } from './storage';
+import type {
+  AppSettings,
+  LevelTag,
+  PersistedData,
+  RoadmapBonusPick,
+  RoadmapCompletionSnapshot,
+  TodayPathPlan,
+} from './storage';
 
 export const MSG = {
   GET_STATE: 'GET_STATE',
@@ -17,6 +24,8 @@ export const MSG = {
   SET_VIDEO_DURATION: 'SET_VIDEO_DURATION',
   SET_VIDEO_PLAYBACK_POSITION: 'SET_VIDEO_PLAYBACK_POSITION',
   SET_TODAY_PATH_PLAN: 'SET_TODAY_PATH_PLAN',
+  SET_ROADMAP_COMPLETION_SNAPSHOT: 'SET_ROADMAP_COMPLETION_SNAPSHOT',
+  SET_ROADMAP_BONUS_PICK: 'SET_ROADMAP_BONUS_PICK',
   /** Dashboard: fetch watch-page metadata for library rows missing durationSec. */
   BACKFILL_LIBRARY_DURATIONS: 'BACKFILL_LIBRARY_DURATIONS',
 } as const;
@@ -52,6 +61,16 @@ export interface SetVideoPlaybackPositionMessage {
 export interface SetTodayPathPlanMessage {
   type: typeof MSG.SET_TODAY_PATH_PLAN;
   payload: { plan: TodayPathPlan | null };
+}
+
+export interface SetRoadmapCompletionSnapshotMessage {
+  type: typeof MSG.SET_ROADMAP_COMPLETION_SNAPSHOT;
+  payload: { snapshot: RoadmapCompletionSnapshot | null };
+}
+
+export interface SetRoadmapBonusPickMessage {
+  type: typeof MSG.SET_ROADMAP_BONUS_PICK;
+  payload: { pick: RoadmapBonusPick | null };
 }
 
 export interface BackfillLibraryDurationsMessage {
@@ -147,6 +166,8 @@ export type ExtensionMessage =
   | SetVideoDurationMessage
   | SetVideoPlaybackPositionMessage
   | SetTodayPathPlanMessage
+  | SetRoadmapCompletionSnapshotMessage
+  | SetRoadmapBonusPickMessage
   | BackfillLibraryDurationsMessage;
 
 export interface GetStateResponse {

@@ -84,6 +84,33 @@ function orderCandidatesForPack(
   return [...primary, ...secondary];
 }
 
+/**
+ * Daily-goal slice for one path node. Only the step that crosses the daily
+ * remainder gets a partial allocation; earlier nodes use full video length.
+ */
+/** True when the step is less than the full video (daily tail on last node). */
+export function pathStepShowsVideoTotal(allocatedSec: number, durationSec: number): boolean {
+  return (
+    Number.isFinite(allocatedSec) &&
+    Number.isFinite(durationSec) &&
+    durationSec > 0 &&
+    allocatedSec < durationSec
+  );
+}
+
+export function allocatePathStepSec(
+  durationSec: number,
+  sumAllocated: number,
+  remainingSec: number,
+): number {
+  const need = remainingSec - sumAllocated;
+  if (need <= 0) return 0;
+  if (sumAllocated + durationSec > remainingSec) {
+    return need;
+  }
+  return Math.min(durationSec, need);
+}
+
 function greedyPackPath(
   ordered: PathBuilderCandidate[],
   remainingSec: number,
@@ -96,11 +123,11 @@ function greedyPackPath(
     if (steps.length >= maxNodes) break;
     if (sumAllocated >= remainingSec) break;
 
-    const leftOnVideo = candidateRemainingSec(c);
-    if (leftOnVideo <= 0) continue;
+    if (candidateRemainingSec(c) <= 0) continue;
 
-    const need = remainingSec - sumAllocated;
-    const allocatedSec = Math.min(leftOnVideo, need);
+    const allocatedSec = allocatePathStepSec(c.durationSec, sumAllocated, remainingSec);
+    if (allocatedSec <= 0) continue;
+
     steps.push({
       videoId: c.item.videoId,
       durationSec: c.durationSec,
@@ -115,7 +142,8 @@ function greedyPackPath(
 
 /**
  * Greedy pack: `addedAt` order (oldest or newest), tie-break shorter videos.
- * Stops when cumulative duration ≥ remainingSec (with per-step allocation caps).
+ * Stops when cumulative duration ≥ remainingSec. Partial `allocatedSec` only on
+ * the last node (daily remainder). Prior watch today affects eligibility only.
  */
 export function buildTodayPath(
   candidates: PathBuilderCandidate[],

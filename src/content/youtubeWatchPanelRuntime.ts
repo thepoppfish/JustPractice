@@ -37,6 +37,7 @@ import {
 import {
   applyWatchPanelCollapsed as applyWatchPanelCollapsedUi,
   calendarViewIncludesToday as calendarViewIncludesTodayUi,
+  mergeIncomingDailySnapshot,
   paintCalStreak as paintCalStreakUi,
   renderWatchPanelCalendar,
   syncWatchPanelLabels as syncWatchPanelLabelsUi,
@@ -51,17 +52,17 @@ import {
   saveWatchPanelVideoToLibrary,
 } from './youtubeLibraryPanel';
 import {
-  applyNoVideoHomePanelLayout,
   clearWatchPanelLibraryBanner,
   applyDefaultWatchPanelHostStyle,
   clampWatchPanelHostToViewport,
   forceWatchPanelHostVisible,
   ensureWatchPanelIfAbsent,
+  migrateWatchPanelShadow,
   setWatchPanelHostVisible,
   needsHomeFeedPanelAttention,
   shouldKeepWatchPanelVisibleWithoutVideoId,
-  updateHomeFeedAttentionStrip as updateHomeFeedAttentionStripUi,
   updateWatchPanelHint,
+  watchPanelMarkupIsCurrent,
   type WatchPanelDebugHooks,
 } from './youtubePanelMount';
 import {
@@ -168,6 +169,11 @@ export function flushWatchPanelPractice(): void {
   if (!currentVideoId) return;
   const pending = practiceMeter.consumeWholeSeconds();
   if (pending <= 0) return;
+  const todayKey = dateKeyFromTimestamp(Date.now());
+  lastDailySnapshot = {
+    ...lastDailySnapshot,
+    [todayKey]: (lastDailySnapshot[todayKey] ?? 0) + pending,
+  };
   const videoId = currentVideoId;
   const snap = practiceCountingSnapshot();
   jpXpLogContent('content:PRACTICE_TICK send', {
@@ -304,6 +310,14 @@ function getTodayPracticeSeconds(): number {
   const key = dateKeyFromTimestamp(Date.now());
   const stored = lastDailySnapshot[key] ?? 0;
   return stored + (practiceEnabled ? practiceMeter.getPendingWholeSeconds() : 0);
+}
+
+function mergeDailySnapshotIntoPanel(incoming: Record<string, number>): void {
+  lastDailySnapshot = mergeIncomingDailySnapshot(
+    lastDailySnapshot,
+    incoming,
+    practiceEnabled ? practiceMeter.getPendingWholeSeconds() : 0,
+  );
 }
 
 function calendarViewIncludesToday(): boolean {
@@ -558,8 +572,15 @@ function ensurePanel(): void {
 }
 
 async function refreshCalendarOnly(): Promise<void> {
-  await refreshWatchPanelCalendarSnapshot((dailySeconds, installKey, playerProgress) => {
-    lastDailySnapshot = { ...dailySeconds };
+  await refreshWatchPanelCalendarSnapshot((dailySeconds, installKey, playerProgress, settings) => {
+    settingsCache = settings;
+    panelLocale = resolveLocale(settingsCache.uiLocale);
+    panelT = createTranslator(panelLocale);
+    lastDailySnapshot = mergeIncomingDailySnapshot(
+      lastDailySnapshot,
+      dailySeconds,
+      practiceEnabled ? practiceMeter.getPendingWholeSeconds() : 0,
+    );
     extensionInstallDateKey = installKey;
     if (playerProgress) {
       cachedPlayerTotalXp = playerProgress.totalXp;
@@ -573,7 +594,12 @@ async function refreshCalendarOnly(): Promise<void> {
 
 function applyPersistedPracticeSnapshotToPanel(persisted: PersistedData | undefined): void {
   if (!persisted?.dailySeconds || typeof persisted.dailySeconds !== 'object') return;
-  lastDailySnapshot = { ...persisted.dailySeconds };
+  if (persisted.settings && typeof persisted.settings === 'object') {
+    settingsCache = ensureSettingsShape({ ...defaultSettings(), ...persisted.settings });
+    panelLocale = resolveLocale(settingsCache.uiLocale);
+    panelT = createTranslator(panelLocale);
+  }
+  mergeDailySnapshotIntoPanel(persisted.dailySeconds);
   if (typeof persisted.extensionInstalledDateKey === 'string' && persisted.extensionInstalledDateKey.length > 0) {
     extensionInstallDateKey = persisted.extensionInstalledDateKey;
   }
@@ -621,7 +647,7 @@ async function refreshState(videoId: string | null): Promise<void> {
         settingsCache = s;
       },
       setLastDailySnapshot: (d) => {
-        lastDailySnapshot = d;
+        mergeDailySnapshotIntoPanel(d);
       },
       setExtensionInstallDateKey: (k) => {
         extensionInstallDateKey = k;
@@ -749,23 +775,6 @@ function clearLibraryBanner(reason = 'unknown'): void {
   clearWatchPanelLibraryBanner({ shadowRoot, reason, debug: panelMountDebug });
 }
 
-function updateHomeFeedAttentionStrip(): void {
-  updateHomeFeedAttentionStripUi({
-    shadowRoot,
-    needsAttention: needsHomeFeedPanelAttention(getVideoIdFromUrl),
-    watchPanelCollapsed: settingsCache.watchPanelCollapsed === true,
-    panelT,
-    onExpandFromCollapsed: () => {
-      settingsCache = { ...settingsCache, watchPanelCollapsed: false };
-      applyWatchPanelCollapsed();
-      sendMsgFireAndForget({
-        type: MSG.SET_SETTINGS,
-        payload: { watchPanelCollapsed: false },
-      });
-    },
-  });
-}
-
 async function toggleWatchPanelCompletion(complete: boolean): Promise<void> {
   await completion.toggleWatchPanelCompletion(complete);
 }
@@ -793,13 +802,11 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
     ensurePanel,
     applyPanelHostPosition,
     applyWatchPanelCollapsed,
-    updateHomeFeedAttentionStrip,
     updateHint,
     refreshCalendarOnly,
     shouldKeepWatchPanelVisibleWithoutVideoId: () =>
       shouldKeepWatchPanelVisibleWithoutVideoId(getVideoIdFromUrl, () => Boolean(getVideoElement())),
     scheduleVideoIdResolutionRetries,
-    applyNoVideoHomePanelLayout,
     readTitle,
     refreshState,
     rebindCompletionPromptListener: () => completion.rebindCompletionPromptListener(),
@@ -825,9 +832,6 @@ export function getWatchPanelPauseWhenUnfocused(): boolean {
 }
 
 export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void {
-  if (nv) {
-    applyPersistedPracticeSnapshotToPanel(nv);
-  }
   runWatchPanelAfterJpPracticeStorageChange(nv, {
     applyIncomingSettingsFromPersisted: (persisted) => {
       settingsCache = ensureSettingsShape({ ...defaultSettings(), ...persisted.settings });
@@ -838,17 +842,19 @@ export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void 
       syncWatchPanelLabels();
       syncLearningFocusFromState();
       updateHint();
-      updateHomeFeedAttentionStrip();
     },
     schedulePostStorageResync: () => {
       fireAsyncWatch(
         (async () => {
-          applyPersistedPracticeSnapshotToPanel(nv);
+          if (nv) {
+            applyPersistedPracticeSnapshotToPanel(nv);
+          } else {
+            await refreshCalendarOnly();
+          }
           if (jpWatchDebugEnabled()) {
             jpWatchLog('storage:onChanged:calendarSync', { key: STORAGE_KEY });
             jpWatchPanelDebugStrip.strip('storage changed → calendar sync');
           }
-          await refreshCalendarOnly();
           updateHint();
         })(),
       );
@@ -890,11 +896,14 @@ export async function refreshWatchPanelCalendarOnVisible(): Promise<void> {
 /** Drop panel DOM from a prior extension injection (broken listeners / hidden host). */
 export function purgeStaleWatchPanelHost(): void {
   const host = document.getElementById(PANEL_HOST_ID) as HTMLElement | null;
-  if (host && !isWatchPanelHostLive(host)) {
+  if (!host) return;
+  if (!isWatchPanelHostLive(host) || !watchPanelMarkupIsCurrent(host)) {
     host.remove();
     shadowRoot = null;
     ui = null;
+    return;
   }
+  if (host.shadowRoot) migrateWatchPanelShadow(host.shadowRoot);
 }
 
 /**

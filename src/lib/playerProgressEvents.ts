@@ -12,6 +12,7 @@ import {
   levelFromTotalXp,
   type XpDelta,
 } from './playerProgress';
+import { roadmapBonusMultiplierForPractice } from './roadmapBonusVideo';
 import { dateKeyFromTimestamp, type PersistedData } from './storage';
 
 export interface XpEventResult {
@@ -57,14 +58,16 @@ function finalizeXpEvent(
 
 export function processPracticeTickXpEvent(
   data: PersistedData,
+  videoId: string,
   deltaSeconds: number,
   endedAtMs: number,
 ): XpEventResult {
   const progress = data.playerProgress;
   const levelBefore = levelFromTotalXp(progress.totalXp);
   const dateKey = dateKeyFromTimestamp(endedAtMs);
+  const bonusMult = roadmapBonusMultiplierForPractice(data, videoId, dateKey);
 
-  const practice = awardPracticeXp(progress, deltaSeconds, endedAtMs);
+  const practice = awardPracticeXp(progress, deltaSeconds, endedAtMs, bonusMult);
   const streak = awardStreakDayXpBonus(data, progress, dateKey, endedAtMs);
   const daily =
     isDailyGoalMet(data, dateKey) ? awardDailyGoalXpBonus(progress, dateKey) : null;

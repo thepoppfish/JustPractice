@@ -78,16 +78,29 @@ export function practiceXpFromSeconds(
   deltaSeconds: number,
   nowMs: number = Date.now(),
   prestigeLevel: number = 0,
+  roadmapBonusMultiplier = 1,
 ): {
   xp: number;
   multiplier: number;
   prestigeMultiplier: number;
+  roadmapBonusMultiplier: number;
 } {
   const base = Math.floor(Math.max(0, deltaSeconds) / 60) * XP_PER_PRACTICE_MINUTE;
   const weekendMultiplier = getPracticeXpMultiplier(nowMs);
   const prestigeMultiplier = getPrestigeXpMultiplier(prestigeLevel);
-  const multiplier = weekendMultiplier * prestigeMultiplier;
-  return { xp: Math.floor(base * multiplier), multiplier, prestigeMultiplier };
+  const bonus =
+    typeof roadmapBonusMultiplier === 'number' &&
+    Number.isFinite(roadmapBonusMultiplier) &&
+    roadmapBonusMultiplier > 1
+      ? roadmapBonusMultiplier
+      : 1;
+  const multiplier = weekendMultiplier * prestigeMultiplier * bonus;
+  return {
+    xp: Math.floor(base * multiplier),
+    multiplier,
+    prestigeMultiplier,
+    roadmapBonusMultiplier: bonus,
+  };
 }
 
 export function backfillXpFromDailySeconds(dailySeconds: Record<string, number>): number {
@@ -128,30 +141,33 @@ export function awardPracticeXp(
   progress: PlayerProgress,
   deltaSeconds: number,
   nowMs: number = Date.now(),
-): XpDelta & { multiplier: number; prestigeMultiplier: number } {
+  roadmapBonusMultiplier = 1,
+): XpDelta & {
+  multiplier: number;
+  prestigeMultiplier: number;
+  roadmapBonusMultiplier: number;
+} {
   const carryIn = Math.max(0, Math.floor(progress.practiceXpCarrySeconds ?? 0));
   const added = Math.max(0, Math.floor(deltaSeconds));
   const pooled = carryIn + added;
   const billableSeconds = Math.floor(pooled / 60) * 60;
   progress.practiceXpCarrySeconds = pooled % 60;
 
-  const { xp, multiplier, prestigeMultiplier } = practiceXpFromSeconds(
-    billableSeconds,
-    nowMs,
-    progress.prestigeLevel,
-  );
+  const { xp, multiplier, prestigeMultiplier, roadmapBonusMultiplier: bonusMult } =
+    practiceXpFromSeconds(billableSeconds, nowMs, progress.prestigeLevel, roadmapBonusMultiplier);
   if (xp <= 0) {
     return {
       xpGained: 0,
       multiplier,
       prestigeMultiplier,
+      roadmapBonusMultiplier: bonusMult,
       levelBefore: levelFromTotalXp(progress.totalXp),
       levelAfter: levelFromTotalXp(progress.totalXp),
       levelUp: false,
     };
   }
   const delta = addXp(progress, xp);
-  return { ...delta, multiplier, prestigeMultiplier };
+  return { ...delta, multiplier, prestigeMultiplier, roadmapBonusMultiplier: bonusMult };
 }
 
 export function awardDailyGoalXpBonus(

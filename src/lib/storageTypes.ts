@@ -1,7 +1,7 @@
 /** Types, defaults, and date/goal helpers for persisted storage. */
 /** Persisted shape in chrome.storage.local */
 
-export const SCHEMA_VERSION = 12 as const;
+export const SCHEMA_VERSION = 15 as const;
 
 export const MAX_DISPLAY_NAME_LEN = 40 as const;
 export const MAX_CUSTOM_DAILY_MESSAGES = 10 as const;
@@ -53,9 +53,46 @@ export interface TodayPathPlan {
     durationSec: number;
     allocatedSec: number;
     videoSecondsBaseline: number;
+    /** Practice on this video today when the plan was built. */
+    videoDailyBaselineAtBuild?: number;
     /** Practice/playback already on this video when the plan was built (counts toward the step). */
     creditedSecAtBuild?: number;
   }[];
+}
+
+/** Frozen roadmap trail after plan complete or daily goal met (same local day). */
+export interface RoadmapCompletionSnapshot {
+  dateKey: string;
+  completedAtMs: number;
+  dailyGoalSec: number;
+  todayPracticeSecAtComplete: number;
+  planComplete: boolean;
+  dailyGoalMetAtComplete: boolean;
+  /** Set after the dashboard completion animation has played (same day). */
+  celebrationShownAtMs?: number;
+  steps: {
+    videoId: string;
+    durationSec: number;
+    allocatedSec: number;
+    practicedSecOnStep: number;
+    title: string;
+    channel: string;
+    difficulty: LevelTag | null;
+    side: 'left' | 'right' | 'center';
+  }[];
+}
+
+export type RoadmapBonusTier = 'short' | 'medium' | 'long';
+
+/** Optional bonus watch after roadmap complete (same local day). */
+export interface RoadmapBonusPick {
+  dateKey: string;
+  videoId: string;
+  tier: RoadmapBonusTier;
+  multiplier: number;
+  pickedAtMs: number;
+  /** Lifetime videoSeconds when the pick was made (lock after practice increases). */
+  videoSecondsBaselineAtPick: number;
 }
 
 export interface PracticeGoals {
@@ -154,10 +191,15 @@ export interface PersistedData {
   videoSeconds: Record<string, number>;
   /** videoId -> farthest playback position seen on YouTube (seconds). */
   videoPlaybackPositionSec: Record<string, number>;
+  /** videoId -> dateKey -> seconds practiced that day (for Today path steps). */
+  videoDailySeconds: Record<string, Record<string, number>>;
   settings: AppSettings;
   playerProgress: PlayerProgress;
-  /** Today tab path plan; rebuilt on new day or regenerate. */
+  /** Roadmap plan; rebuilt on new day or regenerate. */
   todayPathPlan?: TodayPathPlan | null;
+  /** Completed roadmap trail for the current day. */
+  roadmapCompletionSnapshot?: RoadmapCompletionSnapshot | null;
+  roadmapBonusPick?: RoadmapBonusPick | null;
 }
 
 export const STORAGE_KEY = 'jpPractice' as const;
@@ -331,9 +373,12 @@ export const emptyPersisted = (): PersistedData => {
     dailySeconds: {},
     videoSeconds: {},
     videoPlaybackPositionSec: {},
+    videoDailySeconds: {},
     settings: defaultSettings(),
     playerProgress: defaultPlayerProgress(),
     todayPathPlan: null,
+    roadmapCompletionSnapshot: null,
+    roadmapBonusPick: null,
   };
 };
 
@@ -473,6 +518,11 @@ const PERSISTED_TOP_KEYS = new Set([
   'extensionInstalledDateKey',
   'dailySeconds',
   'videoSeconds',
+  'videoPlaybackPositionSec',
+  'videoDailySeconds',
+  'todayPathPlan',
+  'roadmapCompletionSnapshot',
+  'roadmapBonusPick',
   'settings',
   'playerProgress',
 ]);

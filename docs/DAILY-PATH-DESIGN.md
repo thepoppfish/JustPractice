@@ -295,8 +295,9 @@ Pure function target: `buildTodayPath(candidates, remainingSec, options) → Pat
 3. Initialize `sum = 0`, `plan = []`.
 4. For each candidate in order, if `sum >= remainingSec` stop.
 5. Push node:
-   - `allocatedSec = min(durationSec, remainingSec - sum)` on last node if overshooting?  
-   - **Last node rule:** if `sum + durationSec > remainingSec` and this is the node that crosses the line, still add full video but **`allocatedSec = remainingSec - sum`** (user may watch more; plan only *needs* the remainder).
+   - **Last node rule:** if `sum + durationSec > remainingSec`, **`allocatedSec = remainingSec - sum`** (daily remainder only).
+   - Otherwise **`allocatedSec = min(durationSec, remainingSec - sum)`** (full video chunk).
+   - Prior practice today only **skips** exhausted videos (`leftOnVideo <= 0`); it does **not** shrink non-final step sizes (progress uses `creditedSecAtBuild` / today deltas).
 6. If after loop `sum < remainingSec` → **shortfall plan** (see §10).
 
 **Example A — 30 min left**
@@ -574,7 +575,13 @@ Same checklist as rev 1 (`DashView` `path`, sidebar, templates, CSS, i18n) plus:
 
 ---
 
-## 15. Open questions
+## 15. Related plans
+
+- **[ROADMAP-COMPLETION-AND-REWARDS-PLAN.md](ROADMAP-COMPLETION-AND-REWARDS-PLAN.md)** — Completed trail persistence, congratulations animation, short/medium/long bonus XP tiers (planning only).
+
+---
+
+## 16. Open questions
 
 ### Resolved (rev 2)
 
@@ -587,7 +594,7 @@ Same checklist as rev 1 (`DashView` `path`, sidebar, templates, CSS, i18n) plus:
 
 ### Deferred
 
-- Per-video **today-only** seconds (cleaner step math)  
+- ~~Per-video **today-only** seconds (cleaner step math)~~ — shipped (schema v13, `videoDailySeconds`)  
 - `fewestVideos` bin packing  
 - User pin / manual order  
 - Duolingo sections + locks  

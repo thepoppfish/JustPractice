@@ -53,6 +53,25 @@ export function buildMergedDailyForPanel(
   return merged;
 }
 
+/**
+ * Apply remote daily seconds without regressing today's total when local practice
+ * has unflushed pending seconds or a fresher optimistic stored value.
+ */
+export function mergeIncomingDailySnapshot(
+  current: Record<string, number>,
+  incoming: Record<string, number>,
+  pendingTodaySeconds: number,
+  nowMs: number = Date.now(),
+): Record<string, number> {
+  const todayKey = dateKeyFromTimestamp(nowMs);
+  const localTodayTotal = (current[todayKey] ?? 0) + Math.max(0, pendingTodaySeconds);
+  const incomingToday = incoming[todayKey] ?? 0;
+  return {
+    ...incoming,
+    [todayKey]: Math.max(incomingToday, localTodayTotal),
+  };
+}
+
 export function calendarViewIncludesToday(calendarYear: number, calendarMonth: number): boolean {
   const t = new Date();
   return calendarYear === t.getFullYear() && calendarMonth === t.getMonth();

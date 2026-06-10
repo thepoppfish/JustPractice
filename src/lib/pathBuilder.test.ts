@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  allocatePathStepSec,
   buildTodayPath,
+  pathStepShowsVideoTotal,
   effectiveWatchedSec,
   isDailyGoalMetForPath,
   remainingDailySec,
@@ -85,7 +87,7 @@ describe('buildTodayPath', () => {
     expect(r.steps[0]!.videoId).toBe('old');
   });
 
-  it('uses remaining length when video was partially watched', () => {
+  it('keeps full step size when video was partially watched (not last node)', () => {
     const r = buildTodayPath(
       [
         { ...cand('partial', 1, 3600), watchedSec: 1800 },
@@ -94,11 +96,22 @@ describe('buildTodayPath', () => {
       ],
       3 * 3600,
     );
-    expect(r.plannedTotalSec).toBe(2.5 * 3600);
+    expect(r.plannedTotalSec).toBe(3 * 3600);
     expect(r.steps).toHaveLength(3);
-    expect(r.steps.find((s) => s.videoId === 'partial')!.allocatedSec).toBe(1800);
-    expect(r.steps.find((s) => s.videoId === 'b')!.allocatedSec).toBe(3600);
+    expect(r.steps.find((s) => s.videoId === 'partial')!.allocatedSec).toBe(3600);
     expect(r.steps.find((s) => s.videoId === 'c')!.allocatedSec).toBe(3600);
+  });
+
+  it('only last packed node gets a partial daily slice', () => {
+    const r = buildTodayPath(
+      [
+        { ...cand('almostDone', 1, 577), watchedSec: 561 },
+        cand('b', 2, 3600),
+      ],
+      30 * 60,
+    );
+    expect(r.steps[0]!.allocatedSec).toBe(577);
+    expect(r.steps[1]!.allocatedSec).toBe(30 * 60 - 577);
   });
 
   it('skips fully watched videos in the pack', () => {
@@ -124,6 +137,21 @@ describe('buildTodayPath', () => {
       { sortMode: 'newestFirst', deprioritizeVideoIds: ['c'] },
     );
     expect(r.steps[0]!.videoId).toBe('b');
+  });
+});
+
+describe('pathStepShowsVideoTotal', () => {
+  it('is true only when allocated is less than full duration', () => {
+    expect(pathStepShowsVideoTotal(13 * 60, 15 * 60)).toBe(true);
+    expect(pathStepShowsVideoTotal(17 * 60, 17 * 60)).toBe(false);
+  });
+});
+
+describe('allocatePathStepSec', () => {
+  it('returns daily remainder only when the next full video would overshoot', () => {
+    expect(allocatePathStepSec(17 * 60, 0, 30 * 60)).toBe(17 * 60);
+    expect(allocatePathStepSec(15 * 60, 17 * 60, 30 * 60)).toBe(13 * 60);
+    expect(allocatePathStepSec(3 * 3600, 0, 30 * 60)).toBe(30 * 60);
   });
 });
 

@@ -15,6 +15,7 @@ import { levelFromTotalXp, MAX_ACCOUNT_LEVEL, xpIntoCurrentLevel } from '../lib/
 
 export {
   buildMergedDailyForPanel,
+  mergeIncomingDailySnapshot,
   calendarViewIncludesToday,
   streakCaption,
   streakAriaLabel,

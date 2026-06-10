@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BONUS_XP_DAILY_GOAL, BONUS_XP_STREAK_DAY } from './playerProgress';
+import { buildRoadmapBonusPick } from './roadmapBonusVideo';
 import { processPracticeTickXpEvent } from './playerProgressEvents';
 import {
   SCHEMA_VERSION,
@@ -34,7 +35,7 @@ describe('processPracticeTickXpEvent', () => {
     let gained = 0;
     for (let i = 0; i < 4; i++) {
       data.dailySeconds[WEEKDAY_KEY] = (data.dailySeconds[WEEKDAY_KEY] ?? 0) + 15;
-      const res = processPracticeTickXpEvent(data, 15, WEEKDAY_NOON);
+      const res = processPracticeTickXpEvent(data, 'v1', 15, WEEKDAY_NOON);
       gained += res.xpGained;
     }
 
@@ -59,9 +60,46 @@ describe('processPracticeTickXpEvent', () => {
 
     data.dailySeconds[WEEKDAY_KEY] = (data.dailySeconds[WEEKDAY_KEY] ?? 0) + 15;
 
-    const res = processPracticeTickXpEvent(data, 15, WEEKDAY_NOON);
+    const res = processPracticeTickXpEvent(data, 'v1', 15, WEEKDAY_NOON);
     expect(res.xpGained).toBe(1 + BONUS_XP_DAILY_GOAL + BONUS_XP_STREAK_DAY);
     expect(data.playerProgress.lastDailyGoalXpDateKey).toBe(WEEKDAY_KEY);
     expect(data.playerProgress.lastStreakXpDateKey).toBe(WEEKDAY_KEY);
+  });
+
+  it('stacks roadmap bonus multiplier on practice XP', () => {
+    const data = mockData({
+      library: [
+        {
+          videoId: 'long',
+          title: 'Long',
+          channel: '',
+          addedAt: 1,
+          difficulty: null,
+          completedAt: null,
+          durationSec: 40 * 60,
+        },
+      ],
+      roadmapBonusPick: buildRoadmapBonusPick(
+        mockData({
+          library: [
+            {
+              videoId: 'long',
+              title: 'Long',
+              channel: '',
+              addedAt: 1,
+              difficulty: null,
+              completedAt: null,
+              durationSec: 40 * 60,
+            },
+          ],
+        }),
+        WEEKDAY_KEY,
+        'long',
+        'long',
+      ),
+    });
+    data.dailySeconds[WEEKDAY_KEY] = 60;
+    const res = processPracticeTickXpEvent(data, 'long', 60, WEEKDAY_NOON);
+    expect(res.xpGained).toBe(3);
   });
 });

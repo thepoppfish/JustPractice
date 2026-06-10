@@ -16,12 +16,10 @@ export interface WatchPanelVideoFlowDeps {
   ensurePanel: () => void;
   applyPanelHostPosition: () => void;
   applyWatchPanelCollapsed: () => void;
-  updateHomeFeedAttentionStrip: () => void;
   updateHint: () => void;
   refreshCalendarOnly: () => Promise<void>;
   shouldKeepWatchPanelVisibleWithoutVideoId: () => boolean;
   scheduleVideoIdResolutionRetries: () => void;
-  applyNoVideoHomePanelLayout: (shadowRoot: ShadowRoot | null, show: boolean) => void;
   readTitle: () => string;
   refreshState: (videoId: string | null) => Promise<void>;
   rebindCompletionPromptListener: () => void;
@@ -54,7 +52,6 @@ export async function runWatchPanelVideoChangedFlow(deps: WatchPanelVideoFlowDep
       deps.applyWatchPanelCollapsed();
       const titleEl = deps.getShadowRoot()?.querySelector('[part="title"]') as HTMLElement | null;
       if (titleEl) titleEl.textContent = APP_NAME;
-      deps.updateHomeFeedAttentionStrip();
       deps.updateHint();
       deps.fireAsyncWatch(deps.refreshCalendarOnly());
 
@@ -62,15 +59,12 @@ export async function runWatchPanelVideoChangedFlow(deps: WatchPanelVideoFlowDep
       setWatchPanelHostVisible(deps.panelHostId, keep);
       if (keep) {
         if (!deps.getVideoIdFromUrl()) deps.scheduleVideoIdResolutionRetries();
-      } else {
-        deps.applyNoVideoHomePanelLayout(deps.getShadowRoot(), false);
       }
     },
     runHasVideoFlow: async (videoId) => {
       deps.ensurePanel();
       setWatchPanelHostVisible(deps.panelHostId, true);
       const shadowRoot = deps.getShadowRoot();
-      deps.updateHomeFeedAttentionStrip();
       const titleEl = shadowRoot?.querySelector('[part="title"]') as HTMLElement | undefined;
       if (titleEl) {
         const t = deps.readTitle();

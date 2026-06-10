@@ -93,8 +93,18 @@ describe('practice XP', () => {
     expect(isWeekendPracticeBonusActive(mon)).toBe(false);
     expect(getPracticeXpMultiplier(sat)).toBe(2);
     expect(getPracticeXpMultiplier(mon)).toBe(1);
-    expect(practiceXpFromSeconds(120, sat)).toEqual({ xp: 4, multiplier: 2, prestigeMultiplier: 1 });
-    expect(practiceXpFromSeconds(120, mon)).toEqual({ xp: 2, multiplier: 1, prestigeMultiplier: 1 });
+    expect(practiceXpFromSeconds(120, sat)).toEqual({
+      xp: 4,
+      multiplier: 2,
+      prestigeMultiplier: 1,
+      roadmapBonusMultiplier: 1,
+    });
+    expect(practiceXpFromSeconds(120, mon)).toEqual({
+      xp: 2,
+      multiplier: 1,
+      prestigeMultiplier: 1,
+      roadmapBonusMultiplier: 1,
+    });
   });
 
   it('applies prestige multiplier to practice XP only', () => {
@@ -103,7 +113,12 @@ describe('practice XP', () => {
     expect(getPrestigeXpMultiplier(2)).toBe(1.1);
     expect(getPrestigeXpMultiplier(10)).toBe(1.5);
     expect(getPrestigeXpMultiplier(99)).toBe(1.5);
-    expect(practiceXpFromSeconds(120, mon, 2)).toEqual({ xp: 2, multiplier: 1.1, prestigeMultiplier: 1.1 });
+    expect(practiceXpFromSeconds(120, mon, 2)).toEqual({
+      xp: 2,
+      multiplier: 1.1,
+      prestigeMultiplier: 1.1,
+      roadmapBonusMultiplier: 1,
+    });
   });
 });
 

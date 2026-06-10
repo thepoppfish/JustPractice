@@ -37,6 +37,7 @@ export interface AttachDashboardListenersInput {
   setYearHeatmapYear: (y: number) => void;
   requestPathRebuild: () => void;
   regenerateTodayPath: () => void;
+  pickRoadmapBonus: (tier: string, videoId: string) => void | Promise<void>;
   scheduleDurationBackfill: () => void;
 }
 
@@ -119,6 +120,7 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     setYearHeatmapYear,
     requestPathRebuild,
     regenerateTodayPath,
+    pickRoadmapBonus,
     scheduleDurationBackfill,
   } = input;
 
@@ -156,6 +158,19 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
         requestPathRebuild();
         void refreshAfterMutation(['path']);
       }
+    });
+  });
+
+  root.querySelectorAll<HTMLElement>('[data-path-bonus-pick]').forEach((card) => {
+    listen(card, 'click', (e) => {
+      if (card.getAttribute('aria-disabled') === 'true') {
+        e.preventDefault();
+        return;
+      }
+      const tier = card.getAttribute('data-path-bonus-pick');
+      const videoId = card.getAttribute('data-path-bonus-video');
+      if (!tier || !videoId) return;
+      void pickRoadmapBonus(tier, videoId);
     });
   });
 

@@ -50,37 +50,6 @@ export function watchPanelShadowCss(): string {
       .drag-handle:active { cursor: grabbing; }
       .panel-main { padding: 10px 12px 12px; }
       .wrap.collapsed .panel-main { display: none; }
-      .wrap--no-video .panel-main [part="save-row"],
-      .wrap--no-video .panel-main [part="complete-row"],
-      .wrap--no-video .panel-main .row.level-row,
-      .wrap--no-video .panel-main .hint {
-        display: none !important;
-      }
-      .home-feed-attention[hidden] {
-        display: none !important;
-      }
-      .home-feed-attention {
-        display: block;
-        margin: 0;
-        padding: 10px 12px;
-        font-size: 12px;
-        font-weight: 700;
-        line-height: 1.45;
-        color: #fff;
-        text-shadow: 0 0 2px rgba(0, 0, 0, 0.75);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        box-sizing: border-box;
-        animation: jp-home-attention-flash 1s ease-in-out infinite;
-      }
-      @keyframes jp-home-attention-flash {
-        0%,
-        100% {
-          background: rgba(200, 28, 28, 0.96);
-        }
-        50% {
-          background: rgba(110, 12, 12, 0.88);
-        }
-      }
       .grip { opacity: 0.85; letter-spacing: -1px; }
       .row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
       .row.level-row {
@@ -433,8 +402,8 @@ export function watchPanelShadowCss(): string {
         border: 1px solid rgba(66, 198, 111, 0.32);
       }
       .cal-cell--goal {
-        background: rgba(232, 184, 74, 0.16);
-        border: 1px solid rgba(232, 184, 74, 0.38);
+        background: rgba(232, 184, 74, 0.3);
+        border: 1px solid rgba(232, 184, 74, 0.55);
       }
       .cal-day-num { font-weight: 600; color: #eee; line-height: 1.2; }
       .cal-day-min { font-size: 9px; line-height: 1.1; margin-top: 2px; color: #fff; }

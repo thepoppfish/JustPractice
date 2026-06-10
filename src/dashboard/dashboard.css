@@ -2961,7 +2961,7 @@ body {
   font-style: normal;
 }
 
-/* —— Today path tab —— */
+/* —— Roadmap tab —— */
 .path-section {
   max-width: 520px;
   margin-inline: auto;
@@ -3037,6 +3037,103 @@ body {
   position: relative;
   padding: 12px 8px 40px;
   min-height: 120px;
+}
+
+.path-celebration-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.path-celebration-layer--active {
+  pointer-events: auto;
+}
+
+.path-celebration-vignette {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(
+    ellipse 85% 70% at 50% 38%,
+    rgba(8, 12, 20, 0.55) 0%,
+    rgba(8, 12, 20, 0.88) 100%
+  );
+  pointer-events: none;
+}
+
+.path-celebration-headline {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  z-index: 2;
+  width: min(100%, 320px);
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.path-celebration-layer--active .path-celebration-headline {
+  pointer-events: auto;
+}
+
+.path-celebration-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #b8ffd4;
+  letter-spacing: -0.02em;
+}
+
+.path-celebration-sub {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.path-celebration-skip {
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
+.path-celebration-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.path-celebration-spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.path-node--celebrate-pulse {
+  animation: path-node-celebrate-pulse 520ms ease-out;
+}
+
+@keyframes path-node-celebrate-pulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.path-section--completed .path-trail {
+  position: relative;
+  z-index: 1;
 }
 
 .path-connectors {
@@ -3312,4 +3409,125 @@ body {
   margin: 0 0 8px;
   font-size: 16px;
   color: var(--text);
+}
+
+.path-bonus {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.path-bonus-heading {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.path-bonus-hint,
+.path-bonus-active {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.path-bonus-active {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.path-bonus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.path-bonus-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  text-align: start;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.path-bonus-card:hover:not([aria-disabled='true']) {
+  border-color: rgba(88, 204, 2, 0.45);
+}
+
+.path-bonus-card--selected {
+  border-color: #58cc02;
+  box-shadow: 0 0 0 1px rgba(88, 204, 2, 0.25);
+}
+
+.path-bonus-card[aria-disabled='true'],
+.path-bonus-card--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.path-bonus-card--empty {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.path-bonus-thumb {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.path-bonus-card-tier {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.path-bonus-card-mult {
+  font-size: 20px;
+  font-weight: 800;
+  color: #58cc02;
+}
+
+.path-bonus-card-duration {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.path-bonus-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.path-bonus-card-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.path-bonus-open {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #58cc02;
 }

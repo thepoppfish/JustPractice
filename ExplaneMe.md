@@ -430,7 +430,7 @@ Built in `dashboardViewModel.ts`; HTML in `dashboardTemplates.ts`; events in `da
 | View | ID | Primary content |
 |------|-----|-----------------|
 | Library | `library` | In-progress saves (`inProgressLibraryItems`), search + level filter chips |
-| Today (path) | `path` | Finite **today path** to remaining daily goal (`buildTodayPath` / `resolveTodayPathUi`); see [`docs/DAILY-PATH-DESIGN.md`](docs/DAILY-PATH-DESIGN.md) |
+| Roadmap (`path`) | `path` | Finite **roadmap** of unwatched videos toward remaining daily goal (`buildTodayPath` / `resolveTodayPathUi`); see [`docs/DAILY-PATH-DESIGN.md`](docs/DAILY-PATH-DESIGN.md) |
 | Completed | `completed` | `completedLibraryItems` sorted by `completedAt`; mark incomplete |
 | Stats | `stats` | Aggregates, 7-day buckets, **year heatmap** with year navigation |
 | Progress | `progress` | Account level/XP bar, prestige button, achievements by category |

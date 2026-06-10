@@ -24,13 +24,6 @@ ${watchPanelShadowCss()}
         <button type="button" class="collapse-btn" part="collapse" aria-expanded="true">▲</button>
         <div class="drag-handle" part="drag-handle"><span class="grip">⠿</span><span part="drag-hint">${escapeHtml(labels.dragToMove)}</span></div>
       </div>
-      <div
-        class="home-feed-attention"
-        part="home-feed-attention"
-        role="alert"
-        aria-live="assertive"
-        hidden
-      ></div>
       <div class="panel-main">
         <div class="title" part="title">${escapeHtml(APP_NAME)}</div>
         <div class="status" part="status"></div>

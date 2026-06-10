@@ -28,6 +28,18 @@ import {
   switchActiveView,
 } from './dashboardDomUpdate';
 import { refreshPathTrailLayout } from './dashboardPathLayout';
+import {
+  buildRoadmapBonusPick,
+  type RoadmapBonusTier,
+} from '../lib/roadmapBonusVideo';
+import {
+  markRoadmapCelebrationShown,
+  normalizeRoadmapCompletionSnapshot,
+} from '../lib/roadmapCompletionSnapshot';
+import {
+  cancelRoadmapCompletionCelebration,
+  playRoadmapCompletionCelebration,
+} from './roadmapCompletionCelebration';
 
 const app = document.getElementById('app')!;
 
@@ -71,7 +83,59 @@ function buildVm(data: PersistedData) {
   });
 }
 
+function celebrationSubtitle(vm: ReturnType<typeof buildVm>): string {
+  const p = vm.pathUi;
+  if (p.showGoalMet) return vm.t('path.completeSubGoalMet');
+  if (p.showPlanCompleteOnly && p.remainingSec > 0) {
+    return vm.t('path.completeSubPlanOnly', {
+      minutes: String(Math.ceil(p.remainingSec / 60)),
+    });
+  }
+  return vm.t('path.goalMetSub');
+}
+
+async function pickRoadmapBonus(tierRaw: string, videoId: string): Promise<void> {
+  if (!cachedData) return;
+  const tier = tierRaw as RoadmapBonusTier;
+  if (tier !== 'short' && tier !== 'medium' && tier !== 'long') return;
+  const todayKey = buildVm(cachedData).todayKey;
+  const pick = buildRoadmapBonusPick(cachedData, todayKey, tier, videoId);
+  if (!pick) return;
+  suppressStorageRender(400);
+  await send({ type: MSG.SET_ROADMAP_BONUS_PICK, payload: { pick } });
+  cachedData = { ...cachedData, roadmapBonusPick: pick };
+  await refreshAfterMutation(['path']);
+}
+
+async function markCelebrationShownInStorage(): Promise<void> {
+  const snap = normalizeRoadmapCompletionSnapshot(cachedData?.roadmapCompletionSnapshot);
+  if (!snap || snap.celebrationShownAtMs) return;
+  const updated = markRoadmapCelebrationShown(snap);
+  await send({ type: MSG.SET_ROADMAP_COMPLETION_SNAPSHOT, payload: { snapshot: updated } });
+  if (cachedData) cachedData = { ...cachedData, roadmapCompletionSnapshot: updated };
+}
+
+function scheduleRoadmapCelebration(vm: ReturnType<typeof buildVm>): void {
+  if (!vm.pathUi.playCompletionCelebration) return;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const section = app.querySelector<HTMLElement>('.path-section');
+      if (!section) return;
+      refreshPathTrailLayout(app);
+      playRoadmapCompletionCelebration(section, {
+        title: vm.t('path.completeTitle'),
+        subtitle: celebrationSubtitle(vm),
+        skipLabel: vm.t('path.celebrationSkip'),
+        onComplete: () => {
+          void markCelebrationShownInStorage();
+        },
+      });
+    });
+  });
+}
+
 async function regenerateTodayPath(): Promise<void> {
+  cancelRoadmapCompletionCelebration();
   suppressStorageRender(2000);
   let data: PersistedData;
   try {
@@ -82,16 +146,42 @@ async function regenerateTodayPath(): Promise<void> {
   pathRegenerateFromVideoIds = data.todayPathPlan?.steps.map((s) => s.videoId) ?? [];
   pathForceRebuild = true;
   await send({ type: MSG.SET_TODAY_PATH_PLAN, payload: { plan: null } });
-  if (cachedData) cachedData = { ...cachedData, todayPathPlan: null };
+  await send({ type: MSG.SET_ROADMAP_COMPLETION_SNAPSHOT, payload: { snapshot: null } });
+  await send({ type: MSG.SET_ROADMAP_BONUS_PICK, payload: { pick: null } });
+  if (cachedData) {
+    cachedData = {
+      ...cachedData,
+      todayPathPlan: null,
+      roadmapCompletionSnapshot: null,
+      roadmapBonusPick: null,
+    };
+  }
   await refreshAfterMutation(['path']);
   pathRegenerateFromVideoIds = [];
 }
 
 async function persistPathPlanIfNeeded(vm: ReturnType<typeof buildVm>): Promise<void> {
   const plan = vm.pathUi.planToPersist;
-  if (!plan) return;
-  await send({ type: MSG.SET_TODAY_PATH_PLAN, payload: { plan } });
-  pathForceRebuild = false;
+  if (plan) {
+    await send({ type: MSG.SET_TODAY_PATH_PLAN, payload: { plan } });
+    pathForceRebuild = false;
+  }
+  if (vm.pathUi.clearCompletionSnapshot) {
+    await send({ type: MSG.SET_ROADMAP_COMPLETION_SNAPSHOT, payload: { snapshot: null } });
+    await send({ type: MSG.SET_ROADMAP_BONUS_PICK, payload: { pick: null } });
+    if (cachedData) {
+      cachedData = {
+        ...cachedData,
+        roadmapCompletionSnapshot: null,
+        roadmapBonusPick: null,
+      };
+    }
+  }
+  const snapshot = vm.pathUi.snapshotToPersist;
+  if (snapshot) {
+    await send({ type: MSG.SET_ROADMAP_COMPLETION_SNAPSHOT, payload: { snapshot } });
+    if (cachedData) cachedData = { ...cachedData, roadmapCompletionSnapshot: snapshot };
+  }
 }
 
 function suppressStorageRender(ms = 450): void {
@@ -189,6 +279,9 @@ function bindDashboardListeners(vm: ReturnType<typeof buildVm>): void {
     regenerateTodayPath: () => {
       void regenerateTodayPath();
     },
+    pickRoadmapBonus: (tier, videoId) => {
+      void pickRoadmapBonus(tier, videoId);
+    },
     scheduleDurationBackfill: () => {
       if (cachedData) scheduleLibraryDurationBackfill(cachedData);
     },
@@ -196,6 +289,7 @@ function bindDashboardListeners(vm: ReturnType<typeof buildVm>): void {
 }
 
 function switchView(view: DashView): void {
+  if (view !== 'path') cancelRoadmapCompletionCelebration();
   activeView = view;
   persistDashView(view);
   switchActiveView(app, view);
@@ -263,7 +357,10 @@ async function refreshAfterMutation(panels: readonly DashView[] = defaultMutatio
   switchActiveView(app, activeView);
   await persistPathPlanIfNeeded(vm);
   bindDashboardListeners(vm);
-  if (panels.includes('path')) refreshPathTrailLayout(app);
+  if (panels.includes('path')) {
+    refreshPathTrailLayout(app);
+    scheduleRoadmapCelebration(vm);
+  }
 }
 
 function afterLibraryDataChange(): void {
@@ -307,6 +404,7 @@ async function renderAsync(): Promise<void> {
     await persistPathPlanIfNeeded(vm);
     bindDashboardListeners(vm);
     refreshPathTrailLayout(app);
+    if (activeView === 'path') scheduleRoadmapCelebration(vm);
     return;
   }
 
@@ -315,7 +413,10 @@ async function renderAsync(): Promise<void> {
   patchDashboardPanels(app, vm, DASH_VIEWS);
   switchActiveView(app, activeView);
   bindDashboardListeners(vm);
-  if (activeView === 'path') refreshPathTrailLayout(app);
+  if (activeView === 'path') {
+    refreshPathTrailLayout(app);
+    scheduleRoadmapCelebration(vm);
+  }
 }
 
 let storageRenderTimer: ReturnType<typeof setTimeout> | null = null;

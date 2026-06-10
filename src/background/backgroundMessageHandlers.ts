@@ -25,7 +25,13 @@ import { explainPracticeXpZero, jpXpLogBackground } from '../lib/xpDebug';
 import { maybeNotifyXpEvents, maybeNotifyPrestigeUp } from '../lib/xpNotifications';
 import { backfillLibraryDurations } from './backgroundDurationEnrich';
 import { enrichLibraryItemFromOEmbed } from './backgroundOEmbed';
+import {
+  normalizeRoadmapBonusPick,
+  roadmapBonusMultiplierForPractice,
+} from '../lib/roadmapBonusVideo';
+import { normalizeRoadmapCompletionSnapshot } from '../lib/roadmapCompletionSnapshot';
 import { normalizeTodayPathPlan } from '../lib/todayPathPlan';
+import { addVideoDailyPractice } from '../lib/videoDailyPractice';
 import { rebuildContextMenusFromStorage } from './backgroundContextMenus';
 
 const MAX_TICK_SECONDS = 120;
@@ -200,7 +206,14 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
       const key = dateKeyFromTimestamp(endedAtMs);
       p.dailySeconds[key] = (p.dailySeconds[key] ?? 0) + deltaSeconds;
       p.videoSeconds[videoId] = (p.videoSeconds[videoId] ?? 0) + deltaSeconds;
-      const xpResult = processPracticeTickXpEvent(p, deltaSeconds, endedAtMs);
+      p.videoDailySeconds = addVideoDailyPractice(
+        p.videoDailySeconds ?? {},
+        videoId,
+        key,
+        deltaSeconds,
+      );
+      const bonusMult = roadmapBonusMultiplierForPractice(p, videoId, key);
+      const xpResult = processPracticeTickXpEvent(p, videoId, deltaSeconds, endedAtMs);
       const carryOut = Math.max(0, Math.floor(p.playerProgress.practiceXpCarrySeconds ?? 0));
       const zeroXpReason = explainPracticeXpZero({
         deltaSeconds,
@@ -219,6 +232,7 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
         levelUp: xpResult.levelUp,
         newLevel: xpResult.newLevel,
         dailySecondsToday: p.dailySeconds[key] ?? 0,
+        ...(bonusMult > 1 ? { roadmapBonusMultiplier: bonusMult } : {}),
         ...(zeroXpReason ? { zeroXpReason } : {}),
       });
       await writePersisted(p);
@@ -307,6 +321,18 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
     case MSG.SET_TODAY_PATH_PLAN: {
       const p = await readPersisted();
       p.todayPathPlan = normalizeTodayPathPlan(message.payload.plan);
+      await writePersisted(p);
+      return { ok: true };
+    }
+    case MSG.SET_ROADMAP_COMPLETION_SNAPSHOT: {
+      const p = await readPersisted();
+      p.roadmapCompletionSnapshot = normalizeRoadmapCompletionSnapshot(message.payload.snapshot);
+      await writePersisted(p);
+      return { ok: true };
+    }
+    case MSG.SET_ROADMAP_BONUS_PICK: {
+      const p = await readPersisted();
+      p.roadmapBonusPick = normalizeRoadmapBonusPick(message.payload.pick);
       await writePersisted(p);
       return { ok: true };
     }

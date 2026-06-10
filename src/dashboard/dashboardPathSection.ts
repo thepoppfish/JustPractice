@@ -33,11 +33,11 @@ function pathNodeHtml(vm: DashboardViewModel, index: number): string {
       ? Math.min(100, Math.round((node.practicedSecOnStep / node.allocatedSec) * 100))
       : 0;
   const doneSec = Math.min(node.practicedSecOnStep, node.allocatedSec);
-  const alreadyInVideo =
-    node.watchedSecAtBuild > 0 && node.watchedSecAtBuild < node.durationSec
+  const practicedTodayLine =
+    node.practicedTodayAtBuild > 0 && node.practicedTodayAtBuild < node.durationSec
       ? escapeHtml(
-          vm.t('path.alreadyInVideo', {
-            duration: formatDuration(node.watchedSecAtBuild),
+          vm.t('path.practicedTodayOnVideo', {
+            duration: formatDuration(node.practicedTodayAtBuild),
           }),
         )
       : '';
@@ -47,10 +47,12 @@ function pathNodeHtml(vm: DashboardViewModel, index: number): string {
       allocated: formatDuration(node.allocatedSec),
     }),
   );
-  const videoLine = escapeHtml(
-    vm.t('path.videoLengthTotal', { duration: formatDuration(node.durationSec) }),
-  );
-  const meta = [escapeHtml(lvl), alreadyInVideo, stepLine, videoLine].filter(Boolean).join(' · ');
+  const videoLine = node.showVideoLengthTotal
+    ? escapeHtml(
+        vm.t('path.videoLengthTotal', { duration: formatDuration(node.durationSec) }),
+      )
+    : '';
+  const meta = [escapeHtml(lvl), practicedTodayLine, stepLine, videoLine].filter(Boolean).join(' · ');
   const doneBadge =
     isDone && thumb ? `<span class="path-node-done-badge" aria-hidden="true">${icoCheck()}</span>` : '';
 
@@ -89,12 +91,96 @@ function pathNodeHtml(vm: DashboardViewModel, index: number): string {
     </li>`;
 }
 
+function pathCelebrationLayerHtml(vm: DashboardViewModel): string {
+  if (vm.pathUi!.mode !== 'completed') return '';
+  return `
+    <div class="path-celebration-layer" hidden aria-hidden="true">
+      <div class="path-celebration-vignette" aria-hidden="true"></div>
+      <div class="path-celebration-headline">
+        <p class="path-celebration-title"></p>
+        <p class="path-celebration-sub"></p>
+        <button type="button" class="path-celebration-skip secondary">${escapeHtml(vm.t('path.celebrationSkip'))}</button>
+      </div>
+      <div class="path-celebration-particles" aria-hidden="true"></div>
+    </div>`;
+}
+
+function pathBonusTierCardHtml(vm: DashboardViewModel, tier: (typeof vm.bonusUi.tiers)[number]): string {
+  const tierKey = tier.tier;
+  const label = vm.t(`path.bonus.${tierKey}`);
+  const multLabel = vm.t('path.bonus.multiplier', { multiplier: String(tier.multiplier) });
+  const c = tier.candidate;
+  if (!c) {
+    return `
+      <div class="path-bonus-card path-bonus-card--empty">
+        <span class="path-bonus-card-tier">${escapeHtml(label)}</span>
+        <span class="path-bonus-card-mult">${escapeHtml(multLabel)}</span>
+        <p class="path-bonus-card-empty">${escapeHtml(vm.t('path.bonus.emptyTier'))}</p>
+      </div>`;
+  }
+  const thumb = thumbnailUrlForVideoId(c.videoId);
+  const selected = tier.isSelected ? ' path-bonus-card--selected' : '';
+  const href = `https://www.youtube.com/watch?v=${encodeURIComponent(c.videoId)}`;
+  const disabled = tier.canPick ? '' : ' aria-disabled="true" tabindex="-1"';
+  const duration = formatDuration(c.durationSec);
+  return `
+    <a
+      class="path-bonus-card${selected}"
+      href="${escapeAttr(href)}"
+      target="_blank"
+      rel="noreferrer"
+      data-path-bonus-pick="${escapeAttr(tierKey)}"
+      data-path-bonus-video="${escapeAttr(c.videoId)}"
+      ${disabled}
+      aria-pressed="${tier.isSelected ? 'true' : 'false'}"
+      aria-label="${escapeAttr(
+        vm.t('path.bonus.openVideo') + ': ' + c.title + ' (' + multLabel + ')',
+      )}"
+    >
+      ${
+        thumb
+          ? `<img class="path-bonus-thumb" src="${escapeAttr(thumb)}" width="120" height="68" alt="" loading="lazy" />`
+          : ''
+      }
+      <span class="path-bonus-card-tier">${escapeHtml(label)}</span>
+      <span class="path-bonus-card-mult">${escapeHtml(multLabel)}</span>
+      <span class="path-bonus-card-duration">~${escapeHtml(duration)}</span>
+      <span class="path-bonus-card-title">${escapeHtml(c.title)}</span>
+      <span class="path-bonus-open">${escapeHtml(vm.t('path.bonus.openVideo'))}</span>
+    </a>`;
+}
+
+function pathBonusSectionHtml(vm: DashboardViewModel): string {
+  const b = vm.bonusUi;
+  if (!b.showPicker) return '';
+  const cards = b.tiers.map((t) => pathBonusTierCardHtml(vm, t)).join('');
+  const active = b.activePick;
+  const activeBanner =
+    active
+      ? `<p class="path-bonus-active">${escapeHtml(
+          vm.t('path.bonus.activePick', {
+            multiplier: String(active.multiplier),
+            title:
+              b.tiers.find((t) => t.tier === active.tier)?.candidate?.title ?? active.videoId,
+          }),
+        )}</p>`
+      : '';
+  return `
+    <section class="path-bonus" aria-labelledby="path-bonus-heading">
+      <h2 id="path-bonus-heading" class="path-bonus-heading">${escapeHtml(vm.t('path.bonus.title'))}</h2>
+      <p class="path-bonus-hint">${escapeHtml(vm.t('path.bonus.stackHint'))}</p>
+      ${activeBanner}
+      <div class="path-bonus-grid">${cards}</div>
+    </section>`;
+}
+
 function pathTrailHtml(vm: DashboardViewModel): string {
   const nodes = vm.pathUi!.nodes;
   if (nodes.length === 0) return '';
   const items = nodes.map((_, i) => pathNodeHtml(vm, i)).join('');
   return `
     <div class="path-canvas">
+      ${pathCelebrationLayerHtml(vm)}
       <svg class="path-connectors" aria-hidden="true"></svg>
       <ol class="path-trail" aria-label="${escapeHtml(vm.t('path.mainAria'))}">${items}</ol>
     </div>`;
@@ -112,6 +198,26 @@ function pathHeaderHtml(vm: DashboardViewModel): string {
   let sub = '';
   if (p.showNoGoal) {
     sub = `<p class="path-header-sub">${escapeHtml(vm.t('path.noGoal'))} <button type="button" class="path-link-btn" data-path-goto="goals">${escapeHtml(vm.t('path.noGoalCta'))}</button></p>`;
+  } else if (p.mode === 'completed') {
+    sub = `<p class="path-header-sub path-header-sub--celebrate">${escapeHtml(vm.t('path.completeTitle'))}</p>`;
+    if (p.showGoalMet) {
+      sub += `<p class="path-header-sub">${escapeHtml(vm.t('path.completeSubGoalMet'))}</p>`;
+    } else if (p.showPlanCompleteOnly && p.remainingSec > 0) {
+      sub += `<p class="path-header-sub">${escapeHtml(
+        vm.t('path.completeSubPlanOnly', { minutes: String(Math.ceil(p.remainingSec / 60)) }),
+      )}</p>`;
+    } else {
+      sub += `<p class="path-header-sub">${escapeHtml(vm.t('path.completeSubBonus'))}</p>`;
+    }
+    if (p.nodes.length > 0) {
+      const planned = formatDuration(p.plannedTotalSec);
+      const count = p.nodes.length;
+      const plannedLine =
+        count === 1
+          ? vm.t('path.plannedSummaryOne', { duration: planned })
+          : vm.t('path.plannedSummary', { count: String(count), duration: planned });
+      sub += `<p class="path-header-sub">${escapeHtml(plannedLine)}</p>`;
+    }
   } else if (p.showGoalMet) {
     sub = `<p class="path-header-sub path-header-sub--celebrate">${escapeHtml(vm.t('path.goalMet'))}</p>
       <p class="path-header-sub">${escapeHtml(vm.t('path.goalMetSub'))}</p>`;
@@ -151,7 +257,10 @@ function pathHeaderHtml(vm: DashboardViewModel): string {
     }
   }
 
-  const actions = `
+  const actions =
+    p.mode === 'completed'
+      ? ''
+      : `
     <div class="path-header-actions">
       <button type="button" class="secondary" data-path-action="regenerate">${escapeHtml(vm.t('path.regeneratePath'))}</button>
       ${
@@ -174,13 +283,19 @@ export function dashboardPathSectionHtml(vm: DashboardViewModel): string {
   let body = '';
   if (p.showNoGoal) {
     body = `<div class="path-empty">${escapeHtml(vm.t('path.noGoal'))}</div>`;
-  } else if (p.showGoalMet && p.nodes.length === 0) {
+  } else if (p.showGoalMet && p.nodes.length === 0 && p.mode !== 'completed') {
     body = `<div class="path-empty path-empty--celebrate">${escapeHtml(vm.t('path.goalMetSub'))}</div>`;
   } else if (p.showMissingDuration) {
     body = `
       <div class="path-empty">
         <h3 class="path-empty-title">${escapeHtml(vm.t('path.loadingDurationsTitle'))}</h3>
         <p>${escapeHtml(vm.t('path.loadingDurationsBody', { count: String(p.unknownDurationCount) }))}</p>
+      </div>`;
+  } else if (p.showNoUnwatchedVideos) {
+    body = `
+      <div class="path-empty">
+        <h3 class="path-empty-title">${escapeHtml(vm.t('path.emptyAllWatchedTitle'))}</h3>
+        <p>${escapeHtml(vm.t('path.emptyAllWatchedBody'))}</p>
       </div>`;
   } else if (p.showEmptyCandidates) {
     body = `
@@ -189,17 +304,17 @@ export function dashboardPathSectionHtml(vm: DashboardViewModel): string {
         <p>${escapeHtml(vm.t('path.emptyBody'))}</p>
       </div>`;
   } else if (p.nodes.length > 0) {
-    body = pathTrailHtml(vm);
+    body = pathTrailHtml(vm) + pathBonusSectionHtml(vm);
   } else {
     body = `<div class="path-empty">${escapeHtml(vm.t('path.emptyBody'))}</div>`;
   }
 
   return `
-    <section class="${vm.viewPanelClass('path')} dash-section-center path-section" data-view-panel="path" aria-label="${escapeHtml(vm.t('path.mainAria'))}">
+    <section class="${vm.viewPanelClass('path')} dash-section-center path-section${p.mode === 'completed' ? ' path-section--completed' : ''}" data-view-panel="path" aria-label="${escapeHtml(vm.t('path.mainAria'))}">
       <h1 class="row-title dash-section-head">${escapeHtml(vm.t('path.title'))}</h1>
       <p class="row-sub dash-section-sub">${escapeHtml(vm.t('path.subtitle'))}</p>
       ${
-        p.nodes.length > 0 && !p.showNoGoal
+        p.showPartialStepHint
           ? `<p class="row-sub dash-section-sub path-section-hint">${escapeHtml(vm.t('path.stepsNotFullVideosHint'))}</p>`
           : ''
       }

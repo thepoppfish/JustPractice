@@ -1,6 +1,7 @@
 import { MSG } from '../lib/messages';
 import type { GetStateResponse } from '../lib/messages';
-import type { PersistedData, PlayerProgress } from '../lib/storage';
+import type { AppSettings, PersistedData, PlayerProgress } from '../lib/storage';
+import { defaultSettings, ensureSettingsShape } from '../lib/storage';
 import { sendMsg } from './youtubeMessaging';
 
 /** GET_STATE → apply daily snapshot + repaint calendar / goal ring (watch panel only). */
@@ -9,6 +10,7 @@ export async function refreshWatchPanelCalendarSnapshot(
     dailySeconds: Record<string, number>,
     extensionInstalledDateKey: string,
     playerProgress: PlayerProgress | null,
+    settings: AppSettings,
   ) => void,
 ): Promise<void> {
   try {
@@ -18,6 +20,7 @@ export async function refreshWatchPanelCalendarSnapshot(
         res.data.dailySeconds,
         res.data.extensionInstalledDateKey,
         res.data.playerProgress ?? null,
+        ensureSettingsShape({ ...defaultSettings(), ...res.data.settings }),
       );
     }
   } catch {

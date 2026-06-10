@@ -1,4 +1,7 @@
+import { normalizeRoadmapBonusPick } from './roadmapBonusVideo';
+import { normalizeRoadmapCompletionSnapshot } from './roadmapCompletionSnapshot';
 import { normalizeTodayPathPlan } from './todayPathPlan';
+import { normalizeVideoDailySeconds } from './videoDailyPractice';
 import {
   SCHEMA_VERSION,
   CEFR_LEVELS,
@@ -99,6 +102,9 @@ export function migrate(input: PersistedData): PersistedData {
   const videoPlaybackPositionSec = normalizeVideoPlaybackPositionSec(
     (input as PersistedData).videoPlaybackPositionSec,
   );
+  const videoDailySeconds = normalizeVideoDailySeconds(
+    (input as PersistedData).videoDailySeconds,
+  );
 
   const settings = ensureSettingsShape({
     ...base.settings,
@@ -122,6 +128,10 @@ export function migrate(input: PersistedData): PersistedData {
       : 0;
 
   const todayPathPlan = normalizeTodayPathPlan((input as PersistedData).todayPathPlan);
+  const roadmapCompletionSnapshot = normalizeRoadmapCompletionSnapshot(
+    (input as PersistedData).roadmapCompletionSnapshot,
+  );
+  const roadmapBonusPick = normalizeRoadmapBonusPick((input as PersistedData).roadmapBonusPick);
 
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -130,6 +140,7 @@ export function migrate(input: PersistedData): PersistedData {
     dailySeconds,
     videoSeconds,
     videoPlaybackPositionSec,
+    videoDailySeconds,
     settings,
     playerProgress: normalizePlayerProgress(
       (input as PersistedData).playerProgress,
@@ -137,6 +148,8 @@ export function migrate(input: PersistedData): PersistedData {
       dailySeconds,
     ),
     todayPathPlan,
+    roadmapCompletionSnapshot,
+    roadmapBonusPick,
   };
 }
 

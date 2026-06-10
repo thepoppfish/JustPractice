@@ -51,6 +51,7 @@ import {
   matchesLibrarySearch,
   resolvedPracticeGoals,
 } from './dashboardFormatters';
+import { resolveRoadmapBonusUi, type RoadmapBonusUiState } from '../lib/roadmapBonusVideo';
 import { resolveTodayPathUi, type TodayPathUiState } from '../lib/todayPath';
 
 export type DashView = 'library' | 'completed' | 'stats' | 'progress' | 'goals' | 'settings' | 'path';
@@ -109,6 +110,7 @@ export interface DashboardViewModel {
   viewPanelClass: (view: DashView) => string;
 
   pathUi: TodayPathUiState;
+  bonusUi: RoadmapBonusUiState;
 }
 
 function compareCompletedLibraryRows(
@@ -231,6 +233,7 @@ export function buildDashboardViewModel(input: {
   const pathUi = resolveTodayPathUi(data, todayKey, input.pathForceRebuild === true, {
     regenerateFromVideoIds: input.pathRegenerateFromVideoIds ?? [],
   });
+  const bonusUi = resolveRoadmapBonusUi(data, todayKey, pathUi.mode, pathUi.nodes.length);
 
   return {
     data,
@@ -280,5 +283,6 @@ export function buildDashboardViewModel(input: {
     navItemClass,
     viewPanelClass,
     pathUi,
+    bonusUi,
   };
 }

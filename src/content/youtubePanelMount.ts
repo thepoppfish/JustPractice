@@ -2,7 +2,22 @@ import type { LevelFramework } from '../lib/storage';
 import { isYoutubeWatchLikePage } from '../lib/youtubeIds';
 import { watchPanelShadowInnerHtml } from './youtubePanelHtml';
 import { attachPanelDrag, levelSelectOptionsHtml } from './youtubePanelUi';
-import { isWatchPanelHostLive, WATCH_PANEL_BOOT_TOKEN } from './watchPanelBoot';
+import {
+  isWatchPanelHostLive,
+  WATCH_PANEL_BOOT_TOKEN,
+  WATCH_PANEL_MARKUP_VERSION,
+} from './watchPanelBoot';
+
+/** Remove retired home-feed banner from panels created before markup v2. */
+export function migrateWatchPanelShadow(sr: ShadowRoot): void {
+  sr.querySelector('[part="home-feed-attention"]')?.remove();
+  sr.querySelector('.home-feed-attention')?.remove();
+  sr.querySelector('.wrap')?.classList.remove('wrap--no-video');
+}
+
+export function watchPanelMarkupIsCurrent(host: HTMLElement): boolean {
+  return host.dataset.jpPanelMarkup === WATCH_PANEL_MARKUP_VERSION;
+}
 
 export interface WatchPanelUiRefs {
   root: HTMLElement;
@@ -105,8 +120,13 @@ export function extractWatchPanelUiFromShadow(sr: ShadowRoot): WatchPanelUiRefs 
 /** Creates the floating host + shadow panel once; wires static listeners. */
 export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
   const existing = document.getElementById(opts.panelHostId) as HTMLElement | null;
-  if (existing && isWatchPanelHostLive(existing)) {
+  if (
+    existing &&
+    isWatchPanelHostLive(existing) &&
+    watchPanelMarkupIsCurrent(existing)
+  ) {
     const sr = existing.shadowRoot!;
+    migrateWatchPanelShadow(sr);
     opts.onMounted({
       host: existing,
       shadowRoot: sr,
@@ -121,6 +141,7 @@ export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
   host.id = opts.panelHostId;
   host.setAttribute('data-jp-practice', '1');
   host.dataset.jpBootToken = WATCH_PANEL_BOOT_TOKEN;
+  host.dataset.jpPanelMarkup = WATCH_PANEL_MARKUP_VERSION;
   applyDefaultWatchPanelHostStyle(host);
 
   const sr = host.attachShadow({ mode: 'open' });
@@ -288,39 +309,3 @@ export function shouldKeepWatchPanelVisibleWithoutVideoId(
   return hasVideoElement();
 }
 
-let prevHomeFeedAttentionShown = false;
-
-export function updateHomeFeedAttentionStrip(p: {
-  shadowRoot: ShadowRoot | null;
-  needsAttention: boolean;
-  watchPanelCollapsed: boolean;
-  panelT: (k: string, p?: Record<string, string | number>) => string;
-  onExpandFromCollapsed: () => void;
-}): void {
-  if (!p.shadowRoot) return;
-  const el = p.shadowRoot.querySelector('[part="home-feed-attention"]') as HTMLElement | null;
-  const wrap = p.shadowRoot.querySelector('.wrap') as HTMLElement | null;
-  if (!el || !wrap) return;
-
-  if (p.needsAttention) {
-    if (!prevHomeFeedAttentionShown && p.watchPanelCollapsed) {
-      p.onExpandFromCollapsed();
-    }
-    prevHomeFeedAttentionShown = true;
-    el.textContent = p.panelT('panel.homeFeedPickAttention');
-    el.hidden = false;
-    applyNoVideoHomePanelLayout(p.shadowRoot, true);
-  } else {
-    prevHomeFeedAttentionShown = false;
-    el.hidden = true;
-    el.textContent = '';
-    applyNoVideoHomePanelLayout(p.shadowRoot, false);
-  }
-}
-
-export function applyNoVideoHomePanelLayout(shadowRoot: ShadowRoot | null, active: boolean): void {
-  if (!shadowRoot) return;
-  const wrap = shadowRoot.querySelector('.wrap') as HTMLElement | null;
-  if (!wrap) return;
-  wrap.classList.toggle('wrap--no-video', active);
-}
