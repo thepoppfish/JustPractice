@@ -1,4 +1,4 @@
-﻿import { APP_NAME } from '../lib/branding';
+﻿import { APP_NAME, appIconUrl } from '../lib/branding';
 import {
   calendarDayBottomLabel,
   formatDuration,
@@ -51,7 +51,8 @@ export function dashboardSidebarHtml(vm: DashboardViewModel): string {
   return `
       <aside class="sidebar" aria-label="${escapeHtml(vm.t('dash.mainNavAria'))}">
         <div class="brand">
-          Just<span class="brand-accent">Practice</span>
+          <img class="brand-logo" src="${escapeAttr(appIconUrl(48))}" width="36" height="36" alt="" />
+          <span class="brand-text">Just<span class="brand-accent">Practice</span></span>
         </div>
         <nav class="side-nav">
           <div class="nav-group">
@@ -131,7 +132,7 @@ ${dashboardTopbarMetricsHtml(vm)}
               vm.t('dash.searchPlaceholder'),
             )}" value="${escapeAttr(searchQuery)}" autocomplete="off" />
           </div>
-          <div class="topbar-badge" title="${escapeAttr(APP_NAME)}">JP</div>
+          <img class="topbar-badge" src="${escapeAttr(appIconUrl(32))}" width="32" height="32" alt="${escapeAttr(APP_NAME)}" />
         </header>`;
 }
 
@@ -556,29 +557,11 @@ export function dashboardGoalsSectionHtml(vm: DashboardViewModel): string {
             <div class="goals-form goals-form--single">
               <label class="goals-field">
                 <span>${escapeHtml(vm.t('dash.goalsMinutesPerDay'))}</span>
-                <input type="number" id="goal-daily-min" min="0" step="1" placeholder="e.g. 30"
+                <input type="text" id="goal-daily-min" class="goals-field-input--compact" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="${escapeAttr(vm.t('dash.goalsMinutesPlaceholder'))}"
                   value="${vm.goals.dailyTargetSec == null ? '' : escapeAttr(String(Math.round(vm.goals.dailyTargetSec / 60)))}" />
               </label>
             </div>
             <button type="button" class="btn-save-goals" id="save-goals">${escapeHtml(vm.t('dash.goalsSaveTargets'))}</button>
-            <h3 class="goals-form-title goals-form-title--spaced">${escapeHtml(vm.t('dash.remindersTitle'))}</h3>
-            <p class="row-sub goals-form-hint">
-              ${escapeHtml(vm.t('dash.remindersHint'))}
-            </p>
-            <div class="settings-block goals-reminder-row">
-              <label class="goals-reminder-label">
-                <input type="checkbox" id="goal-notifications" ${vm.data.settings.goalNotificationsEnabled === true ? 'checked' : ''} />
-                <span>${escapeHtml(vm.t('dash.remindersEnable'))}</span>
-              </label>
-            </div>
-            <div class="goals-form goals-form--single">
-              <label class="goals-field">
-                <span>${escapeHtml(vm.t('dash.remindersHour'))}</span>
-                <input type="number" id="goal-nudge-hour" min="0" max="23" step="1" placeholder="20 (default)"
-                  value="${vm.data.settings.goalNudgeHourLocal == null ? '' : escapeAttr(String(vm.data.settings.goalNudgeHourLocal))}" />
-              </label>
-            </div>
-            <p class="row-sub goals-form-hint">${escapeHtml(vm.t('dash.remindersHourHint'))}</p>
           </section>`;
 }
 
@@ -707,11 +690,6 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               </label>
               <p class="help">${escapeHtml(vm.t('settings.pauseHelp'))}</p>
             </div>
-            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.watchPanelTitle'))}</h2>
-            <div class="settings-block">
-              <button type="button" class="btn-save-goals" id="spawn-watch-panel">${escapeHtml(vm.t('settings.showWatchPanel'))}</button>
-              <p class="help">${escapeHtml(vm.t('settings.showWatchPanelHelp'))}</p>
-            </div>
             <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.learningFocusTitle'))}</h2>
             <div class="settings-block">
               <label>
@@ -739,11 +717,6 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
                 <span>${escapeHtml(vm.t('settings.watchPanelXpToasts'))}</span>
               </label>
               <p class="help settings-notif-option-help">${escapeHtml(vm.t('settings.watchPanelXpToastsHelp'))}</p>
-              <label class="settings-notif-option settings-notif-option--spaced">
-                <input type="checkbox" id="xp-notifications" ${vm.data.settings.xpNotificationsEnabled !== false ? 'checked' : ''} />
-                <span>${escapeHtml(vm.t('settings.xpNotifications'))}</span>
-              </label>
-              <p class="help settings-notif-option-help">${escapeHtml(vm.t('settings.xpNotificationsHelp'))}</p>
             </div>
             <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.dataTitle'))}</h2>
             <p class="help dash-section-sub">${escapeHtml(vm.t('settings.dataHint'))}</p>

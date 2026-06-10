@@ -11,10 +11,6 @@ import {
   emptyPersisted,
 } from '../lib/storage';
 import {
-  ensureGoalCheckAlarm,
-  maybeNotifyDailyGoalMet,
-} from '../lib/goalNotifications';
-import {
   processAchievementScan,
   processFirstCompleteXpEvent,
   processPracticeTickXpEvent,
@@ -22,7 +18,6 @@ import {
 } from '../lib/playerProgressEvents';
 import { canPrestige, levelFromTotalXp } from '../lib/playerProgress';
 import { explainPracticeXpZero, jpXpLogBackground } from '../lib/xpDebug';
-import { maybeNotifyXpEvents, maybeNotifyPrestigeUp } from '../lib/xpNotifications';
 import { backfillLibraryDurations } from './backgroundDurationEnrich';
 import { enrichLibraryItemFromOEmbed } from './backgroundOEmbed';
 import {
@@ -44,7 +39,6 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
       const xpResult = processAchievementScan(data);
       if (xpResult.newAchievements.length > 0 || Object.keys(data.playerProgress.achievements).length !== achBefore) {
         await writePersisted(data);
-        void maybeNotifyXpEvents(data, xpResult);
       }
       return { ok: true, data };
     }
@@ -178,7 +172,6 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
       if (complete) {
         void enrichLibraryItemFromOEmbed(videoId, 'fill-unknown');
       }
-      void maybeNotifyXpEvents(p, xpResult);
       return { ok: true, ...xpResult };
     }
     case MSG.PRACTICE_TICK: {
@@ -236,8 +229,6 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
         ...(zeroXpReason ? { zeroXpReason } : {}),
       });
       await writePersisted(p);
-      void maybeNotifyDailyGoalMet(p);
-      void maybeNotifyXpEvents(p, xpResult);
       return { ok: true, ...xpResult };
     }
     case MSG.SET_SETTINGS: {
@@ -266,7 +257,6 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
     }
     case MSG.CLEAR_ALL_EXTENSION_DATA: {
       await writePersisted(emptyPersisted());
-      await ensureGoalCheckAlarm();
       return { ok: true };
     }
     case MSG.RESTORE_EXTENSION_STORAGE: {
@@ -281,7 +271,6 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
         }
         await chrome.storage.local.clear();
         await chrome.storage.local.set(normalized);
-        await ensureGoalCheckAlarm();
         return { ok: true };
       } catch (e) {
         return {
@@ -354,8 +343,6 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
         return { ok: false, error: 'Cannot prestige yet' };
       }
       await writePersisted(p);
-      void maybeNotifyXpEvents(p, xpResult);
-      void maybeNotifyPrestigeUp(p, xpResult.prestigeLevel);
       return {
         ok: true,
         xpGained: 0,

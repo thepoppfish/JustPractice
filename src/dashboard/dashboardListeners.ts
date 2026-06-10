@@ -1,7 +1,6 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage } from '../lib/messages';
 import { APP_NAME } from '../lib/branding';
-import { requestWatchPanelSpawn } from '../lib/youtubeTabMessaging';
 import {
   daysInCalendarMonth,
   normalizeCustomLevels,
@@ -12,7 +11,6 @@ import { isResolvedLocale } from '../i18n';
 import { formatDuration } from '../lib/practiceStats';
 import {
   parseGoalMinutes,
-  parseNudgeHour,
   writeProgressXpGuideOpen,
   yearHeatmapStatusLabel,
 } from './dashboardFormatters';
@@ -235,9 +233,13 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     void refreshAfterMutation(DASH_VIEWS);
   });
 
+  listen(root.querySelector('#goal-daily-min'), 'input', (e) => {
+    const el = e.target as HTMLInputElement;
+    el.value = el.value.replace(/\D/g, '').slice(0, 3);
+  });
+
   listen(root.querySelector('#save-goals'), 'click', async () => {
     const daily = parseGoalMinutes(root.querySelector<HTMLInputElement>('#goal-daily-min'));
-    const nudgeHour = parseNudgeHour(root.querySelector<HTMLInputElement>('#goal-nudge-hour'));
     const payload =
       daily === null || daily <= 0 ?
         { dailyTargetSec: null, weeklyTargetSec: null, monthlyTargetSec: null }
@@ -252,18 +254,9 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
         })();
     await send({
       type: MSG.SET_SETTINGS,
-      payload: { goals: payload, goalNudgeHourLocal: nudgeHour },
+      payload: { goals: payload },
     });
     void refreshAfterMutation(['goals', 'stats']);
-  });
-
-  listen(root.querySelector('#goal-notifications'), 'change', async (e) => {
-    suppressStorageRender();
-    const checked = (e.target as HTMLInputElement).checked;
-    await send({
-      type: MSG.SET_SETTINGS,
-      payload: { goalNotificationsEnabled: checked },
-    });
   });
 
   listen(root.querySelector('#setting-display-name'), 'change', async (e) => {
@@ -315,15 +308,6 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
         payload: { customDailyMessages: next },
       });
       void refreshAfterMutation(['settings']);
-    });
-  });
-
-  listen(root.querySelector('#xp-notifications'), 'change', async (e) => {
-    suppressStorageRender();
-    const checked = (e.target as HTMLInputElement).checked;
-    await send({
-      type: MSG.SET_SETTINGS,
-      payload: { xpNotificationsEnabled: checked },
     });
   });
 
@@ -439,22 +423,6 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       type: MSG.SET_SETTINGS,
       payload: { calendarShowPracticeTime: calTimeEl.checked },
     });
-  });
-
-  listen(root.querySelector('#spawn-watch-panel'), 'click', async () => {
-    const res = await requestWatchPanelSpawn();
-    if (res.status === 'no_youtube_tabs') {
-      window.alert(vm.t('settings.showWatchPanelNoTab'));
-    } else if (res.status === 'needs_refresh') {
-      window.alert(vm.t('settings.showWatchPanelNeedsRefresh'));
-    } else if (res.tabsMessaged > 0 && res.tabsMessaged < res.youtubeTabCount) {
-      window.alert(
-        vm.t('settings.showWatchPanelPartial', {
-          ok: res.tabsMessaged,
-          failed: res.youtubeTabCount - res.tabsMessaged,
-        }),
-      );
-    }
   });
 
   const learningFocusEl = root.querySelector<HTMLInputElement>('#learning-focus-hide-recs');

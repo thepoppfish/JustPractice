@@ -1,8 +1,10 @@
+import { APP_NAME } from '../lib/branding';
 import {
   formatGoalPairLineLive,
   formatGoalSlashLive,
   ringDasharrayFromProgress,
 } from '../lib/goalFormat';
+import { shouldShowWatchPanelLibraryChrome } from '../lib/youtubeIds';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { matchesActiveFramework, isLegacyLevelTag, tagsForFramework } from '../lib/levelTags';
 import {
@@ -52,6 +54,38 @@ export function populateLevelSelect(
     sel.value = current;
   } else {
     sel.value = '';
+  }
+}
+
+/** Save / complete / level controls only on watch-like pages; homepage keeps XP + calendar. */
+export function syncWatchPanelVideoLibraryChrome(p: {
+  shadowRoot: ShadowRoot | null;
+  readTitle?: () => string;
+}): void {
+  if (!p.shadowRoot) return;
+  const onWatchPage = shouldShowWatchPanelLibraryChrome();
+  const wrap = p.shadowRoot.querySelector('.wrap') as HTMLElement | null;
+  if (wrap) wrap.dataset.jpLibraryChrome = onWatchPage ? '1' : '0';
+  for (const part of ['save-row', 'complete-row'] as const) {
+    const el = p.shadowRoot.querySelector(`[part="${part}"]`) as HTMLElement | null;
+    if (el) el.hidden = !onWatchPage;
+  }
+  const levelControls = p.shadowRoot.querySelector('.level-controls') as HTMLElement | null;
+  if (levelControls) levelControls.hidden = !onWatchPage;
+  const statusEl = p.shadowRoot.querySelector('[part="status"]') as HTMLElement | null;
+  if (statusEl) statusEl.hidden = !onWatchPage;
+  const hintEl = p.shadowRoot.querySelector('[part="hint"]') as HTMLElement | null;
+  if (hintEl) hintEl.hidden = !onWatchPage;
+  const titleEl = p.shadowRoot.querySelector('[part="title"]') as HTMLElement | null;
+  if (!onWatchPage) {
+    if (titleEl) titleEl.textContent = APP_NAME;
+    const prompt = p.shadowRoot.querySelector('[part="complete-prompt"]') as HTMLElement | null;
+    if (prompt) prompt.hidden = true;
+    return;
+  }
+  if (titleEl && p.readTitle) {
+    const t = p.readTitle();
+    titleEl.textContent = t.length > 90 ? `${t.slice(0, 90)}…` : t;
   }
 }
 
@@ -143,6 +177,7 @@ export function updateDailyGoalRing(p: {
   shadowRoot: ShadowRoot | null;
   getGoals: () => PracticeGoals;
   getTodayPracticeSeconds: () => number;
+  panelT: (k: string, params?: Record<string, string | number>) => string;
 }): void {
   if (!p.shadowRoot) return;
   const fg = p.shadowRoot.querySelector('[part="daily-ring-fg"]') as SVGCircleElement | null;
@@ -159,7 +194,7 @@ export function updateDailyGoalRing(p: {
     fg.style.strokeDashoffset = '0';
     label.textContent = '—';
     label.classList.add('daily-ring-muted');
-    wrap.title = 'Set a daily goal in the extension dashboard (Goals tab).';
+    wrap.title = p.panelT('panel.dailyGoalNoTarget');
     return;
   }
 
@@ -168,7 +203,10 @@ export function updateDailyGoalRing(p: {
   fg.setAttribute('stroke-dasharray', ringDasharrayFromProgress(pct));
   fg.style.strokeDashoffset = '0';
   label.textContent = formatGoalSlashLive(done, target);
-  wrap.title = `Daily goal: ${formatGoalPairLineLive(done, target)} (${Math.round(pct * 100)}%).`;
+  wrap.title = p.panelT('panel.dailyGoalTooltip', {
+    pair: formatGoalPairLineLive(done, target),
+    percent: String(Math.round(pct * 100)),
+  });
 }
 
 let xpToastTimer: ReturnType<typeof setTimeout> | null = null;

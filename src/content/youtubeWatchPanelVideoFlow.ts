@@ -1,4 +1,3 @@
-import { APP_NAME } from '../lib/branding';
 import { setWatchPanelHostVisible } from './youtubePanelMount';
 import { runWatchPanelOnVideoChanged } from './youtubeWatchLifecycle';
 
@@ -21,6 +20,7 @@ export interface WatchPanelVideoFlowDeps {
   shouldKeepWatchPanelVisibleWithoutVideoId: () => boolean;
   scheduleVideoIdResolutionRetries: () => void;
   readTitle: () => string;
+  syncWatchPanelVideoLibraryChrome: () => void;
   refreshState: (videoId: string | null) => Promise<void>;
   rebindCompletionPromptListener: () => void;
   runSameVideoFlow: (videoId: string) => void | Promise<void>;
@@ -50,8 +50,7 @@ export async function runWatchPanelVideoChangedFlow(deps: WatchPanelVideoFlowDep
       deps.ensurePanel();
       deps.applyPanelHostPosition();
       deps.applyWatchPanelCollapsed();
-      const titleEl = deps.getShadowRoot()?.querySelector('[part="title"]') as HTMLElement | null;
-      if (titleEl) titleEl.textContent = APP_NAME;
+      deps.syncWatchPanelVideoLibraryChrome();
       deps.updateHint();
       deps.fireAsyncWatch(deps.refreshCalendarOnly());
 
@@ -64,12 +63,7 @@ export async function runWatchPanelVideoChangedFlow(deps: WatchPanelVideoFlowDep
     runHasVideoFlow: async (videoId) => {
       deps.ensurePanel();
       setWatchPanelHostVisible(deps.panelHostId, true);
-      const shadowRoot = deps.getShadowRoot();
-      const titleEl = shadowRoot?.querySelector('[part="title"]') as HTMLElement | undefined;
-      if (titleEl) {
-        const t = deps.readTitle();
-        titleEl.textContent = t.length > 90 ? `${t.slice(0, 90)}…` : t;
-      }
+      deps.syncWatchPanelVideoLibraryChrome();
       await deps.refreshState(videoId);
       deps.updateHint();
       deps.resetTimers();

@@ -1,5 +1,7 @@
 import type { LevelFramework } from '../lib/storage';
-import { isYoutubeWatchLikePage } from '../lib/youtubeIds';
+import { isYoutubeWatchLikePage, shouldShowWatchPanelLibraryChrome } from '../lib/youtubeIds';
+
+export { syncWatchPanelVideoLibraryChrome } from './youtubePanelUi';
 import { watchPanelShadowInnerHtml } from './youtubePanelHtml';
 import { attachPanelDrag, levelSelectOptionsHtml } from './youtubePanelUi';
 import {
@@ -196,6 +198,11 @@ export function updateWatchPanelHint(p: {
   pauseWhenUnfocused: boolean;
   panelT: (k: string, p?: Record<string, string | number>) => string;
 }): void {
+  if (!shouldShowWatchPanelLibraryChrome()) {
+    p.hintEl.hidden = true;
+    return;
+  }
+  p.hintEl.hidden = false;
   p.hintEl.textContent = p.practiceEnabled
     ? p.pauseWhenUnfocused
       ? p.panelT('panel.countHintFocused')

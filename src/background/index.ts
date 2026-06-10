@@ -1,21 +1,16 @@
 import type { ExtensionMessage, ExtensionResponse } from '../lib/messages';
-import {
-  ensureGoalCheckAlarm,
-  onGoalAlarmName,
-  runPeriodicGoalChecks,
-} from '../lib/goalNotifications';
 import { attachBackgroundContextMenuListeners } from './backgroundContextMenus';
 import { handleBackgroundMessage } from './backgroundMessageHandlers';
 
-attachBackgroundContextMenuListeners();
-void ensureGoalCheckAlarm();
+const LEGACY_GOAL_ALARM = 'jp-practice-goal-checks';
 
-chrome.alarms.onAlarm.addListener((a) => {
-  if (onGoalAlarmName(a.name)) void runPeriodicGoalChecks();
-});
+attachBackgroundContextMenuListeners();
+
+/** Drop legacy goal-reminder alarm (feature removed). */
+void chrome.alarms.clear(LEGACY_GOAL_ALARM);
 
 chrome.runtime.onStartup.addListener(() => {
-  void ensureGoalCheckAlarm();
+  void chrome.alarms.clear(LEGACY_GOAL_ALARM);
 });
 
 chrome.runtime.onMessage.addListener(

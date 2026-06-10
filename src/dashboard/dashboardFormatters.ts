@@ -190,12 +190,12 @@ export function goalRingCardHtml(
 
 const PROGRESS_XP_GUIDE_OPEN_KEY = 'jp-progress-xp-guide-open';
 
-/** Default open so rules are visible; user collapse is remembered across dashboard refreshes. */
+/** Closed by default; stays open in this session only after the user expands it. */
 export function readProgressXpGuideOpen(): boolean {
   try {
-    return sessionStorage.getItem(PROGRESS_XP_GUIDE_OPEN_KEY) !== 'false';
+    return sessionStorage.getItem(PROGRESS_XP_GUIDE_OPEN_KEY) === 'true';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -274,14 +274,3 @@ export function parseGoalMinutes(el: HTMLInputElement | null): number | null {
   return Math.round(n * 60);
 }
 
-/** Local hour 0–23 for evening nudge; empty field → null (default 20 in notification logic). */
-export function parseNudgeHour(el: HTMLInputElement | null): number | null {
-  if (!el) return null;
-  const raw = el.value.trim();
-  if (raw === '') return null;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return null;
-  const r = Math.round(n);
-  if (r < 0 || r > 23) return null;
-  return r;
-}

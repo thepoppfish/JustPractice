@@ -34,6 +34,25 @@ export function isYoutubeWatchLikePage(href?: string): boolean {
   }
 }
 
+/**
+ * Library actions (save / level / complete) belong on a full watch or Shorts player —
+ * not on home browse, subscriptions, or the mini-player while the feed is visible.
+ */
+export function shouldShowWatchPanelLibraryChrome(): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    const path = new URL(
+      typeof location !== 'undefined' && location.href ? location.href : 'https://www.youtube.com/',
+      'https://www.youtube.com',
+    ).pathname;
+    if (path === '/shorts' || path.startsWith('/shorts/')) return true;
+    if (!isYoutubeClassicWatchPath(path)) return false;
+    return document.querySelector('ytd-watch-flexy') != null;
+  } catch {
+    return false;
+  }
+}
+
 /** Parse an 11-char YouTube video id from watch, shorts, or youtu.be URLs (absolute or relative). */
 export function parseYoutubeVideoId(urlStr: string): string | null {
   try {

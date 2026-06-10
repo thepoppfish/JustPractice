@@ -143,13 +143,7 @@ export interface AppSettings {
   /** yyyy-mm-dd — last local day we showed the evening nudge */
   lastNotifiedGoalNudgeDate?: string | null;
   /**
-   * When true (default), show browser notifications for account level-up / achievements.
-   * Phase 2+ UI may expose this toggle.
-   */
-  xpNotificationsEnabled?: boolean;
-  /**
    * When true (default), show the watch-panel +XP toast and status flash each time practice XP is earned (~every minute).
-   * Rank-up feedback still shows when this is off.
    */
   watchPanelXpToastsEnabled?: boolean;
   /** Shown in dashboard greeting (Hello, {name}). */
@@ -318,8 +312,6 @@ export function ensureSettingsShape(raw: AppSettings | Partial<AppSettings> | un
     },
     goalNotificationsEnabled:
       typeof raw.goalNotificationsEnabled === 'boolean' ? raw.goalNotificationsEnabled : false,
-    xpNotificationsEnabled:
-      typeof raw.xpNotificationsEnabled === 'boolean' ? raw.xpNotificationsEnabled : true,
     watchPanelXpToastsEnabled:
       typeof raw.watchPanelXpToastsEnabled === 'boolean'
         ? raw.watchPanelXpToastsEnabled
@@ -349,7 +341,6 @@ export const defaultSettings = (): AppSettings => ({
   goalNudgeHourLocal: null,
   lastNotifiedGoalMetDate: null,
   lastNotifiedGoalNudgeDate: null,
-  xpNotificationsEnabled: true,
   watchPanelXpToastsEnabled: true,
   displayName: '',
   customDailyMessages: [],

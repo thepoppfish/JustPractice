@@ -35,6 +35,18 @@ h1 {
   margin-bottom: 10px;
 }
 
+.popup-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.popup-logo {
+  display: block;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
 .popup-xp-row {
   display: flex;
   flex-wrap: wrap;

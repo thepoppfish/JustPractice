@@ -1,7 +1,7 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage, GetStateResponse } from '../lib/messages';
 import { requestWatchPanelSpawn } from '../lib/youtubeTabMessaging';
-import { APP_NAME } from '../lib/branding';
+import { APP_NAME, appIconUrl } from '../lib/branding';
 import {
   STORAGE_KEY,
   defaultSettings,
@@ -174,7 +174,10 @@ async function renderAsync(): Promise<void> {
   app.innerHTML = `
     <div class="wrap">
       <div class="popup-head">
-        <h1>${escapeHtml(APP_NAME)}</h1>
+        <div class="popup-title-row">
+          <img class="popup-logo" src="${escapeAttr(appIconUrl(32))}" width="28" height="28" alt="" />
+          <h1>${escapeHtml(APP_NAME)}</h1>
+        </div>
         <div class="popup-xp-row" aria-label="${escapeAttr(t('progress.xpBarAria'))}">
           <span class="popup-rank-badge">${escapeHtml(t('popup.rank', { level: String(accountLevel) }))}</span>
           ${prestigeBadge}

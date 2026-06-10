@@ -20,6 +20,14 @@ const MUST_TRANSLATE_PREFIXES = [
   'dash.welcome',
 ];
 
+/** Spot-check keys that must not be left as English copy-paste in locale files. */
+const MUST_TRANSLATE_KEYS = [
+  'path.subtitle',
+  'path.noGoal',
+  'path.bonus.stackHint',
+  'panel.dailyGoalNoTarget',
+];
+
 describe('locale parity with en.json', () => {
   for (const [code, table] of Object.entries(locales)) {
     it(`${code} has every key and non-empty strings`, () => {
@@ -33,9 +41,10 @@ describe('locale parity with en.json', () => {
     });
 
     it(`${code} translates profile, language picker, and daily motivation strings`, () => {
-      const mustTranslate = enKeys.filter((k) =>
-        MUST_TRANSLATE_PREFIXES.some((p) => k.startsWith(p)),
-      );
+      const mustTranslate = [
+        ...enKeys.filter((k) => MUST_TRANSLATE_PREFIXES.some((p) => k.startsWith(p))),
+        ...MUST_TRANSLATE_KEYS,
+      ];
       for (const key of mustTranslate) {
         expect(table[key as keyof typeof table]).not.toBe(en[key as keyof typeof en]);
       }

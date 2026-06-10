@@ -34,6 +34,7 @@ export interface WatchPanelGetStateSideEffects {
   updateDailyGoalRing: () => void;
   updatePlayerXpBar: (totalXp: number, prestigeLevel?: number) => void;
   syncWatchPanelLabels: () => void;
+  syncWatchPanelVideoLibraryChrome: () => void;
 }
 
 export interface WatchPanelGetStateDebug {
@@ -52,17 +53,15 @@ export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
   getPanelT: () => Translator;
   debug: WatchPanelGetStateDebug;
 }): Promise<void> {
-  const saveRowEl = p.shadowRoot?.querySelector('[part="save-row"]') as HTMLElement | null;
-
   try {
     const res = (await sendMsg<GetStateResponse>({
       type: MSG.GET_STATE,
     })) as GetStateResponse;
     if (!res?.ok || !('data' in res)) {
-      if (saveRowEl) saveRowEl.hidden = false;
       p.mut.setLibraryItemForCurrentVideo(null);
       p.mut.setInLibrary(false);
       p.fx.syncWatchPanelLabels();
+      p.fx.syncWatchPanelVideoLibraryChrome();
       return;
     }
     const settings = ensureSettingsShape({ ...defaultSettings(), ...res.data.settings });
@@ -92,8 +91,7 @@ export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
     );
 
     p.ui.statusEl.textContent = item ? panelT('panel.statusInLibrary') : panelT('panel.statusNotSaved');
-
-    if (saveRowEl) saveRowEl.hidden = false;
+    p.fx.syncWatchPanelVideoLibraryChrome();
 
     // Counting is automatic and tied to library membership; the caller derives it from `inLibrary`.
 
@@ -109,8 +107,8 @@ export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
     p.mut.setLibraryItemForCurrentVideo(null);
     p.mut.setInLibrary(false);
     p.ui.statusEl.textContent = p.getPanelT()('panel.syncError');
-    if (saveRowEl) saveRowEl.hidden = false;
     p.fx.syncWatchPanelLabels();
+    p.fx.syncWatchPanelVideoLibraryChrome();
   }
 }
 

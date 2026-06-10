@@ -231,6 +231,13 @@ export function watchPanelShadowCss(): string {
       .row[hidden] {
         display: none !important;
       }
+      .wrap[data-jp-library-chrome="0"] [part="save-row"],
+      .wrap[data-jp-library-chrome="0"] [part="complete-row"],
+      .wrap[data-jp-library-chrome="0"] .level-controls,
+      .wrap[data-jp-library-chrome="0"] [part="status"],
+      .wrap[data-jp-library-chrome="0"] [part="hint"] {
+        display: none !important;
+      }
       .row:first-of-type { margin-top: 0; }
       label { color: #bbb; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
       select, button {

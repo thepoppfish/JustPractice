@@ -41,6 +41,7 @@ import {
   paintCalStreak as paintCalStreakUi,
   renderWatchPanelCalendar,
   syncWatchPanelLabels as syncWatchPanelLabelsUi,
+  syncWatchPanelVideoLibraryChrome as syncWatchPanelVideoLibraryChromeUi,
   updateDailyGoalRing as updateDailyGoalRingUi,
   updatePlayerXpBar as updatePlayerXpBarUi,
 } from './youtubePanelUi';
@@ -341,6 +342,7 @@ function syncWatchPanelLabels(): void {
     panelT,
     onAfter: () => {
       completion.syncCompletionUiOnLabelsRefresh();
+      syncWatchPanelVideoLibraryChrome();
       jpWatchPanelDebugStrip.sync();
     },
   });
@@ -359,6 +361,7 @@ function updateDailyGoalRing(): void {
     shadowRoot,
     getGoals: () => settingsCache.goals ?? defaultGoals(),
     getTodayPracticeSeconds,
+    panelT,
   });
 }
 
@@ -567,6 +570,7 @@ function ensurePanel(): void {
     onAfterAppend: () => {
       applyPanelHostPosition();
       applyWatchPanelCollapsed();
+      syncWatchPanelVideoLibraryChrome();
     },
   });
 }
@@ -634,6 +638,7 @@ async function refreshState(videoId: string | null): Promise<void> {
     inLibrary = false;
     await refreshCalendarOnly();
     syncWatchPanelLabels();
+    syncWatchPanelVideoLibraryChrome();
     syncPracticeEnabledFromLibrary();
     syncLearningFocusFromState();
     return;
@@ -672,6 +677,7 @@ async function refreshState(videoId: string | null): Promise<void> {
       updateDailyGoalRing,
       updatePlayerXpBar,
       syncWatchPanelLabels,
+      syncWatchPanelVideoLibraryChrome,
     },
     getPanelT: () => panelT,
     debug: {
@@ -710,6 +716,10 @@ function syncLibraryPlaybackPositionFromPlayer(): void {
     type: MSG.SET_VIDEO_PLAYBACK_POSITION,
     payload: { videoId, positionSec },
   });
+}
+
+function syncWatchPanelVideoLibraryChrome(): void {
+  syncWatchPanelVideoLibraryChromeUi({ shadowRoot, readTitle });
 }
 
 function updateHint(): void {
@@ -781,6 +791,7 @@ async function toggleWatchPanelCompletion(complete: boolean): Promise<void> {
 
 export async function onWatchPanelVideoChanged(): Promise<void> {
   videoIdRetryGeneration += 1;
+  syncWatchPanelVideoLibraryChrome();
   await runWatchPanelVideoChangedFlow({
     panelHostId: PANEL_HOST_ID,
     getVideoIdFromUrl,
@@ -808,6 +819,7 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
       shouldKeepWatchPanelVisibleWithoutVideoId(getVideoIdFromUrl, () => Boolean(getVideoElement())),
     scheduleVideoIdResolutionRetries,
     readTitle,
+    syncWatchPanelVideoLibraryChrome,
     refreshState,
     rebindCompletionPromptListener: () => completion.rebindCompletionPromptListener(),
     runSameVideoFlow: () => {
@@ -840,6 +852,7 @@ export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void 
       applyPanelHostPosition();
       applyWatchPanelCollapsed();
       syncWatchPanelLabels();
+      syncWatchPanelVideoLibraryChrome();
       syncLearningFocusFromState();
       updateHint();
     },

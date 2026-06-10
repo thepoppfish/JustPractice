@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   isYoutubeClassicWatchPage,
   isYoutubeClassicWatchPath,
@@ -9,6 +9,7 @@ import {
   isYoutubeWatchLikePath,
   parseYoutubeVideoId,
   resolveYoutubeVideoIdFromPage,
+  shouldShowWatchPanelLibraryChrome,
 } from './youtubeIds';
 
 describe('parseYoutubeVideoId', () => {
@@ -74,6 +75,42 @@ describe('isYoutubeWatchLikePage', () => {
   it('uses href when provided', () => {
     expect(isYoutubeWatchLikePage('https://www.youtube.com/watch?v=x')).toBe(true);
     expect(isYoutubeWatchLikePage('https://www.youtube.com/')).toBe(false);
+  });
+});
+
+describe('shouldShowWatchPanelLibraryChrome', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('is false on home browse even when a mini-player video is present', () => {
+    vi.stubGlobal('location', { href: 'https://www.youtube.com/' });
+    document.body.innerHTML = `
+      <ytd-miniplayer active>
+        <div selected><a href="/watch?v=dQw4w9WgXcQ">title</a></div>
+      </ytd-miniplayer>
+    `;
+    expect(shouldShowWatchPanelLibraryChrome()).toBe(false);
+  });
+
+  it('is false on /watch without the full watch layout', () => {
+    vi.stubGlobal('location', { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+    expect(shouldShowWatchPanelLibraryChrome()).toBe(false);
+  });
+
+  it('is true on /watch with ytd-watch-flexy', () => {
+    vi.stubGlobal('location', { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+    document.body.innerHTML = '<ytd-watch-flexy video-id="dQw4w9WgXcQ"></ytd-watch-flexy>';
+    expect(shouldShowWatchPanelLibraryChrome()).toBe(true);
+  });
+
+  it('is true on Shorts', () => {
+    vi.stubGlobal('location', { href: 'https://www.youtube.com/shorts/dQw4w9WgXcQ' });
+    expect(shouldShowWatchPanelLibraryChrome()).toBe(true);
   });
 });
 
