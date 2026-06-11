@@ -1,7 +1,7 @@
 /** Types, defaults, and date/goal helpers for persisted storage. */
 /** Persisted shape in chrome.storage.local */
 
-export const SCHEMA_VERSION = 15 as const;
+export const SCHEMA_VERSION = 16 as const;
 
 export const MAX_DISPLAY_NAME_LEN = 40 as const;
 export const MAX_CUSTOM_DAILY_MESSAGES = 10 as const;
@@ -194,6 +194,8 @@ export interface PersistedData {
   /** Completed roadmap trail for the current day. */
   roadmapCompletionSnapshot?: RoadmapCompletionSnapshot | null;
   roadmapBonusPick?: RoadmapBonusPick | null;
+  /** Unix ms when the user finished first-run welcome onboarding; null = not completed. */
+  onboardingCompletedAt?: number | null;
 }
 
 export const STORAGE_KEY = 'jpPractice' as const;
@@ -370,6 +372,7 @@ export const emptyPersisted = (): PersistedData => {
     todayPathPlan: null,
     roadmapCompletionSnapshot: null,
     roadmapBonusPick: null,
+    onboardingCompletedAt: null,
   };
 };
 

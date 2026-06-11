@@ -69,8 +69,6 @@ export async function runWatchPanelVideoChangedFlow(deps: WatchPanelVideoFlowDep
       deps.resetTimers();
       deps.rebindCompletionPromptListener();
     },
-    runSameVideoFlow: async () => {
-      deps.rebindCompletionPromptListener();
-    },
+    runSameVideoFlow: deps.runSameVideoFlow,
   });
 }

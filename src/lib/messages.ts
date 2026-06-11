@@ -124,7 +124,9 @@ export type SetSettingsPayload = Omit<Partial<AppSettings>, 'watchPanelLeft' | '
 
 export interface SetSettingsMessage {
   type: typeof MSG.SET_SETTINGS;
-  payload: SetSettingsPayload;
+  payload: SetSettingsPayload & {
+    onboardingCompletedAt?: number | null;
+  };
 }
 
 export interface ShowWatchPanelMessage {

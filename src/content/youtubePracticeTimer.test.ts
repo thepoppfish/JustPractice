@@ -10,6 +10,7 @@ import {
 const base = {
   practiceEnabled: true,
   currentVideoId: 'abc',
+  inLibrary: true,
   video: { paused: false, ended: false } as const,
   visibilityState: 'visible' as DocumentVisibilityState,
 };
@@ -21,6 +22,10 @@ describe('shouldCountPracticeTime', () => {
 
   it('returns false without a video id', () => {
     expect(shouldCountPracticeTime({ ...base, currentVideoId: null })).toBe(false);
+  });
+
+  it('returns false when video is not saved to the library', () => {
+    expect(shouldCountPracticeTime({ ...base, inLibrary: false })).toBe(false);
   });
 
   it('returns false when video is missing', () => {
@@ -52,6 +57,7 @@ describe('explainWhyNotCountingPractice', () => {
   it('returns the first failing gate in priority order', () => {
     expect(explainWhyNotCountingPractice({ ...base, practiceEnabled: false })).toBe('practiceOff');
     expect(explainWhyNotCountingPractice({ ...base, currentVideoId: null })).toBe('noVideoId');
+    expect(explainWhyNotCountingPractice({ ...base, inLibrary: false })).toBe('notInLibrary');
     expect(explainWhyNotCountingPractice({ ...base, video: null })).toBe('noVideoElement');
     expect(
       explainWhyNotCountingPractice({ ...base, video: { paused: false, ended: true } }),

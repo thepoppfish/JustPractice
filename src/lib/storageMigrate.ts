@@ -132,6 +132,11 @@ export function migrate(input: PersistedData): PersistedData {
     (input as PersistedData).roadmapCompletionSnapshot,
   );
   const roadmapBonusPick = normalizeRoadmapBonusPick((input as PersistedData).roadmapBonusPick);
+  const rawOnboardingAt = (input as PersistedData).onboardingCompletedAt;
+  const onboardingCompletedAt =
+    typeof rawOnboardingAt === 'number' && Number.isFinite(rawOnboardingAt) && rawOnboardingAt > 0
+      ? rawOnboardingAt
+      : null;
 
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -150,6 +155,7 @@ export function migrate(input: PersistedData): PersistedData {
     todayPathPlan,
     roadmapCompletionSnapshot,
     roadmapBonusPick,
+    onboardingCompletedAt,
   };
 }
 

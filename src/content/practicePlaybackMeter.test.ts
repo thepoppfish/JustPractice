@@ -11,6 +11,7 @@ import {
 const eligibleBase: PracticeMeterEligibility = {
   practiceEnabled: true,
   currentVideoId: 'abc',
+  inLibrary: true,
   visibilityState: 'visible',
   videoEnded: false,
 };
@@ -122,9 +123,10 @@ describe('processPlaybackSample', () => {
 });
 
 describe('isEligibleForPlaybackMeter', () => {
-  it('requires practice on, video id, and visible tab', () => {
+  it('requires practice on, library membership, video id, and visible tab', () => {
     expect(isEligibleForPlaybackMeter(eligibleBase)).toBe(true);
     expect(isEligibleForPlaybackMeter({ ...eligibleBase, practiceEnabled: false })).toBe(false);
+    expect(isEligibleForPlaybackMeter({ ...eligibleBase, inLibrary: false })).toBe(false);
     expect(isEligibleForPlaybackMeter({ ...eligibleBase, currentVideoId: null })).toBe(false);
     expect(isEligibleForPlaybackMeter({ ...eligibleBase, visibilityState: 'hidden' })).toBe(false);
     expect(isEligibleForPlaybackMeter({ ...eligibleBase, videoEnded: true })).toBe(false);

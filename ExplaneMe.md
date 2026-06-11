@@ -11,7 +11,7 @@ This document describes **JustPractice**, a Chrome MV3 extension: what each sour
 - **Single source of truth:** `chrome.storage.local` under the key `jpPractice` (`STORAGE_KEY` in `src/lib/storage.ts`). Shape = `PersistedData` (library, daily/video practice seconds, settings, `playerProgress`, schema version).
 - **Who writes storage:** almost always the **background service worker** (`src/background/index.ts`) after validating messages. Content scripts and pages send `chrome.runtime.sendMessage` payloads typed in `src/lib/messages.ts`.
 - **Who reads storage for UI:** popup and dashboard call `GET_STATE` via messaging; the YouTube **content script** uses `GET_STATE` (library refresh, calendar snapshot) and listens to `chrome.storage.onChanged` for `STORAGE_KEY` to refresh UI without spamming the background. Open extension pages and the watch panel also **poll storage every ~15s while visible** (`src/lib/storageSyncPoll.ts`) as a safety net alongside `onChanged`.
-- **YouTube entry:** `src/content/youtube.ts` (~36 lines) is **boot-only** — debug log, `attachWatchPanelRuntimeHooks()`, visibility debounce for calendar refresh, `storage.onChanged` → `onJpPracticeStorageChanged`, initial `onWatchPanelVideoChanged`, `initFeedCards`.
+- **YouTube entry:** `src/content/youtube.ts` (~34 lines) is **boot-only** — debug log, `attachWatchPanelRuntimeHooks()`, visibility debounce for calendar refresh, `storage.onChanged` → `onJpPracticeStorageChanged`, initial `onWatchPanelVideoChanged`.
 - **YouTube orchestrator:** `src/content/youtubeWatchPanelRuntime.ts` (~627 lines) owns watch-panel state, practice intervals, library save/complete, calendar/XP wiring; delegates completion prompt to `youtubeWatchPanelCompletion.ts`, video/SPA binding to `youtubeWatchPanelVideoFlow.ts`, paint to `youtubePanelUi.ts` / `youtubePanelCalendarUi.ts`, mount to `youtubePanelMount.ts`, lifecycle glue to `youtubeWatchLifecycle.ts`.
 
 **Architecture (mermaid)**
@@ -128,7 +128,7 @@ flowchart TB
 | `yearHeatmapMonth.ts` | ~136 | **Month drill-down** grid (`MonthDetailGrid`) from daily seconds + goals. | `yearHeatmapInteractive`, `yearHeatmapMonthHtml` | 4 | 3 | No |
 | `yearHeatmapMonthHtml.ts` | ~54 | Month layer markup for drill-down overlay. | `yearHeatmapInteractive` | 2 | 2 | No |
 | `yearHeatmapInteractive.ts` | ~137 | Click month → drill-down; back to year; wires DOM listeners (panel + dashboard). | `youtubePanelUi`, `dashboardListeners` | 4 | 3 | No |
-| `extensionMessaging.ts` | ~17 | Benign extension error detection (invalidated context, missing receiver). | `youtubeMessaging.ts`, `feedCardsState` | 3 | 1 | No |
+| `extensionMessaging.ts` | ~17 | Benign extension error detection (invalidated context, missing receiver). | `youtubeMessaging.ts` | 3 | 1 | No |
 | `htmlEscape.ts` | ~10 | Safe string escaping for injected HTML. | Dashboard, templates, panel | 3 | 1 | No |
 | `branding.ts` | ~2 | `APP_NAME` constant. | Menus, UI chrome | 2 | 1 | No |
 | `vite-env.d.ts` | ~1 | Vite client type refs. | Build | 1 | 1 | No |
@@ -150,7 +150,7 @@ flowchart TB
 
 | File | Lines (approx.) | Purpose | Connects to | Imp. | Cplx. | Split? |
 |------|-----------------|---------|-------------|------|-------|--------|
-| `youtube.ts` | ~36 | **Boot only:** `attachWatchPanelRuntimeHooks`, debounced visible-tab calendar refresh, `storage.onChanged` → runtime, initial video change, `initFeedCards`. | `youtubeWatchPanelRuntime`, `feedCards`, `youtubeDebug` | 4 | 1 | No |
+| `youtube.ts` | ~34 | **Boot only:** `attachWatchPanelRuntimeHooks`, debounced visible-tab calendar refresh, `storage.onChanged` → runtime, initial video change. | `youtubeWatchPanelRuntime`, `youtubeDebug` | 4 | 1 | No |
 | `youtubeWatchPanelRuntime.ts` | ~627 | **Main orchestrator:** shadow panel state, `currentVideoId`, home pick meta, practice `pendingSeconds` + intervals, library/complete handlers, calendar/XP bar updates, hooks registration. | Most content modules + `lib/` + `i18n` | 5 | 4 | No — split into completion + video flow modules |
 | `youtubeWatchPanelCompletion.ts` | ~171 | Ended/completion prompt state, visibility, `toggleWatchPanelCompletion`, video `timeupdate` rebind. | Runtime, `youtubePlayerHooks`, `youtubePanelUi` | 4 | 3 | No |
 | `youtubeWatchPanelVideoFlow.ts` | ~79 | `runWatchPanelVideoChangedFlow` — no-video vs has-video panel steps (delegates to lifecycle). | Runtime, `youtubeWatchLifecycle`, mount | 4 | 3 | No |
@@ -165,10 +165,7 @@ flowchart TB
 | `youtubePlayerHooks.ts` | ~137 | Nav hooks, player `MutationObserver`, home feed pointer pick, **completion prompt** `timeupdate` listener + threshold math. | Runtime, `feedCards` | 4 | 4 | **Maybe** — nav vs observer vs completion |
 | `youtubePracticeTimer.ts` | ~101 | `shouldCountPracticeTime`, flush, interval controller, page flush listeners. | Runtime only | 4 | 3 | No |
 | `youtubeDebug.ts` | ~54 | `jpPracticeDebug` localStorage flag, console helpers, optional debug strip in shadow DOM. | Runtime | 2 | 2 | No |
-| `feedCards.ts` | ~48 | Boot: `initFeedCards`, `pickFeedCardFromInteractionTarget`; re-exports `VideoMeta`. | `youtube.ts`, `youtubePlayerHooks` | 4 | 2 | No |
-| `feedCardsDom.ts` | ~338 | Deep DOM scan, card meta extraction, hover-strip mount. | `feedCards`, `feedCardsPopover` | 4 | 4 | No |
-| `feedCardsPopover.ts` | ~250 | Level-picker popover host, save/update via messaging. | `feedCardsDom`, `feedCardsState` | 4 | 3 | No |
-| `feedCardsState.ts` | ~85 | Shared feed state, `sendFeedMsg`, library id cache sync. | Dom + popover + `feedCards` | 3 | 2 | No |
+| `feedCards.ts` | ~125 | `pickFeedCardFromInteractionTarget` — resolve a feed/grid card to `VideoMeta` from a pointer target (deep DOM scan, title/channel extraction). | `youtubePlayerHooks` | 4 | 3 | No |
 
 ---
 
@@ -201,6 +198,21 @@ flowchart TB
 | `dashboard/dashboard.css` | ~1936 | Full-page dashboard styles (including heatmap, progress, completed tab). | `index.html` | 2 | 2 | N/A |
 
 > **Dashboard import graph:** `main.ts` → `dashboardViewModel`, `dashboardTemplates`, `dashboardListeners`, `dashboardDomUpdate`. **`dashboardFormatters`** and **`dashboardIcons`** are pulled in by templates/VM/listeners (not by `main.ts` directly).
+
+---
+
+## `src/welcome/`
+
+| File | Lines (approx.) | Purpose | Connects to | Imp. | Cplx. | Split? |
+|------|-----------------|---------|-------------|------|-------|--------|
+| `welcome/index.html` | ~13 | First-run onboarding tab shell. | `welcome/main.ts` | 2 | 1 | No |
+| `welcome/main.ts` | ~350 | 5-step wizard: language carousel, level framework, daily goal, tutorial embed, finish CTAs. | `messages` SET_SETTINGS, `i18n`, `practiceGoals`, `welcomeConfig` | 4 | 3 | No |
+| `welcome/welcome.css` | ~350 | Onboarding layout, carousel crossfade, reduced-motion. | `index.html` | 2 | 2 | No |
+| `lib/welcomeConfig.ts` | ~10 | Tutorial video id placeholder, goal presets, page path. | welcome + background | 2 | 1 | No |
+| `lib/welcomePage.ts` | ~10 | `welcomePageUrl()` / `openWelcomePage()`. | dashboard replay, background install | 2 | 1 | No |
+| `background/backgroundOnboarding.ts` | ~15 | Opens welcome tab on `onInstalled` when `reason === 'install'`. | `welcomePage` | 3 | 1 | No |
+
+> **First install:** background opens `src/welcome/index.html`. Completion sets `onboardingCompletedAt` on `PersistedData` via `SET_SETTINGS`. Dashboard **Settings → Show welcome guide again** reopens the tab. See `docs/WELCOME-ONBOARDING-PLAN.md`.
 
 ---
 
@@ -244,7 +256,7 @@ Run: `npm test`. Note: `tsconfig.json` excludes `*.test.ts` from `tsc`; Vitest s
 | Panel paint (calendar, ring, XP, completion prompt UI) | `src/content/youtubePanelUi.ts` |
 | Year heatmap grid math / colors | `src/lib/yearHeatmapCalendar.ts` |
 | Year heatmap HTML or month drill-down | `src/lib/yearHeatmapHtml.ts`, `yearHeatmapMonth.ts`, `yearHeatmapInteractive.ts` |
-| Feed thumbnail strip | `src/content/feedCards.ts` |
+| Feed card → watch-panel home pick | `src/content/feedCards.ts`, `youtubePlayerHooks.ts` |
 | Account XP / prestige / achievements logic | `src/lib/playerProgress.ts`, `playerProgressEvents.ts`, `achievements.ts` |
 | XP / prestige browser toasts | `src/lib/xpNotifications.ts` |
 | Right-click save menus | `src/background/backgroundContextMenus.ts` + `levelTags.ts` |
@@ -338,8 +350,8 @@ Defined in `src/lib/messages.ts`; dispatched in `src/background/index.ts` → `h
 
 | Message | Typical senders | Payload (summary) | Handler effect / response |
 |---------|-----------------|-------------------|---------------------------|
-| `GET_STATE` | Popup, dashboard, watch runtime, library panel, lifecycle, feed cards | none | `{ ok: true, data: PersistedData }` |
-| `ADD_OR_UPDATE_LIBRARY` | Panel, feed strip, context menu | `videoId`, `title`, `channel`, optional `difficulty` | Upsert; async oEmbed enrich; **`LibraryWriteOkResponse`** (`libraryAction`, title, channel, difficulty) |
+| `GET_STATE` | Popup, dashboard, watch runtime, library panel, lifecycle | none | `{ ok: true, data: PersistedData }` |
+| `ADD_OR_UPDATE_LIBRARY` | Panel, context menu | `videoId`, `title`, `channel`, optional `difficulty` | Upsert; async oEmbed enrich; **`LibraryWriteOkResponse`** (`libraryAction`, title, channel, difficulty) |
 | `REMOVE_LIBRARY` | UIs | `videoId` | Filter library; `{ ok: true }` |
 | `SET_DIFFICULTY` | Panel / library | `videoId`, `difficulty` | Patch row; `{ ok: true }` |
 | `SET_LIBRARY_COMPLETION` | Watch panel, Completed tab | `videoId`, `complete`, optional `title`/`channel` | Sets/clears `completedAt`; first complete → +15 XP + achievements; **`SetLibraryCompletionOkResponse`** (+ `XpAwardFields`) |
@@ -396,7 +408,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-  participant RT as youtubeWatchPanelRuntime / feedCards
+  participant RT as youtubeWatchPanelRuntime
   participant BG as background/index.ts
   participant ST as chrome.storage.local
   participant OE as oEmbed (network)
@@ -531,7 +543,6 @@ Achievement **ids** match the table above (e.g. `lib_25`, `watch_100h`, `level_1
 **Writers**
 
 - **Watch panel** (`youtubeWatchPanelRuntime.ts` + `youtubeLibraryPanel.ts`): save, remove, difficulty; title/channel from DOM + `youtubePageTitle` helpers.
-- **Feed cards** (`feedCards.ts`): thumbnail-strip save; same `ADD_OR_UPDATE_LIBRARY` message.
 - **Context menu** (`background/index.ts` `onClicked`): `videoId` from `linkUrl` or tab URL; Unknown title/channel until oEmbed.
 
 **Readers**
@@ -566,13 +577,15 @@ Achievement **ids** match the table above (e.g. `lib_25`, `watch_100h`, `level_1
 
 ---
 
-### Feature: feed thumbnail strip + home pick
+### Feature: feed card home pick
 
-**Module:** `feedCards.ts`, started from `youtube.ts` via `initFeedCards`.
+**Module:** `feedCards.ts` (`pickFeedCardFromInteractionTarget`).
 
-**Problem:** Pages without `v=` in the URL still need a bound video for save/practice. **`attachHomeFeedPointerPick`** (`youtubePlayerHooks.ts`) sets `homePickMeta` in the runtime when the user taps a card.
+**Problem:** Pages without `v=` in the URL still need a bound video for save/practice. **`attachHomeFeedPointerPick`** (`youtubePlayerHooks.ts`) calls `pickFeedCardFromInteractionTarget` to resolve the tapped card to `VideoMeta` and sets `homePickMeta` in the runtime.
 
-**Fragility:** YouTube DOM churn — debounced scans, mount attributes, shadow popover.
+> Note: the old hover-over-thumbnail “JustPractice” save strip + level popover (`feedCardsDom.ts`, `feedCardsPopover.ts`, `feedCardsState.ts`, `initFeedCards`, `feed.*` locale keys) was removed; only the pointer-pick resolver remains.
+
+**Fragility:** YouTube DOM churn — deep shadow-DOM scan to find the enclosing card.
 
 ---
 

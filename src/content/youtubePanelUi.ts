@@ -1,4 +1,3 @@
-import { APP_NAME } from '../lib/branding';
 import {
   formatGoalPairLineLive,
   formatGoalSlashLive,
@@ -61,11 +60,15 @@ export function populateLevelSelect(
 export function syncWatchPanelVideoLibraryChrome(p: {
   shadowRoot: ShadowRoot | null;
   readTitle?: () => string;
+  getVideoIdFromUrl?: () => string | null;
 }): void {
   if (!p.shadowRoot) return;
-  const onWatchPage = shouldShowWatchPanelLibraryChrome();
+  const resolveVideoId = p.getVideoIdFromUrl ?? (() => null);
+  const onWatchPage = shouldShowWatchPanelLibraryChrome(resolveVideoId);
   const wrap = p.shadowRoot.querySelector('.wrap') as HTMLElement | null;
   if (wrap) wrap.dataset.jpLibraryChrome = onWatchPage ? '1' : '0';
+  const titleEl = p.shadowRoot.querySelector('[part="title"]') as HTMLElement | null;
+  if (titleEl) titleEl.hidden = !onWatchPage;
   for (const part of ['save-row', 'complete-row'] as const) {
     const el = p.shadowRoot.querySelector(`[part="${part}"]`) as HTMLElement | null;
     if (el) el.hidden = !onWatchPage;
@@ -76,11 +79,11 @@ export function syncWatchPanelVideoLibraryChrome(p: {
   if (statusEl) statusEl.hidden = !onWatchPage;
   const hintEl = p.shadowRoot.querySelector('[part="hint"]') as HTMLElement | null;
   if (hintEl) hintEl.hidden = !onWatchPage;
-  const titleEl = p.shadowRoot.querySelector('[part="title"]') as HTMLElement | null;
+  const libraryBanner = p.shadowRoot.querySelector('[part="library-banner"]') as HTMLElement | null;
+  if (libraryBanner) libraryBanner.hidden = !onWatchPage;
+  const completePrompt = p.shadowRoot.querySelector('[part="complete-prompt"]') as HTMLElement | null;
   if (!onWatchPage) {
-    if (titleEl) titleEl.textContent = APP_NAME;
-    const prompt = p.shadowRoot.querySelector('[part="complete-prompt"]') as HTMLElement | null;
-    if (prompt) prompt.hidden = true;
+    if (completePrompt) completePrompt.hidden = true;
     return;
   }
   if (titleEl && p.readTitle) {

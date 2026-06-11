@@ -1,6 +1,5 @@
 import { MSG } from '../lib/messages';
 import { STORAGE_KEY, type PersistedData } from '../lib/storage';
-import { initFeedCards } from './feedCards';
 import { fireAsyncWatch } from './youtubeMessaging';
 import { syncJpXpDebugFlagToExtensionStorage } from '../lib/xpDebug';
 import { jpWatchDebugEnabled, jpWatchLog } from './youtubeDebug';
@@ -54,7 +53,6 @@ function boot(): void {
   });
 
     fireAsyncWatch(onWatchPanelVideoChanged());
-    initFeedCards();
   } catch (err) {
     console.error('[JustPractice] YouTube content script boot failed', err);
   }

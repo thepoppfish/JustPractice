@@ -231,11 +231,20 @@ export function watchPanelShadowCss(): string {
       .row[hidden] {
         display: none !important;
       }
+      .level-controls[hidden] {
+        display: none !important;
+      }
+      .title[hidden] {
+        display: none !important;
+      }
+      .wrap[data-jp-library-chrome="0"] [part="title"],
       .wrap[data-jp-library-chrome="0"] [part="save-row"],
       .wrap[data-jp-library-chrome="0"] [part="complete-row"],
       .wrap[data-jp-library-chrome="0"] .level-controls,
       .wrap[data-jp-library-chrome="0"] [part="status"],
-      .wrap[data-jp-library-chrome="0"] [part="hint"] {
+      .wrap[data-jp-library-chrome="0"] [part="hint"],
+      .wrap[data-jp-library-chrome="0"] [part="library-banner"],
+      .wrap[data-jp-library-chrome="0"] [part="complete-prompt"] {
         display: none !important;
       }
       .row:first-of-type { margin-top: 0; }
@@ -549,3 +558,16 @@ export function watchPanelShadowCss(): string {
       .month-hm-time--missed { opacity: 0.55; }
       .month-hm-time--empty { opacity: 0.35; }`;
 }
+
+/** Appended to legacy shadow panels missing browse-mode hide rules. */
+export const watchPanelLibraryChromeMigrateCss = `
+      .title[hidden] { display: none !important; }
+      .wrap[data-jp-library-chrome="0"] [part="title"],
+      .wrap[data-jp-library-chrome="0"] [part="save-row"],
+      .wrap[data-jp-library-chrome="0"] [part="complete-row"],
+      .wrap[data-jp-library-chrome="0"] .level-controls,
+      .wrap[data-jp-library-chrome="0"] [part="status"],
+      .wrap[data-jp-library-chrome="0"] [part="hint"],
+      .wrap[data-jp-library-chrome="0"] [part="library-banner"],
+      .wrap[data-jp-library-chrome="0"] [part="complete-prompt"] { display: none !important; }
+`;

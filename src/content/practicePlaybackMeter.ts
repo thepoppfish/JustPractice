@@ -50,12 +50,14 @@ export function processPlaybackSample(input: PlaybackSampleInput): PlaybackSampl
 export interface PracticeMeterEligibility {
   practiceEnabled: boolean;
   currentVideoId: string | null;
+  inLibrary: boolean;
   visibilityState: DocumentVisibilityState;
   videoEnded: boolean;
 }
 
 export function isEligibleForPlaybackMeter(e: PracticeMeterEligibility): boolean {
   if (!e.practiceEnabled || !e.currentVideoId) return false;
+  if (!e.inLibrary) return false;
   if (e.visibilityState !== 'visible') return false;
   if (e.videoEnded) return false;
   return true;

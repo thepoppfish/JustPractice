@@ -13,6 +13,7 @@ import {
   type PersistedData,
 } from '../lib/storage';
 import { startStorageSyncPoll } from '../lib/storageSyncPoll';
+import { signatureOf } from '../lib/dataSignature';
 import { tagsForFramework, isLegacyLevelTag, isJlptTag, isCefrTag } from '../lib/levelTags';
 import { thumbnailUrlForVideoId } from '../lib/youtubeMeta';
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
@@ -25,8 +26,6 @@ type FilterLevel = '' | 'unset' | 'legacy' | LevelTag;
 
 const app = document.getElementById('app')!;
 
-const POPUP_TIP_SEEN_KEY = 'jpPopupTipSeen' as const;
-
 async function send<T>(msg: ExtensionMessage): Promise<T> {
   return chrome.runtime.sendMessage(msg) as Promise<T>;
 }
@@ -37,8 +36,14 @@ async function loadData(): Promise<PersistedData> {
   return res.data;
 }
 
+type PopupTab = 'library' | 'stats' | 'settings';
+
 let filterLevel: FilterLevel = '';
 let searchQuery = '';
+/** Active tab is in-session UI state; tracked so re-renders don't reset it. */
+let activeTab: PopupTab = 'library';
+/** Signature of the data last painted; lets the 15s poll skip no-op renders. */
+let lastRenderedSignature: string | null = null;
 
 function matchesFilter(item: LibraryItem, fw: LevelFramework, customLevels: readonly string[]): boolean {
   if (filterLevel === '') return true;
@@ -101,6 +106,7 @@ async function renderAsync(): Promise<void> {
     app.innerHTML = `<div class="wrap"><p class="empty">${escapeHtml(createTranslator(resolveLocale(undefined))('popup.loadError'))}</p></div>`;
     return;
   }
+  lastRenderedSignature = signatureOf(data);
 
   const st = ensureSettingsShape({ ...defaultSettings(), ...data.settings });
   const fw = st.levelFramework ?? 'jlpt';
@@ -129,9 +135,6 @@ async function renderAsync(): Promise<void> {
   const xpLabel = maxLevel
     ? escapeHtml(t('progress.maxLevel'))
     : escapeHtml(t('popup.xpToNext', { current: String(xpBar.xpIntoLevel), needed: String(xpBar.xpNeededForNext) }));
-
-  const tipStore = await chrome.storage.local.get(POPUP_TIP_SEEN_KEY);
-  const showOnboardingTip = tipStore[POPUP_TIP_SEEN_KEY] !== true;
 
   const inProgress = inProgressLibraryItems(data.library);
 
@@ -187,21 +190,13 @@ async function renderAsync(): Promise<void> {
           <span class="popup-xp-label">${xpLabel}</span>
         </div>
       </div>
-      ${
-        showOnboardingTip
-          ? `<div class="onboarding-tip" role="status">
-        <p class="onboarding-tip-text">${escapeHtml(t('popup.tipPractice'))}</p>
-        <button type="button" class="onboarding-tip-dismiss" id="dismiss-onboarding-tip">${escapeHtml(t('popup.tipOk'))}</button>
-      </div>`
-          : ''
-      }
       <p class="open-dash"><button type="button" class="linkish" id="open-dashboard">${escapeHtml(t('popup.openDashboard'))}</button></p>
       <div class="tabs">
-        <button type="button" data-tab="library" class="active">${escapeHtml(t('popup.tabLibrary'))}</button>
-        <button type="button" data-tab="stats">${escapeHtml(t('popup.tabStats'))}</button>
-        <button type="button" data-tab="settings">${escapeHtml(t('popup.tabSettings'))}</button>
+        <button type="button" data-tab="library" class="${activeTab === 'library' ? 'active' : ''}">${escapeHtml(t('popup.tabLibrary'))}</button>
+        <button type="button" data-tab="stats" class="${activeTab === 'stats' ? 'active' : ''}">${escapeHtml(t('popup.tabStats'))}</button>
+        <button type="button" data-tab="settings" class="${activeTab === 'settings' ? 'active' : ''}">${escapeHtml(t('popup.tabSettings'))}</button>
       </div>
-      <div id="panel-library" class="panel active">
+      <div id="panel-library" class="panel${activeTab === 'library' ? ' active' : ''}">
         <input type="search" class="search" placeholder="${escapeAttr(t('popup.searchPlaceholder'))}" value="${escapeAttr(
           searchQuery,
         )}" />
@@ -219,7 +214,7 @@ async function renderAsync(): Promise<void> {
           }
         </div>
       </div>
-      <div id="panel-stats" class="panel">
+      <div id="panel-stats" class="panel${activeTab === 'stats' ? ' active' : ''}">
         <div class="stats-grid">
           <div class="stat-card">
             <h2>${escapeHtml(t('common.today'))}</h2>
@@ -238,7 +233,7 @@ async function renderAsync(): Promise<void> {
           ${escapeHtml(t('popup.helpStats'))}
         </p>
       </div>
-      <div id="panel-settings" class="panel">
+      <div id="panel-settings" class="panel${activeTab === 'settings' ? ' active' : ''}">
         <div class="settings">
           <label>
             <input type="checkbox" id="pause-unfocused" ${data.settings.pauseWhenUnfocused ? 'checked' : ''} />
@@ -258,10 +253,6 @@ async function renderAsync(): Promise<void> {
   `;
 
   wireTabs();
-  app.querySelector('#dismiss-onboarding-tip')?.addEventListener('click', async () => {
-    await chrome.storage.local.set({ [POPUP_TIP_SEEN_KEY]: true });
-    render();
-  });
   app.querySelector('#open-dashboard')?.addEventListener('click', () => {
     void chrome.runtime.openOptionsPage();
   });
@@ -350,6 +341,7 @@ function wireTabs(): void {
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const tab = btn.getAttribute('data-tab');
+      if (tab === 'library' || tab === 'stats' || tab === 'settings') activeTab = tab;
       buttons.forEach((b) => b.classList.toggle('active', b === btn));
       panels.forEach((p) => {
         const id = p.id.replace('panel-', '');
@@ -373,7 +365,22 @@ chrome.storage.onChanged.addListener((changes, area) => {
   scheduleRenderFromStorage();
 });
 
-const stopStorageSyncPoll = startStorageSyncPoll(() => scheduleRenderFromStorage());
+/** Poll safety net: only re-render when stored data actually changed, so the
+ *  user's active tab / scroll position is not reset every 15s. */
+async function pollFromStorage(): Promise<void> {
+  let data: PersistedData;
+  try {
+    data = await loadData();
+  } catch {
+    return;
+  }
+  if (signatureOf(data) === lastRenderedSignature) return;
+  scheduleRenderFromStorage();
+}
+
+const stopStorageSyncPoll = startStorageSyncPoll(() => {
+  void pollFromStorage();
+});
 window.addEventListener('pagehide', stopStorageSyncPoll);
 
 render();

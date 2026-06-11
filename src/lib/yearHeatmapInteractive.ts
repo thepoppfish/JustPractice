@@ -24,6 +24,10 @@ export interface AttachYearHeatmapInteractiveOptions {
   /** When set, month drill-down includes its own legend and monthly-goal badge copy. */
   translate?: (key: string, params?: Record<string, string>) => string;
   onYearChange?: (year: number) => void;
+  /** Zoom (year vs month) is in-session UI state; report it so a re-render can restore it. */
+  onZoomChange?: (zoom: YearHeatmapZoom) => void;
+  /** Restore a prior zoom on attach (e.g. after a data-change re-render). */
+  initialZoom?: YearHeatmapZoom;
 }
 
 const MONTH_HOVER_CLASS = 'year-hm-cell--month-hover';
@@ -83,6 +87,7 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
     setNavMode('year');
     opts.root.classList.remove('year-hm--month-open');
     clearMonthHover();
+    opts.onZoomChange?.({ mode: 'year' });
   }
 
   function renderMonthView(year: number, monthIndex: number): void {
@@ -110,6 +115,7 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
     if (keys) keys.hidden = true;
     setNavMode('month');
     opts.root.classList.add('year-hm--month-open');
+    opts.onZoomChange?.({ mode: 'month', year, monthIndex });
   }
 
   function openMonth(year: number, monthIndex: number): void {
@@ -178,6 +184,13 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
         openMonth(activeMonth.year, Number(sideSlot.dataset.monthIndex));
       }
     }
+  }
+
+  if (
+    opts.initialZoom?.mode === 'month' &&
+    opts.initialZoom.year === opts.getYear()
+  ) {
+    openMonth(opts.initialZoom.year, opts.initialZoom.monthIndex);
   }
 
   yearLayer.addEventListener('pointerover', onCellPointerOver);

@@ -8,9 +8,11 @@ import {
   type AppSettings,
   type LibraryItem,
   type PersistedData,
+  type PlayerProgress,
   defaultSettings,
 } from '../lib/storage';
 import { startStorageSyncPoll } from '../lib/storageSyncPoll';
+import { signatureOf } from '../lib/dataSignature';
 import type { VideoMeta } from './feedCards';
 import {
   isPlaceholderYoutubePageTitle,
@@ -57,6 +59,7 @@ import {
   applyDefaultWatchPanelHostStyle,
   clampWatchPanelHostToViewport,
   forceWatchPanelHostVisible,
+  attachWatchPanelBrowseShellObserver,
   ensureWatchPanelIfAbsent,
   migrateWatchPanelShadow,
   setWatchPanelHostVisible,
@@ -131,6 +134,7 @@ function practiceMeterEligibility(): PracticeMeterEligibility {
   return {
     practiceEnabled,
     currentVideoId,
+    inLibrary,
     visibilityState: document.visibilityState,
     videoEnded: Boolean(video?.ended),
   };
@@ -141,6 +145,7 @@ function practiceCountParams() {
   return {
     practiceEnabled,
     currentVideoId,
+    inLibrary,
     video,
     visibilityState: document.visibilityState,
   };
@@ -506,6 +511,7 @@ export function mountWatchPanelShellSync(): void {
     if (host) forceWatchPanelHostVisible(host);
     applyPanelHostPosition();
     applyWatchPanelCollapsed();
+    syncWatchPanelVideoLibraryChrome();
     document.documentElement.dataset.jpPracticeScript = '1';
   } catch (err) {
     console.error('[JustPractice] mountWatchPanelShellSync failed', err);
@@ -575,24 +581,49 @@ function ensurePanel(): void {
   });
 }
 
+/** Signature of the last calendar snapshot painted; lets the 15s poll skip
+ *  redundant repaints when stored practice data has not changed. */
+let lastCalendarSignature: string | null = null;
+
+function applyCalendarSnapshot(
+  dailySeconds: Record<string, number>,
+  installKey: string,
+  playerProgress: PlayerProgress | null,
+  settings: AppSettings,
+): void {
+  settingsCache = settings;
+  panelLocale = resolveLocale(settingsCache.uiLocale);
+  panelT = createTranslator(panelLocale);
+  lastDailySnapshot = mergeIncomingDailySnapshot(
+    lastDailySnapshot,
+    dailySeconds,
+    practiceEnabled ? practiceMeter.getPendingWholeSeconds() : 0,
+  );
+  extensionInstallDateKey = installKey;
+  if (playerProgress) {
+    cachedPlayerTotalXp = playerProgress.totalXp;
+    cachedPlayerPrestigeLevel = playerProgress.prestigeLevel ?? 0;
+    updatePlayerXpBar();
+  }
+  renderCalendar(lastDailySnapshot);
+  updateDailyGoalRing();
+}
+
 async function refreshCalendarOnly(): Promise<void> {
   await refreshWatchPanelCalendarSnapshot((dailySeconds, installKey, playerProgress, settings) => {
-    settingsCache = settings;
-    panelLocale = resolveLocale(settingsCache.uiLocale);
-    panelT = createTranslator(panelLocale);
-    lastDailySnapshot = mergeIncomingDailySnapshot(
-      lastDailySnapshot,
-      dailySeconds,
-      practiceEnabled ? practiceMeter.getPendingWholeSeconds() : 0,
-    );
-    extensionInstallDateKey = installKey;
-    if (playerProgress) {
-      cachedPlayerTotalXp = playerProgress.totalXp;
-      cachedPlayerPrestigeLevel = playerProgress.prestigeLevel ?? 0;
-      updatePlayerXpBar();
-    }
-    renderCalendar(lastDailySnapshot);
-    updateDailyGoalRing();
+    lastCalendarSignature = signatureOf({ dailySeconds, installKey, playerProgress, settings });
+    applyCalendarSnapshot(dailySeconds, installKey, playerProgress, settings);
+  });
+}
+
+/** Poll safety net: only repaint the calendar when the stored snapshot changed,
+ *  so the panel does not flicker / reset every 15s. */
+async function pollCalendarSync(): Promise<void> {
+  await refreshWatchPanelCalendarSnapshot((dailySeconds, installKey, playerProgress, settings) => {
+    const sig = signatureOf({ dailySeconds, installKey, playerProgress, settings });
+    if (sig === lastCalendarSignature) return;
+    lastCalendarSignature = sig;
+    applyCalendarSnapshot(dailySeconds, installKey, playerProgress, settings);
   });
 }
 
@@ -619,12 +650,15 @@ function applyPersistedPracticeSnapshotToPanel(persisted: PersistedData | undefi
 }
 
 /**
- * Counting is automatic: a video accrues practice time iff it is saved to the library.
- * (No user-facing toggle — `practiceEnabled` mirrors `inLibrary`.)
+ * Practice time accrues only for videos saved in the library.
+ * `practiceEnabled` follows whether the bound watch target is a library item.
  */
-function syncPracticeEnabledFromLibrary(): void {
-  const next = inLibrary;
+function syncPracticeEnabledFromVideoBinding(): void {
+  const next = Boolean(currentVideoId && inLibrary);
   if (next === practiceEnabled) return;
+  if (practiceEnabled) {
+    flushWatchPanelPractice();
+  }
   practiceEnabled = next;
   practiceMeterDebugTick = 0;
   resetTimers();
@@ -639,7 +673,7 @@ async function refreshState(videoId: string | null): Promise<void> {
     await refreshCalendarOnly();
     syncWatchPanelLabels();
     syncWatchPanelVideoLibraryChrome();
-    syncPracticeEnabledFromLibrary();
+    syncPracticeEnabledFromVideoBinding();
     syncLearningFocusFromState();
     return;
   }
@@ -658,6 +692,9 @@ async function refreshState(videoId: string | null): Promise<void> {
         extensionInstallDateKey = k;
       },
       setInLibrary: (v) => {
+        if (inLibrary && !v) {
+          flushWatchPanelPractice();
+        }
         inLibrary = v;
       },
       setLibraryItemForCurrentVideo: (v) => {
@@ -686,7 +723,7 @@ async function refreshState(videoId: string | null): Promise<void> {
       strip: (line) => jpWatchPanelDebugStrip.strip(line),
     },
   });
-  syncPracticeEnabledFromLibrary();
+  syncPracticeEnabledFromVideoBinding();
   syncLearningFocusFromState();
   syncLibraryVideoDurationFromPlayer();
   syncLibraryPlaybackPositionFromPlayer();
@@ -719,7 +756,7 @@ function syncLibraryPlaybackPositionFromPlayer(): void {
 }
 
 function syncWatchPanelVideoLibraryChrome(): void {
-  syncWatchPanelVideoLibraryChromeUi({ shadowRoot, readTitle });
+  syncWatchPanelVideoLibraryChromeUi({ shadowRoot, readTitle, getVideoIdFromUrl });
 }
 
 function updateHint(): void {
@@ -729,6 +766,7 @@ function updateHint(): void {
     practiceEnabled,
     pauseWhenUnfocused: settingsCache.pauseWhenUnfocused,
     panelT,
+    getVideoIdFromUrl,
   });
 }
 
@@ -797,7 +835,6 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
     getVideoIdFromUrl,
     flushPractice: flushWatchPanelPractice,
     resetPracticeToggleAndPending: () => {
-      practiceEnabled = false;
       practiceMeter.reset();
     },
     clearCompletionPromptState: () => completion.clearCompletionPromptState(),
@@ -806,6 +843,11 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
     setCurrentVideoId: (nextId) => {
       const previousVideoId = currentVideoId;
       currentVideoId = nextId;
+      if (previousVideoId !== nextId) {
+        inLibrary = false;
+        libraryItemForCurrentVideo = null;
+        syncPracticeEnabledFromVideoBinding();
+      }
       return previousVideoId;
     },
     clearLibraryBanner,
@@ -878,6 +920,7 @@ export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void 
 export function attachWatchPanelRuntimeHooks(): void {
   attachYoutubeNavHooks(() => fireAsyncWatch(onWatchPanelVideoChanged()));
   attachYoutubePlayerDomHooks(() => {
+    syncWatchPanelVideoLibraryChrome();
     completion.rebindCompletionPromptListener();
     if (practiceEnabled && currentVideoId) {
       practiceMeter.rebind();
@@ -898,7 +941,11 @@ export function attachWatchPanelRuntimeHooks(): void {
   });
   document.addEventListener('visibilitychange', () => completion.onDocumentVisibilityChange());
   startStorageSyncPoll(() => {
-    fireAsyncWatch(refreshCalendarOnly());
+    fireAsyncWatch(pollCalendarSync());
+  });
+  attachWatchPanelBrowseShellObserver(() => {
+    syncWatchPanelVideoLibraryChrome();
+    updateHint();
   });
 }
 

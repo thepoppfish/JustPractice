@@ -1,10 +1,12 @@
 import type { ExtensionMessage, ExtensionResponse } from '../lib/messages';
 import { attachBackgroundContextMenuListeners } from './backgroundContextMenus';
+import { attachBackgroundOnboardingListeners } from './backgroundOnboarding';
 import { handleBackgroundMessage } from './backgroundMessageHandlers';
 
 const LEGACY_GOAL_ALARM = 'jp-practice-goal-checks';
 
 attachBackgroundContextMenuListeners();
+attachBackgroundOnboardingListeners();
 
 /** Drop legacy goal-reminder alarm (feature removed). */
 void chrome.alarms.clear(LEGACY_GOAL_ALARM);

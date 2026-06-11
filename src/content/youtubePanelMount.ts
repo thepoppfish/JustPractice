@@ -1,7 +1,12 @@
 import type { LevelFramework } from '../lib/storage';
-import { isYoutubeWatchLikePage, shouldShowWatchPanelLibraryChrome } from '../lib/youtubeIds';
+import {
+  isYoutubeWatchLikePage,
+  needsHomeFeedPanelAttention,
+  shouldShowWatchPanelLibraryChrome,
+} from '../lib/youtubeIds';
 
 export { syncWatchPanelVideoLibraryChrome } from './youtubePanelUi';
+import { watchPanelLibraryChromeMigrateCss } from './youtubePanelCss';
 import { watchPanelShadowInnerHtml } from './youtubePanelHtml';
 import { attachPanelDrag, levelSelectOptionsHtml } from './youtubePanelUi';
 import {
@@ -15,6 +20,35 @@ export function migrateWatchPanelShadow(sr: ShadowRoot): void {
   sr.querySelector('[part="home-feed-attention"]')?.remove();
   sr.querySelector('.home-feed-attention')?.remove();
   sr.querySelector('.wrap')?.classList.remove('wrap--no-video');
+  const style = sr.querySelector('style');
+  const marker = 'data-jp-library-chrome="0"] [part="title"]';
+  if (style && !style.textContent?.includes(marker)) {
+    style.textContent += watchPanelLibraryChromeMigrateCss;
+  }
+}
+
+let browseShellObserver: MutationObserver | null = null;
+let browseShellDebounceTimer: number | null = null;
+
+/** Re-sync video chrome when YouTube toggles browse vs watch DOM (mini player, SPA). */
+export function attachWatchPanelBrowseShellObserver(onLayoutChange: () => void): void {
+  if (browseShellObserver || typeof MutationObserver === 'undefined') return;
+  const schedule = () => {
+    if (browseShellDebounceTimer !== null) window.clearTimeout(browseShellDebounceTimer);
+    browseShellDebounceTimer = window.setTimeout(() => {
+      browseShellDebounceTimer = null;
+      onLayoutChange();
+    }, 150);
+  };
+  browseShellObserver = new MutationObserver(schedule);
+  const root = document.body ?? document.documentElement;
+  browseShellObserver.observe(root, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['hidden', 'active', 'video-id'],
+  });
+  schedule();
 }
 
 export function watchPanelMarkupIsCurrent(host: HTMLElement): boolean {
@@ -197,8 +231,9 @@ export function updateWatchPanelHint(p: {
   practiceEnabled: boolean;
   pauseWhenUnfocused: boolean;
   panelT: (k: string, p?: Record<string, string | number>) => string;
+  getVideoIdFromUrl: () => string | null;
 }): void {
-  if (!shouldShowWatchPanelLibraryChrome()) {
+  if (!shouldShowWatchPanelLibraryChrome(p.getVideoIdFromUrl)) {
     p.hintEl.hidden = true;
     return;
   }
@@ -296,15 +331,7 @@ export function showWatchPanelLibraryBanner(p: {
   }, 14_000);
 }
 
-export function needsHomeFeedPanelAttention(getVideoIdFromUrl: () => string | null): boolean {
-  if (typeof location === 'undefined') return false;
-  if (!/(^|\.)youtube\.com$/i.test(location.hostname) && !/(^|\.)m\.youtube\.com$/i.test(location.hostname)) {
-    return false;
-  }
-  const path = location.pathname;
-  if (path.startsWith('/watch') || path.startsWith('/shorts/')) return false;
-  return getVideoIdFromUrl() === null;
-}
+export { needsHomeFeedPanelAttention };
 
 /** Keep the floating panel on-screen when id resolution is still in flight (SPA / DOM lag). */
 export function shouldKeepWatchPanelVisibleWithoutVideoId(

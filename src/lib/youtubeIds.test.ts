@@ -78,9 +78,24 @@ describe('isYoutubeWatchLikePage', () => {
   });
 });
 
+function mockVisibleLayout(): void {
+  Element.prototype.getBoundingClientRect = vi.fn(() => ({
+    width: 400,
+    height: 300,
+    top: 0,
+    left: 0,
+    right: 400,
+    bottom: 300,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  })) as typeof Element.prototype.getBoundingClientRect;
+}
+
 describe('shouldShowWatchPanelLibraryChrome', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    mockVisibleLayout();
   });
 
   afterEach(() => {
@@ -88,17 +103,46 @@ describe('shouldShowWatchPanelLibraryChrome', () => {
   });
 
   it('is false on home browse even when a mini-player video is present', () => {
-    vi.stubGlobal('location', { href: 'https://www.youtube.com/' });
+    vi.stubGlobal('location', {
+      href: 'https://www.youtube.com/',
+      pathname: '/',
+      hostname: 'www.youtube.com',
+    });
     document.body.innerHTML = `
+      <ytd-browse page-subtype="home"></ytd-browse>
       <ytd-miniplayer active>
         <div selected><a href="/watch?v=dQw4w9WgXcQ">title</a></div>
       </ytd-miniplayer>
     `;
-    expect(shouldShowWatchPanelLibraryChrome()).toBe(false);
+    expect(shouldShowWatchPanelLibraryChrome(() => 'dQw4w9WgXcQ')).toBe(false);
+  });
+
+  it('is false on subscriptions when no video id is resolved', () => {
+    vi.stubGlobal('location', {
+      href: 'https://www.youtube.com/feed/subscriptions',
+      pathname: '/feed/subscriptions',
+      hostname: 'www.youtube.com',
+    });
+    expect(shouldShowWatchPanelLibraryChrome(() => null)).toBe(false);
   });
 
   it('is false on /watch without the full watch layout', () => {
     vi.stubGlobal('location', { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+    expect(shouldShowWatchPanelLibraryChrome()).toBe(false);
+  });
+
+  it('is false on /watch when the home browse shell is still visible (mini player)', () => {
+    vi.stubGlobal('location', { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+    document.body.innerHTML = `
+      <ytd-browse page-subtype="home"></ytd-browse>
+      <ytd-watch-flexy video-id="dQw4w9WgXcQ"></ytd-watch-flexy>
+      <ytd-miniplayer active></ytd-miniplayer>
+    `;
+    expect(shouldShowWatchPanelLibraryChrome()).toBe(false);
+  });
+
+  it('is false on the Shorts feed', () => {
+    vi.stubGlobal('location', { href: 'https://www.youtube.com/shorts' });
     expect(shouldShowWatchPanelLibraryChrome()).toBe(false);
   });
 
@@ -111,6 +155,29 @@ describe('shouldShowWatchPanelLibraryChrome', () => {
   it('is true on Shorts', () => {
     vi.stubGlobal('location', { href: 'https://www.youtube.com/shorts/dQw4w9WgXcQ' });
     expect(shouldShowWatchPanelLibraryChrome()).toBe(true);
+  });
+
+  it('is false on home when only ytd-rich-grid-renderer is present (no ytd-browse)', () => {
+    vi.stubGlobal('location', {
+      href: 'https://www.youtube.com/',
+      pathname: '/',
+      hostname: 'www.youtube.com',
+    });
+    document.body.innerHTML = '<ytd-rich-grid-renderer></ytd-rich-grid-renderer>';
+    expect(shouldShowWatchPanelLibraryChrome(() => null)).toBe(false);
+  });
+
+  it('is false when browse grid is visible even if ytd-watch-flexy exists in DOM but not laid out', () => {
+    vi.stubGlobal('location', {
+      href: 'https://www.youtube.com/',
+      pathname: '/',
+      hostname: 'www.youtube.com',
+    });
+    document.body.innerHTML = `
+      <ytd-rich-grid-renderer></ytd-rich-grid-renderer>
+      <ytd-watch-flexy hidden video-id="dQw4w9WgXcQ"></ytd-watch-flexy>
+    `;
+    expect(shouldShowWatchPanelLibraryChrome(() => 'dQw4w9WgXcQ')).toBe(false);
   });
 });
 

@@ -709,6 +709,12 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
               <strong>${escapeHtml(vm.t('settings.howCounted'))}:</strong> ${escapeHtml(vm.t('settings.howCountedBody'))}
             </p>
 
+            <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.showWelcomeAgain'))}</h2>
+            <div class="settings-block">
+              <button type="button" class="btn-save-goals" id="show-welcome-again">${escapeHtml(vm.t('settings.showWelcomeAgain'))}</button>
+              <p class="help">${escapeHtml(vm.t('settings.showWelcomeAgainHelp'))}</p>
+            </div>
+
             <h2 class="row-title row-title--spaced dash-section-head">${escapeHtml(vm.t('settings.notificationsTitle'))}</h2>
             <p class="help dash-section-sub">${escapeHtml(vm.t('settings.notificationsIntro'))}</p>
             <div class="settings-block">

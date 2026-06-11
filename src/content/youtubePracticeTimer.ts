@@ -10,6 +10,7 @@ export type PracticeCountEligibleVideo = Pick<HTMLVideoElement, 'paused' | 'ende
 export interface ShouldCountPracticeTimeParams {
   practiceEnabled: boolean;
   currentVideoId: string | null;
+  inLibrary: boolean;
   video: PracticeCountEligibleVideo | null;
   visibilityState: DocumentVisibilityState;
 }
@@ -18,6 +19,7 @@ export interface ShouldCountPracticeTimeParams {
 export type PracticeCountBlockReason =
   | 'practiceOff'
   | 'noVideoId'
+  | 'notInLibrary'
   | 'noVideoElement'
   | 'ended'
   | 'hidden';
@@ -25,6 +27,7 @@ export type PracticeCountBlockReason =
 const PRACTICE_COUNT_BLOCK_LABELS: Record<PracticeCountBlockReason, string> = {
   practiceOff: 'practice off',
   noVideoId: 'no video id',
+  notInLibrary: 'not saved to library',
   noVideoElement: 'no player video',
   ended: 'ended',
   hidden: 'tab hidden',
@@ -35,6 +38,7 @@ export function explainWhyNotCountingPractice(
 ): PracticeCountBlockReason | null {
   if (!p.practiceEnabled) return 'practiceOff';
   if (!p.currentVideoId) return 'noVideoId';
+  if (!p.inLibrary) return 'notInLibrary';
   if (!p.video) return 'noVideoElement';
   if (p.video.ended) return 'ended';
   if (p.visibilityState !== 'visible') return 'hidden';

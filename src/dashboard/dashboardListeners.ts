@@ -8,13 +8,14 @@ import {
   type UiLocale,
 } from '../lib/storage';
 import { isResolvedLocale } from '../i18n';
+import { openWelcomePage } from '../lib/welcomePage';
 import { formatDuration } from '../lib/practiceStats';
 import {
   parseGoalMinutes,
   writeProgressXpGuideOpen,
   yearHeatmapStatusLabel,
 } from './dashboardFormatters';
-import { attachYearHeatmapInteractive } from '../lib/yearHeatmapInteractive';
+import { attachYearHeatmapInteractive, type YearHeatmapZoom } from '../lib/yearHeatmapInteractive';
 import { DASH_VIEWS } from './dashboardDomUpdate';
 import type { DashView, DashboardViewModel } from './dashboardViewModel';
 
@@ -33,6 +34,8 @@ export interface AttachDashboardListenersInput {
   setSearchQuery: (q: string) => void;
   setLibraryLevelFilter: (f: '' | 'unset' | 'legacy' | LevelTag) => void;
   setYearHeatmapYear: (y: number) => void;
+  getYearHeatmapZoom: () => YearHeatmapZoom;
+  setYearHeatmapZoom: (z: YearHeatmapZoom) => void;
   requestPathRebuild: () => void;
   regenerateTodayPath: () => void;
   pickRoadmapBonus: (tier: string, videoId: string) => void | Promise<void>;
@@ -116,6 +119,8 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     setSearchQuery,
     setLibraryLevelFilter,
     setYearHeatmapYear,
+    getYearHeatmapZoom,
+    setYearHeatmapZoom,
     requestPathRebuild,
     regenerateTodayPath,
     pickRoadmapBonus,
@@ -398,6 +403,10 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     void refreshAfterMutation(DASH_VIEWS);
   });
 
+  listen(root.querySelector('#show-welcome-again'), 'click', () => {
+    openWelcomePage();
+  });
+
   listen(root.querySelector('#clear-extension-data'), 'click', async () => {
     const ok = confirm(vm.t('dash.confirmClearBody', { app: APP_NAME }));
     if (!ok) return;
@@ -436,10 +445,12 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
   });
 
   listen(root.querySelector('.year-hm-prev'), 'click', () => {
+    setYearHeatmapZoom({ mode: 'year' });
     setYearHeatmapYear(vm.yearHeatmapYear - 1);
     void refreshAfterMutation(['stats']);
   });
   listen(root.querySelector('.year-hm-next'), 'click', () => {
+    setYearHeatmapZoom({ mode: 'year' });
     setYearHeatmapYear(vm.yearHeatmapYear + 1);
     void refreshAfterMutation(['stats']);
   });
@@ -466,6 +477,8 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       formatMonthTotal: (sec) =>
         vm.t('yearHeatmap.monthTotal', { duration: formatDuration(sec) }),
       translate: (key, params) => vm.t(key, params),
+      initialZoom: getYearHeatmapZoom(),
+      onZoomChange: (zoom) => setYearHeatmapZoom(zoom),
     });
   }
 }

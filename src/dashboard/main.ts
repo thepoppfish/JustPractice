@@ -6,6 +6,7 @@ import type {
 } from '../lib/messages';
 import { STORAGE_KEY, type LevelTag, type PersistedData } from '../lib/storage';
 import { startStorageSyncPoll } from '../lib/storageSyncPoll';
+import { signatureOf } from '../lib/dataSignature';
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import { escapeHtml } from '../lib/htmlEscape';
 import { createTranslator, resolveLocale } from '../i18n';
@@ -28,6 +29,7 @@ import {
   switchActiveView,
 } from './dashboardDomUpdate';
 import { refreshPathTrailLayout } from './dashboardPathLayout';
+import type { YearHeatmapZoom } from '../lib/yearHeatmapInteractive';
 import {
   buildRoadmapBonusPick,
   type RoadmapBonusTier,
@@ -47,9 +49,12 @@ let searchQuery = '';
 let libraryLevelFilter: '' | 'unset' | 'legacy' | LevelTag = '';
 let activeView: DashView = readPersistedDashView();
 let yearHeatmapYear = new Date().getFullYear();
+let yearHeatmapZoom: YearHeatmapZoom = { mode: 'year' };
 let pathForceRebuild = false;
 let pathRegenerateFromVideoIds: string[] = [];
 let cachedData: PersistedData | null = null;
+/** Signature of the data last painted; lets the 15s poll skip no-op renders. */
+let lastRenderedSignature: string | null = null;
 let renderGeneration = 0;
 let pendingFullRenderAfterSearch = false;
 let storageRenderSuppressUntil = 0;
@@ -273,6 +278,10 @@ function bindDashboardListeners(vm: ReturnType<typeof buildVm>): void {
     setYearHeatmapYear: (y) => {
       yearHeatmapYear = y;
     },
+    getYearHeatmapZoom: () => yearHeatmapZoom,
+    setYearHeatmapZoom: (z) => {
+      yearHeatmapZoom = z;
+    },
     requestPathRebuild: () => {
       pathForceRebuild = true;
     },
@@ -333,6 +342,7 @@ async function refreshAfterMutation(panels: readonly DashView[] = defaultMutatio
   }
 
   cachedData = data;
+  lastRenderedSignature = signatureOf(data);
   syncSearchQueryFromDom();
   const vm = buildVm(data);
   libraryLevelFilter = vm.libraryLevelFilter;
@@ -388,6 +398,7 @@ async function renderAsync(): Promise<void> {
   if (gen !== renderGeneration) return;
 
   cachedData = data;
+  lastRenderedSignature = signatureOf(data);
   syncSearchQueryFromDom();
   const vm = buildVm(data);
   libraryLevelFilter = vm.libraryLevelFilter;
@@ -446,6 +457,7 @@ async function refreshWhileSearchFocused(): Promise<void> {
   if (gen !== renderGeneration) return;
 
   cachedData = data;
+  lastRenderedSignature = signatureOf(data);
   syncSearchQueryFromDom();
   const vm = buildVm(data);
   libraryLevelFilter = vm.libraryLevelFilter;
@@ -470,7 +482,22 @@ chrome.storage.onChanged.addListener((changes, area) => {
   scheduleRenderFromStorage();
 });
 
-const stopStorageSyncPoll = startStorageSyncPoll(() => scheduleRenderFromStorage());
+/** Poll safety net: only re-render when stored data actually changed, so the
+ *  active view / stats month drill-down is not reset every 15s. */
+async function pollFromStorage(): Promise<void> {
+  let data: PersistedData;
+  try {
+    data = await loadData();
+  } catch {
+    return;
+  }
+  if (signatureOf(data) === lastRenderedSignature) return;
+  scheduleRenderFromStorage();
+}
+
+const stopStorageSyncPoll = startStorageSyncPoll(() => {
+  void pollFromStorage();
+});
 window.addEventListener('pagehide', stopStorageSyncPoll);
 
 render();

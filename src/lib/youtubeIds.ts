@@ -34,20 +34,101 @@ export function isYoutubeWatchLikePage(href?: string): boolean {
   }
 }
 
+/** Feed / home / subs paths where library chrome should stay hidden without full watch. */
+export function isYoutubeBrowseFeedPath(pathname: string): boolean {
+  return (
+    pathname === '/' ||
+    pathname === '/feed' ||
+    pathname.startsWith('/feed/') ||
+    pathname === '/results' ||
+    pathname.startsWith('/results')
+  );
+}
+
+function isYoutubeLayoutElementVisible(el: Element | null): boolean {
+  if (!el || typeof document === 'undefined') return false;
+  if (el.hasAttribute('hidden')) return false;
+  if (el.closest('[hidden]') != null) return false;
+  try {
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+  } catch {
+    /* ignore */
+  }
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
+/** YouTube home / subs / search still mount `ytd-browse` while the URL may already be `/watch` (mini player). */
+export function hasYoutubeBrowseShellVisible(): boolean {
+  if (typeof document === 'undefined') return false;
+
+  const browse = document.querySelector('ytd-browse');
+  if (isYoutubeLayoutElementVisible(browse)) return true;
+
+  const path = youtubePagePathname();
+  if (!isYoutubeBrowseFeedPath(path)) return false;
+
+  const feedGrid = document.querySelector(
+    'ytd-rich-grid-renderer, ytd-two-column-browse-results-renderer',
+  );
+  const flexy = document.querySelector('ytd-watch-flexy');
+  if (isYoutubeLayoutElementVisible(feedGrid) && !isYoutubeLayoutElementVisible(flexy)) {
+    return true;
+  }
+
+  return false;
+}
+
+function isYoutubeFullWatchFlexyVisible(): boolean {
+  if (typeof document === 'undefined') return false;
+  return isYoutubeLayoutElementVisible(document.querySelector('ytd-watch-flexy'));
+}
+
+function youtubePagePathname(): string {
+  if (typeof location === 'undefined') return '/';
+  try {
+    return new URL(
+      location.href || 'https://www.youtube.com/',
+      'https://www.youtube.com',
+    ).pathname;
+  } catch {
+    return location.pathname || '/';
+  }
+}
+
+/** Browse / feed pages with no active watch URL video id (home, subs, search, etc.). */
+export function needsHomeFeedPanelAttention(getVideoIdFromUrl: () => string | null): boolean {
+  if (typeof location === 'undefined') return false;
+  const host =
+    typeof location.hostname === 'string' && location.hostname.length > 0
+      ? location.hostname
+      : 'www.youtube.com';
+  if (!/(^|\.)youtube\.com$/i.test(host) && !/(^|\.)m\.youtube\.com$/i.test(host)) {
+    return false;
+  }
+  const path = youtubePagePathname();
+  if (path.startsWith('/watch') || path.startsWith('/shorts/')) return false;
+  return getVideoIdFromUrl() === null;
+}
+
 /**
  * Library actions (save / level / complete) belong on a full watch or Shorts player —
  * not on home browse, subscriptions, or the mini-player while the feed is visible.
  */
-export function shouldShowWatchPanelLibraryChrome(): boolean {
+export function shouldShowWatchPanelLibraryChrome(
+  getVideoIdFromUrl: () => string | null = () => null,
+): boolean {
   if (typeof document === 'undefined') return false;
   try {
-    const path = new URL(
-      typeof location !== 'undefined' && location.href ? location.href : 'https://www.youtube.com/',
-      'https://www.youtube.com',
-    ).pathname;
-    if (path === '/shorts' || path.startsWith('/shorts/')) return true;
+    const path = youtubePagePathname();
+    if (path === '/shorts') return false;
+    if (path.startsWith('/shorts/')) return true;
+    if (hasYoutubeBrowseShellVisible()) return false;
+    if (needsHomeFeedPanelAttention(getVideoIdFromUrl)) return false;
     if (!isYoutubeClassicWatchPath(path)) return false;
-    return document.querySelector('ytd-watch-flexy') != null;
+    if (!isYoutubeFullWatchFlexyVisible()) return false;
+    return true;
   } catch {
     return false;
   }

@@ -17,6 +17,7 @@ export {
   LOCALE_DROPDOWN,
   LOCALE_LABEL_KEYS,
   nativeNameForResolvedLocale,
+  SUPPORTED_RESOLVED_LOCALES,
 } from './localeMeta';
 
 const baseEn = en as Record<string, string>;

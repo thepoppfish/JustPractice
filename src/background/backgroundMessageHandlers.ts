@@ -234,7 +234,7 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
     case MSG.SET_SETTINGS: {
       const p = await readPersisted();
       const inc = message.payload;
-      const { goals, watchPanelLeft, watchPanelTop, ...rest } = inc;
+      const { goals, watchPanelLeft, watchPanelTop, onboardingCompletedAt, ...rest } = inc;
       p.settings = ensureSettingsShape({ ...p.settings, ...rest });
       if (watchPanelLeft === null) delete p.settings.watchPanelLeft;
       else if (typeof watchPanelLeft === 'number' && !Number.isNaN(watchPanelLeft)) {
@@ -251,6 +251,15 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
         };
       }
       p.settings = ensureSettingsShape(p.settings);
+      if (onboardingCompletedAt === null) {
+        p.onboardingCompletedAt = null;
+      } else if (
+        typeof onboardingCompletedAt === 'number' &&
+        Number.isFinite(onboardingCompletedAt) &&
+        onboardingCompletedAt > 0
+      ) {
+        p.onboardingCompletedAt = onboardingCompletedAt;
+      }
       await writePersisted(p);
       rebuildContextMenusFromStorage();
       return { ok: true };

@@ -18,9 +18,8 @@ const MUST_TRANSLATE_PREFIXES = [
   'motivation.',
   'dash.hello',
   'dash.welcome',
+  'welcome.',
 ];
-
-/** Spot-check keys that must not be left as English copy-paste in locale files. */
 const MUST_TRANSLATE_KEYS = [
   'path.subtitle',
   'path.noGoal',
