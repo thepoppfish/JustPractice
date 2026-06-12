@@ -288,6 +288,8 @@
   "welcome.tutorialBullet2": "On a watch page, open the JustPractice panel and tap Save to library",
   "welcome.tutorialBullet3": "Right-click a video link and choose JustPractice → level",
   "welcome.tutorialVideoComingSoon": "Tutorial video coming soon",
+  "welcome.tutorialWatchPrompt": "Please watch the short tutorial below — it shows exactly how to save videos.",
+  "welcome.tutorialWatchOnYoutube": "Watch on YouTube",
   "welcome.doneTitle": "You're ready!",
   "welcome.doneSubtitle": "Pin the extension from Chrome's puzzle icon for quick access.",
   "welcome.openYoutube": "Open YouTube",

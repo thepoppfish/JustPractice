@@ -7,7 +7,8 @@ import type { LevelFramework, UiLocale } from '../lib/storage';
 import {
   WELCOME_GOAL_PRESET_MINUTES,
   WELCOME_TUTORIAL_VIDEO_ID,
-  welcomeTutorialEmbedUrl,
+  welcomeTutorialThumbnailUrl,
+  welcomeTutorialWatchUrl,
 } from '../lib/welcomeConfig';
 import {
   createTranslator,
@@ -95,14 +96,9 @@ function helloDotsHtml(): string {
 }
 
 function languageStepHtml(): string {
-  const browserDefault = resolveLocale('auto');
-  const activeLocale =
-    helloAnimationLocked && state.uiLocale ?
-      state.uiLocale
-    : (SUPPORTED_RESOLVED_LOCALES[carouselIndex] ?? browserDefault);
   const chips = localeChoices()
     .map((row) => {
-      const isSel = row.value === activeLocale;
+      const isSel = state.uiLocale !== null && row.value === state.uiLocale;
       const cls = ['welcome-lang-chip', isSel ? 'is-selected' : ''].filter(Boolean).join(' ');
       return `<button type="button" class="${cls}" data-locale="${escapeAttr(row.value)}">${escapeHtml(`${row.flag} ${row.nativeName}`)}</button>`;
     })
@@ -191,22 +187,28 @@ function goalStepHtml(): string {
     <p class="welcome-goal-reset-hint">${escapeHtml(t('welcome.goalResetLater'))}</p>`;
 }
 
+function openWelcomeTutorialVideo(): void {
+  const videoId = WELCOME_TUTORIAL_VIDEO_ID.trim();
+  if (!videoId) return;
+  void chrome.tabs.create({ url: welcomeTutorialWatchUrl(videoId) });
+}
+
 function tutorialStepHtml(): string {
   const videoId = WELCOME_TUTORIAL_VIDEO_ID.trim();
   const videoBlock =
     videoId ?
-      `<div class="welcome-video-wrap"><iframe src="${escapeAttr(welcomeTutorialEmbedUrl(videoId))}" title="${escapeAttr(t('welcome.tutorialTitle'))}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`
+      `<p class="welcome-tutorial-watch-prompt">${escapeHtml(t('welcome.tutorialWatchPrompt'))}</p>
+    <button type="button" class="welcome-video-wrap welcome-video-poster" id="welcome-watch-tutorial" aria-label="${escapeAttr(t('welcome.tutorialWatchOnYoutube'))}">
+      <img class="welcome-video-thumb" src="${escapeAttr(welcomeTutorialThumbnailUrl(videoId))}" alt="" loading="lazy" />
+      <span class="welcome-video-play" aria-hidden="true"></span>
+      <span class="welcome-video-cta">${escapeHtml(t('welcome.tutorialWatchOnYoutube'))}</span>
+    </button>`
     : `<div class="welcome-video-wrap"><div class="welcome-video-placeholder">${escapeHtml(t('welcome.tutorialVideoComingSoon'))}</div></div>`;
 
   return `
     <h2 class="welcome-step-title">${escapeHtml(t('welcome.tutorialTitle'))}</h2>
     <p class="welcome-step-lead">${escapeHtml(t('welcome.tutorialHint'))}</p>
-    ${videoBlock}
-    <ul class="welcome-tutorial-list">
-      <li>${escapeHtml(t('welcome.tutorialBullet1'))}</li>
-      <li>${escapeHtml(t('welcome.tutorialBullet2'))}</li>
-      <li>${escapeHtml(t('welcome.tutorialBullet3'))}</li>
-    </ul>`;
+    ${videoBlock}`;
 }
 
 function doneStepHtml(): string {
@@ -292,12 +294,9 @@ function stopHelloAnimation(): void {
   helloController = null;
 }
 
-function syncHelloCarouselChrome(locale: ResolvedLocale): void {
+function syncHelloCarouselChrome(): void {
   app.querySelectorAll<HTMLElement>('.welcome-hello-dot').forEach((dot, i) => {
     dot.classList.toggle('is-active', i === carouselIndex);
-  });
-  app.querySelectorAll<HTMLButtonElement>('.welcome-lang-chip').forEach((chip) => {
-    chip.classList.toggle('is-selected', chip.dataset.locale === locale);
   });
 }
 
@@ -317,9 +316,9 @@ function mountHelloAnimation(): void {
     labelEl,
     reducedMotion: prefersReducedMotion(),
     initialIndex: carouselIndex,
-    onIndexChange: (i, slide) => {
+    onIndexChange: (i) => {
       carouselIndex = i;
-      syncHelloCarouselChrome(slide.locale);
+      syncHelloCarouselChrome();
     },
   });
 }
@@ -363,6 +362,7 @@ async function goToStep(next: number): Promise<void> {
     await persistOnboarding();
   }
   state.step = Math.max(0, Math.min(STEP_COUNT - 1, next));
+  if (state.step === 0) helloAnimationLocked = false;
   render();
   if (state.step === 4 && !state.saved) {
     await persistOnboarding();
@@ -416,15 +416,17 @@ function wireStepEvents(): void {
   });
 
   app.querySelector('#welcome-continue')?.addEventListener('click', () => {
-    if (state.step === 0) {
-      if (!state.uiLocale) {
-        const fromCarousel = SUPPORTED_RESOLVED_LOCALES[carouselIndex];
-        state.uiLocale = fromCarousel ?? resolveLocale('auto');
-        t = createTranslator(state.uiLocale);
-      }
+    if (state.step === 0 && !state.uiLocale) {
+      const fromCarousel = SUPPORTED_RESOLVED_LOCALES[carouselIndex];
+      state.uiLocale = fromCarousel ?? resolveLocale('auto');
+      t = createTranslator(state.uiLocale);
     }
     if (state.step === 2) readGoalFromDom();
     void goToStep(state.step + 1);
+  });
+
+  app.querySelector('#welcome-watch-tutorial')?.addEventListener('click', () => {
+    openWelcomeTutorialVideo();
   });
 
   app.querySelector('#welcome-open-youtube')?.addEventListener('click', () => {

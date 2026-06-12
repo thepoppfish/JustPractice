@@ -1,6 +1,7 @@
 {
   "name": "justpractice",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -8,6 +9,9 @@
     "icons": "node scripts/generate-icons.mjs",
     "render:logo-intro": "node scripts/render-logo-intro-video.mjs",
     "verify:dist": "node scripts/verify-extension-dist.mjs",
+    "audit:package-files": "node scripts/generate-package-file-audit.mjs",
+    "package": "node scripts/package-extension.mjs",
+    "package:store": "npm run build && node scripts/package-extension.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
