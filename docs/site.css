@@ -198,33 +198,69 @@ section {
 
 /* Screenshots */
 
-.shot-grid {
+.screenshots-section {
+  --shot-gap: 14px;
+}
+
+.screenshots-section .section-title {
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.shot-showcase {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 26%);
+  grid-template-areas:
+    'stats panel'
+    'library panel';
+  gap: var(--shot-gap);
+  align-items: start;
+  max-width: 1080px;
+  margin: 0 auto;
 }
 
 .shot-card {
   margin: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
 }
 
-.shot-card img {
-  display: block;
-  width: 100%;
-  height: auto;
-  vertical-align: middle;
+.shot-card--stats {
+  grid-area: stats;
+}
+
+.shot-card--panel {
+  grid-area: panel;
+}
+
+.shot-card--library {
+  grid-area: library;
 }
 
 .shot-card figcaption {
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--muted);
-  border-top: 1px solid var(--border);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.shot-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.shot-card--panel img {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
 }
 
 /* Tutorial video */
@@ -347,6 +383,21 @@ details.source-build pre {
 
 .footer-links a {
   font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .shot-showcase {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'panel'
+      'stats'
+      'library';
+    max-width: var(--max-width);
+  }
+
+  .shot-card--panel img {
+    max-width: 320px;
+  }
 }
 
 @media (max-width: 640px) {
