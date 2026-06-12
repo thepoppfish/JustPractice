@@ -23,7 +23,6 @@ import {
   streakAriaLabel,
   goalRingCardHtml,
   progressXpGuideHtml,
-  yearHeatmapKeysHtml,
   yearHeatmapStatusLabel,
 } from './dashboardFormatters';
 import { buildYearHeatmapGridModel, yearHeatmapSectionHtml } from '../lib/yearHeatmapHtml';
@@ -314,7 +313,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
               navPrevLabel: vm.t('dash.yearHeatmapPrevYear'),
               navNextLabel: vm.t('dash.yearHeatmapNextYear'),
               backToYearLabel: vm.t('yearHeatmap.backToYear'),
-              keysHtml: yearHeatmapKeysHtml(vm.t, vm.dailyGoalSec != null),
+              keysHtml: '',
               flawlessYearBadgeLabel: vm.t('dash.yearFlawlessBadge'),
               ariaLabel: vm.t('dash.yearHeatmapAria'),
             })}`;
@@ -342,7 +341,6 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
                   : ''
                 }
               </div>
-              <p class="chart-credit-hint">${escapeHtml(vm.t('dash.practiceDayCreditHint'))}</p>
               <div class="chart" role="img" aria-label="${escapeAttr(vm.t('dash.chartAria'))}">
               ${chartCols}
               </div>

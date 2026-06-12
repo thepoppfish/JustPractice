@@ -239,6 +239,6 @@ export function yearHeatmapSectionHtml(opts: YearHeatmapHtmlOptions): string {
         </div>
         <div class="year-hm-month-layer" data-year-hm-month-layer hidden></div>
       </div>
-      <div class="year-hm-keys" data-year-hm-keys aria-hidden="true">${opts.keysHtml}</div>
+      ${opts.keysHtml ? `<div class="year-hm-keys" data-year-hm-keys aria-hidden="true">${opts.keysHtml}</div>` : ''}
     </div>`;
 }
