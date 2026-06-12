@@ -1,5 +1,5 @@
-/** Paste your YouTube video id here when the tutorial is ready (e.g. `dQw4w9WgXcQ`). */
-export const WELCOME_TUTORIAL_VIDEO_ID = '';
+/** Welcome onboarding tutorial — https://www.youtube.com/watch?v=bT_g9030hx0 */
+export const WELCOME_TUTORIAL_VIDEO_ID = 'bT_g9030hx0';
 
 /** Quick-pick daily goal chips (minutes). */
 export const WELCOME_GOAL_PRESET_MINUTES = [30, 60, 120] as const;
