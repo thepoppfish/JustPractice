@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   aggregatePracticeStats,
   calendarDayBottomLabel,
+  chartBarHeightPx,
   chartDayTier,
   formatDuration,
   formatDurationMinutesOnly,
@@ -195,6 +196,26 @@ describe('practiceStreakDays', () => {
         missMay12,
       ),
     ).toBe(1);
+  });
+});
+
+describe('chartBarHeightPx', () => {
+  const inner = 180;
+
+  it('returns minimum stub for 0 seconds (missed day)', () => {
+    expect(chartBarHeightPx(0, inner)).toBe(5);
+  });
+
+  it('returns small proportional height for under-credit seconds', () => {
+    expect(chartBarHeightPx(30, inner)).toBe(6);
+  });
+
+  it('maps 60 minutes to full chart inner height', () => {
+    expect(chartBarHeightPx(3600, inner)).toBe(180);
+  });
+
+  it('caps height at full inner px when practice exceeds scale', () => {
+    expect(chartBarHeightPx(7200, inner)).toBe(180);
   });
 });
 

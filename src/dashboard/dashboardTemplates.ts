@@ -1,6 +1,7 @@
 ﻿import { APP_NAME, appIconUrl } from '../lib/branding';
 import {
   calendarDayBottomLabel,
+  chartBarHeightPx,
   formatDuration,
   formatHoursMinutesClock,
   practiceCalendarDayVisual,
@@ -239,7 +240,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
   const chartCols = vm.days7
     .map((d) => {
       const isToday = d.dateKey === vm.todayKey;
-      const pct = (d.seconds / vm.maxDaySec) * 100;
+      const barHeightPx = chartBarHeightPx(d.seconds);
       const vis = practiceCalendarDayVisual(
         d.dateKey,
         d.seconds,
@@ -256,8 +257,8 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
         vis === 'neutral' || vis === 'future' ? `chart-val--${barTier}` : `chart-val--${vis}`;
       return `
                 <div class="chart-col${isToday ? ' chart-col--today' : ''}"${isToday ? ' aria-current="date"' : ''}>
-                  <div class="chart-bar-wrap">
-                    <div class="chart-bar chart-bar--${barTier}" style="height:${pct}%"></div>
+                  <div class="chart-bar-track">
+                    <div class="chart-bar chart-bar--${barTier}" style="height:${barHeightPx}px"></div>
                   </div>
                   <span class="chart-val ${valClass}">${escapeHtml(calendarDayBottomLabel(vis, d.seconds, d.dateKey, vm.todayKey))}</span>
                   <span class="chart-label${isToday ? ' chart-label--today' : ''}" title="${escapeAttr(d.dateKey)}">${escapeHtml(d.weekdayShort)}</span>

@@ -74,7 +74,6 @@ export interface DashboardViewModel {
   goals: PracticeGoals;
   rg: PracticeGoals;
   days7: DayBucket[];
-  maxDaySec: number;
   dailyGoalSec: number | null;
   todayKey: string;
   streak: number;
@@ -158,7 +157,6 @@ export function buildDashboardViewModel(input: {
   const goals = data.settings.goals ?? defaultGoals();
   const rg = resolvedPracticeGoals(goals);
   const days7 = lastNDaysBuckets(data, 7, resolvedLocale);
-  const maxDaySec = Math.max(1, ...days7.map((d) => d.seconds));
   const dailyGoalSec =
     goals.dailyTargetSec != null && goals.dailyTargetSec > 0 ? goals.dailyTargetSec : null;
   const todayKey = dateKeyFromTimestamp(Date.now());
@@ -251,7 +249,6 @@ export function buildDashboardViewModel(input: {
     goals,
     rg,
     days7,
-    maxDaySec,
     dailyGoalSec,
     todayKey,
     streak,

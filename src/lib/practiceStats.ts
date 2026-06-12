@@ -165,6 +165,26 @@ export function lastNDaysBuckets(data: PersistedData, n: number, locale?: string
   return out;
 }
 
+/** Fixed Y-axis for the dashboard 7-day chart: 60 minutes = full bar height. */
+export const CHART_BAR_SCALE_SEC = 60 * 60;
+
+/** Inner bar area height in px — must match `.chart-bar-track` height in dashboard.css. */
+export const CHART_INNER_PX = 220;
+
+/** Pixel height for a practice-time bar on a fixed 0–60 min scale. */
+export function chartBarHeightPx(
+  seconds: number,
+  chartInnerPx: number = CHART_INNER_PX,
+): number {
+  const clamped = Math.max(0, seconds);
+  const ratio = Math.min(1, clamped / CHART_BAR_SCALE_SEC);
+  const minPx =
+    clamped > 0 && clamped < MIN_DAY_PRACTICE_CREDIT_SECONDS ? 6
+    : clamped > 0 ? 14
+    : 5;
+  return Math.max(minPx, Math.round(ratio * chartInnerPx));
+}
+
 const ORDER_JLPT = ['Unrated', ...JLPT_LEVELS, 'Legacy'] as const;
 const ORDER_CEFR = ['Unrated', ...CEFR_LEVELS, 'Legacy'] as const;
 
