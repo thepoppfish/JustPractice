@@ -17,10 +17,10 @@ Full file-by-file list: [PACKAGE-FILE-AUDIT.csv](./PACKAGE-FILE-AUDIT.csv)
 
 | Metric | Count |
 |--------|------:|
-| Total paths audited | 224 |
+| Total paths audited | 197 |
 | Dist runtime (`required=1`) | 24 |
-| Dist bloat (`required=0`, exclude from zip) | 3 |
-| Repo dev-only (`required=0`) | 197 |
+| Dist bloat (`required=0`, exclude from zip) | 2 |
+| Repo dev-only (`required=0`) | 171 |
 
 ## Dist runtime — ship these (`required=1`)
 
@@ -56,21 +56,19 @@ Full file-by-file list: [PACKAGE-FILE-AUDIT.csv](./PACKAGE-FILE-AUDIT.csv)
 | Path | Notes |
 |------|-------|
 | `dist/assets/youtube-content.bundle.js.map` | in dist/ but not referenced at runtime — exclude from store zip |
-| `dist/icons/icon-96.png` | in dist/ but not referenced at runtime — exclude from store zip |
 | `dist/icons/logo-source.png` | in dist/ but not referenced at runtime — exclude from store zip |
 
 ## Repo dev-only by category (`required=0`)
 
 | Category | Files | Description |
 |----------|------:|-------------|
-| asset-dev | 16 | see CSV |
 | config | 9 | see CSV |
-| docs | 13 | see CSV |
-| other-dev | 1 | see CSV |
-| public-input | 8 | see CSV |
-| script | 13 | see CSV |
-| source | 96 | see CSV |
-| test | 41 | see CSV |
+| docs | 5 | see CSV |
+| other-dev | 3 | see CSV |
+| public-input | 7 | see CSV |
+| script | 10 | see CSV |
+| source | 95 | see CSV |
+| test | 42 | see CSV |
 
 ## Regenerate
 

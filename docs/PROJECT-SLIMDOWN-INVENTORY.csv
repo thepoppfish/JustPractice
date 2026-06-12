@@ -1,0 +1,165 @@
+path,size_bytes,action,reason,phase
+.gitignore,168,KEEP,project root / tooling config,—
+LICENSE,35936,KEEP,project root / tooling config,—
+README.md,2019,KEEP,project root / tooling config,—
+docs/PACKAGE-FILE-AUDIT.csv,14470,KEEP,packaging reference; regenerate with npm run audit:package-files,—
+docs/PACKAGE-FILE-AUDIT.md,3286,KEEP,packaging reference; regenerate with npm run audit:package-files,—
+eslint.config.js,517,KEEP,project root / tooling config,—
+manifest.config.ts,1209,KEEP,project root / tooling config,—
+package-lock.json,196480,KEEP,project root / tooling config,—
+package.json,1208,KEEP,project root / tooling config,—
+public/icons/icon-128.png,8735,KEEP,icon assets for build,—
+public/icons/icon-16.png,648,KEEP,icon assets for build,—
+public/icons/icon-32.png,1356,KEEP,icon assets for build,—
+public/icons/icon-48.png,2292,KEEP,icon assets for build,—
+public/icons/logo-source.png,43367,KEEP,icon assets for build,—
+scripts/build-youtube-bundle.mjs,993,KEEP,build pipeline,—
+scripts/generate-icons.mjs,1159,KEEP,build pipeline,—
+scripts/generate-package-file-audit.mjs,6964,KEEP,store zip packaging and audit,—
+scripts/package-dist-closure.mjs,3989,KEEP,store zip packaging and audit,—
+scripts/package-extension.mjs,4831,KEEP,store zip packaging and audit,—
+scripts/package-safety.mjs,1810,KEEP,store zip packaging and audit,—
+scripts/patch-crx-build.mjs,966,KEEP,build pipeline,—
+scripts/verify-extension-dist.mjs,2704,KEEP,build pipeline,—
+scripts/vite-plugin-youtube-bundle.ts,1083,KEEP,build pipeline,—
+src/background/backgroundContextMenus.ts,4280,KEEP,application source; required to build extension,—
+src/background/backgroundDurationEnrich.ts,2449,KEEP,application source; required to build extension,—
+src/background/backgroundMessageHandlers.ts,14356,KEEP,application source; required to build extension,—
+src/background/backgroundOEmbed.ts,1404,KEEP,application source; required to build extension,—
+src/background/backgroundOnboarding.test.ts,506,KEEP,unit test; recommended for regression safety,—
+src/background/backgroundOnboarding.ts,429,KEEP,application source; required to build extension,—
+src/background/index.ts,1123,KEEP,application source; required to build extension,—
+src/content/feedCards.ts,4427,KEEP,application source; required to build extension,—
+src/content/learningFocusMode.test.ts,2519,KEEP,unit test; recommended for regression safety,—
+src/content/learningFocusMode.ts,4250,KEEP,application source; required to build extension,—
+src/content/practicePlaybackMeter.test.ts,6847,KEEP,unit test; recommended for regression safety,—
+src/content/practicePlaybackMeter.ts,8488,KEEP,application source; required to build extension,—
+src/content/watchPanelBoot.ts,560,KEEP,application source; required to build extension,—
+src/content/watchPanelGoalRingCelebration.test.ts,520,KEEP,unit test; recommended for regression safety,—
+src/content/watchPanelGoalRingCelebration.ts,8665,KEEP,application source; required to build extension,—
+src/content/watchPanelHost.test.ts,1499,KEEP,unit test; recommended for regression safety,—
+src/content/watchPanelSpawn.ts,1291,KEEP,application source; required to build extension,—
+src/content/youtube.ts,2149,KEEP,application source; required to build extension,—
+src/content/youtubeDebug.ts,2739,KEEP,application source; required to build extension,—
+src/content/youtubeLibraryPanel.ts,10427,KEEP,application source; required to build extension,—
+src/content/youtubeMessaging.ts,1161,KEEP,application source; required to build extension,—
+src/content/youtubePanelCalendarUi.test.ts,1504,KEEP,unit test; recommended for regression safety,—
+src/content/youtubePanelCalendarUi.ts,12956,KEEP,application source; required to build extension,—
+src/content/youtubePanelCss.ts,21972,KEEP,application source; required to build extension,—
+src/content/youtubePanelHtml.ts,5043,KEEP,application source; required to build extension,—
+src/content/youtubePanelMount.ts,12847,KEEP,application source; required to build extension,—
+src/content/youtubePanelUi.libraryChrome.test.ts,4348,KEEP,unit test; recommended for regression safety,—
+src/content/youtubePanelUi.ts,14031,KEEP,application source; required to build extension,—
+src/content/youtubePlayerHooks.test.ts,3036,KEEP,unit test; recommended for regression safety,—
+src/content/youtubePlayerHooks.ts,10104,KEEP,application source; required to build extension,—
+src/content/youtubePracticeTimer.test.ts,4402,KEEP,unit test; recommended for regression safety,—
+src/content/youtubePracticeTimer.ts,4697,KEEP,application source; required to build extension,—
+src/content/youtubeWatchLifecycle.test.ts,1605,KEEP,unit test; recommended for regression safety,—
+src/content/youtubeWatchLifecycle.ts,3413,KEEP,application source; required to build extension,—
+src/content/youtubeWatchPanelCompletion.ts,6857,KEEP,application source; required to build extension,—
+src/content/youtubeWatchPanelRuntime.ts,32314,KEEP,application source; required to build extension,—
+src/content/youtubeWatchPanelVideoFlow.test.ts,1630,KEEP,unit test; recommended for regression safety,—
+src/content/youtubeWatchPanelVideoFlow.ts,2905,KEEP,application source; required to build extension,—
+src/dashboard/dashViewPersistence.test.ts,1200,KEEP,unit test; recommended for regression safety,—
+src/dashboard/dashViewPersistence.ts,685,KEEP,application source; required to build extension,—
+src/dashboard/dashboard.css,68441,KEEP,application source; required to build extension,—
+src/dashboard/dashboardDomUpdate.ts,5014,KEEP,application source; required to build extension,—
+src/dashboard/dashboardFormatters.ts,10119,KEEP,application source; required to build extension,—
+src/dashboard/dashboardIcons.ts,5466,KEEP,application source; required to build extension,—
+src/dashboard/dashboardListeners.ts,16846,KEEP,application source; required to build extension,—
+src/dashboard/dashboardPathLayout.test.ts,386,KEEP,unit test; recommended for regression safety,—
+src/dashboard/dashboardPathLayout.ts,2985,KEEP,application source; required to build extension,—
+src/dashboard/dashboardPathSection.ts,13822,KEEP,application source; required to build extension,—
+src/dashboard/dashboardTemplates.ts,40671,KEEP,application source; required to build extension,—
+src/dashboard/dashboardViewModel.ts,10036,KEEP,application source; required to build extension,—
+src/dashboard/index.html,552,KEEP,application source; required to build extension,—
+src/dashboard/main.ts,16134,KEEP,application source; required to build extension,—
+src/dashboard/roadmapCompletionCelebration.test.ts,1333,KEEP,unit test; recommended for regression safety,—
+src/dashboard/roadmapCompletionCelebration.ts,6895,KEEP,application source; required to build extension,—
+src/i18n/index.ts,2340,KEEP,application source; required to build extension,—
+src/i18n/localeMeta.ts,2604,KEEP,application source; required to build extension,—
+src/i18n/localeParity.test.ts,1613,KEEP,unit test; recommended for regression safety,—
+src/i18n/locales/de.json,31221,KEEP,application source; required to build extension,—
+src/i18n/locales/en.json,30741,KEEP,application source; required to build extension,—
+src/i18n/locales/es.json,31451,KEEP,application source; required to build extension,—
+src/i18n/locales/fr.json,32651,KEEP,application source; required to build extension,—
+src/i18n/locales/he.json,35283,KEEP,application source; required to build extension,—
+src/i18n/locales/ja.json,34548,KEEP,application source; required to build extension,—
+src/lib/achievements.test.ts,3181,KEEP,unit test; recommended for regression safety,—
+src/lib/achievements.ts,7961,KEEP,application source; required to build extension,—
+src/lib/branding.ts,426,KEEP,application source; required to build extension,—
+src/lib/dailyMotivation.test.ts,1166,KEEP,unit test; recommended for regression safety,—
+src/lib/dailyMotivation.ts,1206,KEEP,application source; required to build extension,—
+src/lib/dataSignature.test.ts,1101,KEEP,unit test; recommended for regression safety,—
+src/lib/dataSignature.ts,688,KEEP,application source; required to build extension,—
+src/lib/extensionDist.test.ts,1549,KEEP,unit test; recommended for regression safety,—
+src/lib/extensionMessaging.ts,825,KEEP,application source; required to build extension,—
+src/lib/goalFormat.test.ts,804,KEEP,unit test; recommended for regression safety,—
+src/lib/goalFormat.ts,2823,KEEP,application source; required to build extension,—
+src/lib/htmlEscape.ts,316,KEEP,application source; required to build extension,—
+src/lib/levelTags.test.ts,1059,KEEP,unit test; recommended for regression safety,—
+src/lib/levelTags.ts,2959,KEEP,application source; required to build extension,—
+src/lib/messages.ts,6358,KEEP,application source; required to build extension,—
+src/lib/packageSafety.test.ts,1342,KEEP,unit test; recommended for regression safety,—
+src/lib/pathBuilder.test.ts,5603,KEEP,unit test; recommended for regression safety,—
+src/lib/pathBuilder.ts,5866,KEEP,application source; required to build extension,—
+src/lib/pathStepProgress.ts,1859,KEEP,application source; required to build extension,—
+src/lib/playerProgress.test.ts,7324,KEEP,unit test; recommended for regression safety,—
+src/lib/playerProgress.ts,8133,KEEP,application source; required to build extension,—
+src/lib/playerProgressEvents.test.ts,3330,KEEP,unit test; recommended for regression safety,—
+src/lib/playerProgressEvents.ts,4127,KEEP,application source; required to build extension,—
+src/lib/practiceGoals.test.ts,1333,KEEP,unit test; recommended for regression safety,—
+src/lib/practiceGoals.ts,893,KEEP,application source; required to build extension,—
+src/lib/practiceStats.test.ts,8861,KEEP,unit test; recommended for regression safety,—
+src/lib/practiceStats.ts,8838,KEEP,application source; required to build extension,—
+src/lib/roadmapBonusVideo.test.ts,4466,KEEP,unit test; recommended for regression safety,—
+src/lib/roadmapBonusVideo.ts,7449,KEEP,application source; required to build extension,—
+src/lib/roadmapCompletionSnapshot.test.ts,4860,KEEP,unit test; recommended for regression safety,—
+src/lib/roadmapCompletionSnapshot.ts,7052,KEEP,application source; required to build extension,—
+src/lib/storage.test.ts,13248,KEEP,unit test; recommended for regression safety,—
+src/lib/storage.ts,1021,KEEP,application source; required to build extension,—
+src/lib/storageMigrate.ts,5972,KEEP,application source; required to build extension,—
+src/lib/storageSyncPoll.test.ts,2051,KEEP,unit test; recommended for regression safety,—
+src/lib/storageSyncPoll.ts,903,KEEP,application source; required to build extension,—
+src/lib/storageTypes.ts,21793,KEEP,application source; required to build extension,—
+src/lib/todayPath.test.ts,12043,KEEP,unit test; recommended for regression safety,—
+src/lib/todayPath.ts,14377,KEEP,application source; required to build extension,—
+src/lib/todayPathPlan.ts,2363,KEEP,application source; required to build extension,—
+src/lib/todayPathTypes.ts,454,KEEP,application source; required to build extension,—
+src/lib/videoDailyPractice.test.ts,1691,KEEP,unit test; recommended for regression safety,—
+src/lib/videoDailyPractice.ts,2372,KEEP,application source; required to build extension,—
+src/lib/videoDuration.ts,314,KEEP,application source; required to build extension,—
+src/lib/welcomeConfig.test.ts,610,KEEP,unit test; recommended for regression safety,—
+src/lib/welcomeConfig.ts,627,KEEP,application source; required to build extension,—
+src/lib/welcomePage.ts,258,KEEP,application source; required to build extension,—
+src/lib/xpDebug.test.ts,535,KEEP,unit test; recommended for regression safety,—
+src/lib/xpDebug.ts,3144,KEEP,application source; required to build extension,—
+src/lib/yearHeatmapCalendar.test.ts,2988,KEEP,unit test; recommended for regression safety,—
+src/lib/yearHeatmapCalendar.ts,8413,KEEP,application source; required to build extension,—
+src/lib/yearHeatmapHtml.ts,9371,KEEP,application source; required to build extension,—
+src/lib/yearHeatmapInteractive.ts,7488,KEEP,application source; required to build extension,—
+src/lib/yearHeatmapMonth.test.ts,3630,KEEP,unit test; recommended for regression safety,—
+src/lib/yearHeatmapMonth.ts,5256,KEEP,application source; required to build extension,—
+src/lib/yearHeatmapMonthHtml.ts,9149,KEEP,application source; required to build extension,—
+src/lib/youtubeIds.test.ts,9459,KEEP,unit test; recommended for regression safety,—
+src/lib/youtubeIds.ts,8351,KEEP,application source; required to build extension,—
+src/lib/youtubeMeta.ts,217,KEEP,application source; required to build extension,—
+src/lib/youtubePageTitle.test.ts,1238,KEEP,unit test; recommended for regression safety,—
+src/lib/youtubePageTitle.ts,542,KEEP,application source; required to build extension,—
+src/lib/youtubeTabMessaging.test.ts,644,KEEP,unit test; recommended for regression safety,—
+src/lib/youtubeTabMessaging.ts,4198,KEEP,application source; required to build extension,—
+src/lib/youtubeWatchPageDuration.test.ts,929,KEEP,unit test; recommended for regression safety,—
+src/lib/youtubeWatchPageDuration.ts,2497,KEEP,application source; required to build extension,—
+src/popup/index.html,438,KEEP,application source; required to build extension,—
+src/popup/main.ts,15540,KEEP,application source; required to build extension,—
+src/popup/popup.css,7109,KEEP,application source; required to build extension,—
+src/vite-env.d.ts,39,KEEP,application source; required to build extension,—
+src/welcome/index.html,452,KEEP,application source; required to build extension,—
+src/welcome/main.ts,17061,KEEP,application source; required to build extension,—
+src/welcome/welcome.css,11919,KEEP,application source; required to build extension,—
+src/welcome/welcomeHelloAnimation.test.ts,754,KEEP,unit test; recommended for regression safety,—
+src/welcome/welcomeHelloAnimation.ts,3200,KEEP,application source; required to build extension,—
+tsconfig.json,411,KEEP,project root / tooling config,—
+tsconfig.node.json,223,KEEP,project root / tooling config,—
+vite.config.ts,884,KEEP,project root / tooling config,—
+vitest.config.ts,164,KEEP,project root / tooling config,—

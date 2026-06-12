@@ -1,22 +1,5 @@
 path,required,category,notes
 .gitignore,0,other-dev,git config
-AGENT-HANDOFF-practice-counting-and-ring-animation.md,0,docs,markdown notes
-assets/logo-intro/frames/frame-0000.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0001.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0002.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0003.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0004.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0005.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0006.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0007.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0008.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0009.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0010.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0011.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0012.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/frames/frame-0013.png,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/JustPractice-logo-intro-1080p.mp4,0,asset-dev,logo intro video render pipeline
-assets/logo-intro/README.md,0,asset-dev,logo intro video render pipeline
 dist/assets/animation.js,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/assets/htmlEscape.js,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/assets/index.css,1,dist-runtime,reachable from manifest/HTML/JS closure
@@ -37,25 +20,19 @@ dist/icons/icon-128.png,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/icons/icon-16.png,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/icons/icon-32.png,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/icons/icon-48.png,1,dist-runtime,reachable from manifest/HTML/JS closure
-dist/icons/icon-96.png,0,dist-bloat,in dist/ but not referenced at runtime — exclude from store zip
 dist/icons/logo-source.png,0,dist-bloat,in dist/ but not referenced at runtime — exclude from store zip
 dist/manifest.json,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/service-worker-loader.js,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/src/dashboard/index.html,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/src/popup/index.html,1,dist-runtime,reachable from manifest/HTML/JS closure
 dist/src/welcome/index.html,1,dist-runtime,reachable from manifest/HTML/JS closure
-docs/DAILY-PATH-DESIGN.md,0,docs,documentation
-docs/GOAL-REMINDERS-WHY-NOT-WORKING.md,0,docs,documentation
-docs/HOMEPAGE-PANEL-CLEAN-UI-PLAN.md,0,docs,documentation
 docs/PACKAGE-FILE-AUDIT.csv,0,docs,documentation
 docs/PACKAGE-FILE-AUDIT.md,0,docs,documentation
-docs/ROADMAP-COMPLETION-AND-REWARDS-PLAN.md,0,docs,documentation
-docs/UI-15S-RESET-BUG-PLAN.md,0,docs,documentation
-docs/WELCOME-ONBOARDING-PLAN.md,0,docs,documentation
+docs/PROJECT-SLIMDOWN-INVENTORY.csv,0,docs,documentation
+docs/PROJECT-SLIMDOWN-PLAN.md,0,docs,documentation
 eslint.config.js,0,config,build/dev config
-ExplaneMe.md,0,docs,markdown notes
+LICENSE,0,other-dev,
 manifest.config.ts,0,config,build/dev config
-MotivationIdeas.md,0,docs,markdown notes
 package-lock.json,0,config,npm metadata; not shipped
 package.json,0,config,npm metadata; not shipped
 public/assets/youtube-content.bundle.js,0,public-input,static build input; not shipped as-is
@@ -64,23 +41,19 @@ public/icons/icon-128.png,0,public-input,static build input; not shipped as-is
 public/icons/icon-16.png,0,public-input,static build input; not shipped as-is
 public/icons/icon-32.png,0,public-input,static build input; not shipped as-is
 public/icons/icon-48.png,0,public-input,static build input; not shipped as-is
-public/icons/icon-96.png,0,public-input,static build input; not shipped as-is
 public/icons/logo-source.png,0,public-input,static build input; not shipped as-is
 README.md,0,docs,markdown notes
-scripts/apply-i18n-overrides.mjs,0,script,dev tooling
-scripts/audit-i18n-detail.mjs,0,script,dev tooling
-scripts/audit-i18n.mjs,0,script,dev tooling
+release/justpractice-1.0.0.zip,0,other-dev,
 scripts/build-youtube-bundle.mjs,0,script,build pipeline input
 scripts/generate-icons.mjs,0,script,build pipeline input
 scripts/generate-package-file-audit.mjs,0,script,dev tooling
-scripts/i18n-gap-translations.json,0,script,dev tooling
-scripts/i18n-locale-overrides.json,0,script,dev tooling
+scripts/generate-slimdown-inventory.mjs,0,script,dev tooling
+scripts/package-dist-closure.mjs,0,script,dev tooling
+scripts/package-extension.mjs,0,script,dev tooling
+scripts/package-safety.mjs,0,script,dev tooling
 scripts/patch-crx-build.mjs,0,script,build pipeline input
-scripts/render-logo-intro-video.mjs,0,script,dev tooling
-scripts/sync-i18n-locales.mjs,0,script,dev tooling
 scripts/verify-extension-dist.mjs,0,script,build pipeline input
 scripts/vite-plugin-youtube-bundle.ts,0,script,build pipeline input
-src/assets/notify.png,0,source,TypeScript source; bundled into dist
 src/background/backgroundContextMenus.ts,0,source,TypeScript source; bundled into dist
 src/background/backgroundDurationEnrich.ts,0,source,TypeScript source; bundled into dist
 src/background/backgroundMessageHandlers.ts,0,source,TypeScript source; bundled into dist
@@ -159,6 +132,7 @@ src/lib/htmlEscape.ts,0,source,TypeScript source; bundled into dist
 src/lib/levelTags.test.ts,0,test,unit test; compiled away
 src/lib/levelTags.ts,0,source,TypeScript source; bundled into dist
 src/lib/messages.ts,0,source,TypeScript source; bundled into dist
+src/lib/packageSafety.test.ts,0,test,unit test; compiled away
 src/lib/pathBuilder.test.ts,0,test,unit test; compiled away
 src/lib/pathBuilder.ts,0,source,TypeScript source; bundled into dist
 src/lib/pathStepProgress.ts,0,source,TypeScript source; bundled into dist
@@ -220,6 +194,5 @@ src/welcome/welcomeHelloAnimation.ts,0,source,TypeScript source; bundled into di
 tsconfig.json,0,config,build/dev config
 tsconfig.node.json,0,config,build/dev config
 tsconfig.tsbuildinfo,0,config,build/dev config
-UIBreakdown.md,0,docs,markdown notes
 vite.config.ts,0,config,build/dev config
 vitest.config.ts,0,config,build/dev config

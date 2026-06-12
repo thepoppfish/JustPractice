@@ -13,7 +13,7 @@ if (!fs.existsSync(source)) {
   process.exit(1);
 }
 
-const sizes = [16, 32, 48, 96, 128];
+const sizes = [16, 32, 48, 128];
 
 function circleMaskPng(size) {
   const r = size / 2;

@@ -63,10 +63,6 @@ function categorizeRepoFile(rel) {
     return { required: 0, category: 'docs', notes: 'documentation' };
   }
 
-  if (rel.startsWith('assets/logo-intro/')) {
-    return { required: 0, category: 'asset-dev', notes: 'logo intro video render pipeline' };
-  }
-
   if (rel.startsWith('scripts/')) {
     const note = BUILD_SCRIPTS.has(rel) ? 'build pipeline input' : 'dev tooling';
     return { required: 0, category: 'script', notes: note };
