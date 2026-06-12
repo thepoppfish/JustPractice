@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JustPractice — YouTube practice tracker</title>
+    <meta
+      name="description"
+      content="Track YouTube practice time, build a local video library, and tag difficulty with JLPT, CEFR, or custom levels. Chrome extension — data stays on your device."
+    />
+    <meta property="og:title" content="JustPractice — YouTube practice tracker" />
+    <meta
+      property="og:description"
+      content="Track YouTube practice time, build a local library, and tag videos with JLPT, CEFR, or custom levels."
+    />
+    <meta
+      property="og:image"
+      content="https://thepoppfish.github.io/JustPractice/assets/icon-128.png"
+    />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="assets/icon-128.png" />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <div class="site-wrap">
+      <header class="hero">
+        <div class="hero-brand">
+          <img
+            class="hero-logo"
+            src="assets/icon-128.png"
+            width="72"
+            height="72"
+            alt=""
+          />
+          <h1>JustPractice</h1>
+          <p class="hero-tagline">
+            Track YouTube practice time. Build a local library. Tag videos with JLPT, CEFR, or
+            custom levels.
+          </p>
+        </div>
+        <div class="hero-cta">
+          <a
+            class="btn btn-primary"
+            href="https://github.com/thepoppfish/JustPractice/releases/latest"
+            >Download latest release</a
+          >
+          <a class="btn btn-secondary" href="https://github.com/thepoppfish/JustPractice"
+            >View source on GitHub</a
+          >
+        </div>
+        <div class="badges" aria-label="Project highlights">
+          <span class="badge">Chrome extension</span>
+          <span class="badge">GPL-3.0</span>
+          <span class="badge">Local-only data</span>
+        </div>
+      </header>
+
+      <section id="features" aria-labelledby="features-title">
+        <h2 class="section-title" id="features-title">Features</h2>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>Practice timer</h3>
+            <p>
+              Counts watch time while YouTube plays (visible, focused tab). Daily goals and streaks
+              on the dashboard.
+            </p>
+          </article>
+          <article class="feature-card">
+            <h3>Video library</h3>
+            <p>
+              Save videos from YouTube with difficulty tags (JLPT N5–N1, CEFR A1–C2, or your own
+              custom list).
+            </p>
+          </article>
+          <article class="feature-card">
+            <h3>Full dashboard</h3>
+            <p>
+              Stats, heatmaps, Today path, achievements, and settings — open from the toolbar popup
+              or extension options.
+            </p>
+          </article>
+          <article class="feature-card">
+            <h3>Private by default</h3>
+            <p>
+              All data stays in <code>chrome.storage.local</code> on your device. Export or import a
+              JSON backup anytime.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="screenshots" aria-labelledby="screenshots-title">
+        <h2 class="section-title" id="screenshots-title">Screenshots</h2>
+        <div class="shot-grid">
+          <figure class="shot-card">
+            <img
+              src="assets/screenshot-popup.png"
+              width="900"
+              height="520"
+              alt="JustPractice toolbar popup"
+              loading="lazy"
+            />
+            <figcaption>Toolbar popup</figcaption>
+          </figure>
+          <figure class="shot-card">
+            <img
+              src="assets/screenshot-panel.png"
+              width="900"
+              height="520"
+              alt="JustPractice panel on a YouTube watch page"
+              loading="lazy"
+            />
+            <figcaption>YouTube watch panel</figcaption>
+          </figure>
+          <figure class="shot-card">
+            <img
+              src="assets/screenshot-dashboard.png"
+              width="900"
+              height="520"
+              alt="JustPractice dashboard"
+              loading="lazy"
+            />
+            <figcaption>Dashboard</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="tutorial" aria-labelledby="tutorial-title">
+        <h2 class="section-title" id="tutorial-title">Watch how it works</h2>
+        <a
+          class="video-link"
+          href="https://www.youtube.com/watch?v=bT_g9030hx0"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Watch tutorial on YouTube"
+        >
+          <img
+            src="https://i.ytimg.com/vi/bT_g9030hx0/hqdefault.jpg"
+            width="480"
+            height="360"
+            alt=""
+            loading="lazy"
+          />
+          <span class="video-play" aria-hidden="true"></span>
+        </a>
+        <p class="video-hint">Short walkthrough: saving videos and using the panel.</p>
+      </section>
+
+      <section id="install" aria-labelledby="install-title">
+        <h2 class="section-title" id="install-title">Install in Chrome (developer mode)</h2>
+        <p>
+          Chrome does not support one-click install outside the Web Store. Follow these steps to
+          load the extension from a release zip:
+        </p>
+        <ol class="install-steps">
+          <li>
+            <strong>Download</strong> the latest <code>justpractice-*.zip</code> from
+            <a href="https://github.com/thepoppfish/JustPractice/releases/latest">Releases</a>.
+          </li>
+          <li>
+            <strong>Extract</strong> the zip to a folder (e.g. <code>justpractice-1.0.0/</code>).
+            You should see <code>manifest.json</code> at the top level.
+          </li>
+          <li>Open <code>chrome://extensions</code>.</li>
+          <li>Enable <strong>Developer mode</strong> (top right).</li>
+          <li>
+            Click <strong>Load unpacked</strong> and select the <strong>extracted folder</strong>
+            (not the zip file).
+          </li>
+        </ol>
+        <div class="note-box">
+          <strong>Updates:</strong> Download a new release zip and load the new folder, or replace
+          the files in your folder and click <strong>Reload</strong> on the extension card in
+          <code>chrome://extensions</code>.
+        </div>
+        <details class="source-build">
+          <summary>Build from source instead</summary>
+          <pre><code>git clone https://github.com/thepoppfish/JustPractice.git
+cd JustPractice
+npm install
+npm run build</code></pre>
+          <p style="margin: 12px 0 0; color: var(--muted); font-size: 0.9375rem">
+            Then load the <code>dist/</code> folder as an unpacked extension.
+          </p>
+        </details>
+      </section>
+
+      <section id="usage" aria-labelledby="usage-title">
+        <h2 class="section-title" id="usage-title">Quick usage</h2>
+        <ul class="usage-list">
+          <li>Toolbar popup for today&rsquo;s progress; open the dashboard for full stats.</li>
+          <li>
+            On YouTube watch: floating panel — save to library, set level, practice timer, mini
+            calendar.
+          </li>
+          <li>Right-click video links &rarr; JustPractice &rarr; pick a level.</li>
+          <li>
+            Settings: level framework (JLPT / CEFR / Custom), UI language (EN, FR, JA, HE, ES, DE).
+          </li>
+        </ul>
+      </section>
+
+      <footer class="site-footer">
+        <p>
+          <strong>Privacy:</strong> No accounts, no server. Practice data is stored under the key
+          <code>jpPractice</code> in Chrome local storage on your device.
+        </p>
+        <p>
+          <strong>License:</strong>
+          <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="license">GNU GPL v3 or later</a>
+          — Copyright &copy; Daniel. If you redistribute changes, source must remain open under
+          GPL.
+        </p>
+        <nav class="footer-links" aria-label="Footer">
+          <a href="https://github.com/thepoppfish/JustPractice">GitHub</a>
+          <a href="https://github.com/thepoppfish/JustPractice/releases/latest">Releases</a>
+          <a href="https://github.com/thepoppfish/JustPractice/issues">Report an issue</a>
+        </nav>
+      </footer>
+    </div>
+  </body>
+</html>

@@ -2,6 +2,15 @@
 
 Track **YouTube** practice watch time, keep a **local library** of saved videos, and tag difficulty with **JLPT** (N5–N1), **CEFR** (A1–C2), or your own **custom** ordered levels. One active framework in settings at a time; other tags stay in the library as **Legacy**. Set **daily goals** with optional reminders. **English**, **French**, **Japanese**, **Hebrew**, **Spanish**, or **German** UI (browser default optional). Everything stays in **`chrome.storage.local`** on this browser profile.
 
+## Website
+
+**https://thepoppfish.github.io/JustPractice/** — overview, install guide, tutorial video.
+
+## Install (release zip)
+
+1. Download the latest release from [GitHub Releases](https://github.com/thepoppfish/JustPractice/releases/latest).
+2. Extract the zip, then load the folder in Chrome as an unpacked extension ([full steps on the website](https://thepoppfish.github.io/JustPractice/#install)).
+
 ## Development
 
 ```bash
