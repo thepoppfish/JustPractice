@@ -200,6 +200,7 @@ section {
 
 .screenshots-section {
   --shot-gap: 14px;
+  --shot-panel-width: 260px;
 }
 
 .screenshots-section .section-title {
@@ -209,14 +210,11 @@ section {
 }
 
 .shot-showcase {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(200px, 26%);
-  grid-template-areas:
-    'stats panel'
-    'library panel';
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
   gap: var(--shot-gap);
-  align-items: start;
-  max-width: 1080px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
@@ -224,43 +222,65 @@ section {
   margin: 0;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
 }
 
-.shot-card--stats {
-  grid-area: stats;
+.shot-card--stats,
+.shot-card--library {
+  flex: 1 1 0;
+  max-width: 360px;
 }
 
 .shot-card--panel {
-  grid-area: panel;
-}
-
-.shot-card--library {
-  grid-area: library;
+  flex: 0 0 var(--shot-panel-width);
+  width: var(--shot-panel-width);
 }
 
 .shot-card figcaption {
+  flex: 0 0 auto;
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
+  text-align: center;
 }
 
-.shot-card img {
+.shot-media {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 10px;
+  background: var(--bg);
+}
+
+.shot-card--panel .shot-media {
+  flex: 0 0 auto;
+  padding: 0;
+  background: transparent;
+}
+
+.shot-card--stats img,
+.shot-card--library img {
   display: block;
-  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
+  object-fit: contain;
 }
 
 .shot-card--panel img {
+  display: block;
   width: 100%;
-  max-width: 280px;
-  margin: 0 auto;
+  height: auto;
 }
 
 /* Tutorial video */
@@ -387,16 +407,25 @@ details.source-build pre {
 
 @media (max-width: 768px) {
   .shot-showcase {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'panel'
-      'stats'
-      'library';
+    flex-direction: column;
+    align-items: center;
     max-width: var(--max-width);
   }
 
-  .shot-card--panel img {
-    max-width: 320px;
+  .shot-card--stats,
+  .shot-card--library,
+  .shot-card--panel {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .shot-card--panel {
+    order: -1;
+  }
+
+  .shot-media {
+    min-height: 0;
   }
 }
 
