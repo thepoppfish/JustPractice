@@ -211,9 +211,9 @@ section {
 
 .shot-showcase {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  gap: var(--shot-gap);
+  gap: 18px;
   max-width: 1040px;
   margin: 0 auto;
 }
@@ -222,7 +222,7 @@ section {
   margin: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  flex: 0 0 auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -231,13 +231,12 @@ section {
 
 .shot-card--stats,
 .shot-card--library {
-  flex: 1 1 0;
-  max-width: 360px;
+  width: min(300px, 30vw);
 }
 
 .shot-card--panel {
-  flex: 0 0 var(--shot-panel-width);
   width: var(--shot-panel-width);
+  align-self: center;
 }
 
 .shot-card figcaption {
@@ -252,31 +251,12 @@ section {
 }
 
 .shot-media {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-  padding: 10px;
-  background: var(--bg);
-}
-
-.shot-card--panel .shot-media {
   flex: 0 0 auto;
-  padding: 0;
-  background: transparent;
+  line-height: 0;
 }
 
 .shot-card--stats img,
-.shot-card--library img {
-  display: block;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-}
-
+.shot-card--library img,
 .shot-card--panel img {
   display: block;
   width: 100%;
@@ -409,23 +389,18 @@ details.source-build pre {
   .shot-showcase {
     flex-direction: column;
     align-items: center;
+    gap: var(--shot-gap);
     max-width: var(--max-width);
   }
 
   .shot-card--stats,
   .shot-card--library,
   .shot-card--panel {
-    flex: 0 0 auto;
-    width: 100%;
-    max-width: 420px;
+    width: min(100%, 360px);
   }
 
   .shot-card--panel {
     order: -1;
-  }
-
-  .shot-media {
-    min-height: 0;
   }
 }
 
