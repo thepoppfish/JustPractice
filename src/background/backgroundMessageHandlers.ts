@@ -193,26 +193,27 @@ async function handleStorageMessage(
     }
     case MSG.PRACTICE_TICK: {
       let { deltaSeconds } = message.payload;
-      if (deltaSeconds <= 0) {
-        const empty = await readPersisted();
+      const p = await readPersisted();
+      const { videoId, endedAtMs } = message.payload;
+      const inLibrary = p.library.some((x) => x.videoId === videoId);
+      // A tick can already be in flight when another view removes/clears the video.
+      // Recheck inside the transaction so that stale tabs cannot recreate practice data.
+      if (deltaSeconds <= 0 || !inLibrary) {
         void jpXpLogBackground('bg:PRACTICE_TICK skip', {
-          reason: 'deltaSeconds<=0',
-          videoId: message.payload.videoId,
+          reason: deltaSeconds <= 0 ? 'deltaSeconds<=0' : 'not in library',
+          videoId,
         });
         return {
           ok: true,
           xpGained: 0,
           newAchievements: [],
           levelUp: false,
-          newLevel: levelFromTotalXp(empty.playerProgress.totalXp),
-          totalXp: empty.playerProgress.totalXp,
+          newLevel: levelFromTotalXp(p.playerProgress.totalXp),
+          totalXp: p.playerProgress.totalXp,
         };
       }
       if (deltaSeconds > MAX_TICK_SECONDS) deltaSeconds = MAX_TICK_SECONDS;
-      const p = await readPersisted();
-      const { videoId, endedAtMs } = message.payload;
       const carryIn = Math.max(0, Math.floor(p.playerProgress.practiceXpCarrySeconds ?? 0));
-      const inLibrary = p.library.some((x) => x.videoId === videoId);
       const key = dateKeyFromTimestamp(endedAtMs);
       p.dailySeconds[key] = (p.dailySeconds[key] ?? 0) + deltaSeconds;
       p.videoSeconds[videoId] = (p.videoSeconds[videoId] ?? 0) + deltaSeconds;

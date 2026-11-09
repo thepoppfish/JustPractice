@@ -1,5 +1,6 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage } from '../lib/messages';
+import { practiceViewBlockReason, type PracticeViewState } from './practiceCountingPolicy';
 
 /** Batched persist interval for `PRACTICE_TICK` (write batching only — not how seconds are measured). */
 export const PRACTICE_FLUSH_INTERVAL_MS = 30_000;
@@ -7,12 +8,11 @@ export const PRACTICE_FLUSH_INTERVAL_MS = 30_000;
 /** Minimal video surface for status / ended checks (not used to gate the playback meter). */
 export type PracticeCountEligibleVideo = Pick<HTMLVideoElement, 'paused' | 'ended'>;
 
-export interface ShouldCountPracticeTimeParams {
+export interface ShouldCountPracticeTimeParams extends PracticeViewState {
   practiceEnabled: boolean;
   currentVideoId: string | null;
   inLibrary: boolean;
   video: PracticeCountEligibleVideo | null;
-  visibilityState: DocumentVisibilityState;
 }
 
 /** First gate that blocks counting; `null` when session gates pass (meter uses media delta). */
@@ -22,7 +22,8 @@ export type PracticeCountBlockReason =
   | 'notInLibrary'
   | 'noVideoElement'
   | 'ended'
-  | 'hidden';
+  | 'hidden'
+  | 'unfocused';
 
 const PRACTICE_COUNT_BLOCK_LABELS: Record<PracticeCountBlockReason, string> = {
   practiceOff: 'practice off',
@@ -31,6 +32,7 @@ const PRACTICE_COUNT_BLOCK_LABELS: Record<PracticeCountBlockReason, string> = {
   noVideoElement: 'no player video',
   ended: 'ended',
   hidden: 'tab hidden',
+  unfocused: 'YouTube page unfocused',
 };
 
 export function explainWhyNotCountingPractice(
@@ -41,8 +43,7 @@ export function explainWhyNotCountingPractice(
   if (!p.inLibrary) return 'notInLibrary';
   if (!p.video) return 'noVideoElement';
   if (p.video.ended) return 'ended';
-  if (p.visibilityState !== 'visible') return 'hidden';
-  return null;
+  return practiceViewBlockReason(p);
 }
 
 export function shouldCountPracticeTime(p: ShouldCountPracticeTimeParams): boolean {
@@ -144,10 +145,17 @@ export function createPracticeFlushScheduler(
 /** Tab hide / unload → flush pending practice. */
 export function attachPracticePageFlushListeners(opts: {
   flush: () => void;
+  onEligibilityChange: () => void;
 }): void {
   document.addEventListener('visibilitychange', () => {
+    opts.onEligibilityChange();
     if (document.visibilityState === 'hidden') opts.flush();
   });
+  window.addEventListener('blur', () => {
+    opts.onEligibilityChange();
+    opts.flush();
+  });
+  window.addEventListener('focus', opts.onEligibilityChange);
   window.addEventListener('pagehide', () => opts.flush());
   window.addEventListener('beforeunload', () => opts.flush());
 }

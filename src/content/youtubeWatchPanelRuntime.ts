@@ -135,6 +135,8 @@ function practiceMeterEligibility(): PracticeMeterEligibility {
     currentVideoId,
     inLibrary,
     visibilityState: document.visibilityState,
+    documentFocused: document.hasFocus(),
+    pauseWhenUnfocused: settingsCache.pauseWhenUnfocused,
     videoEnded: Boolean(video?.ended),
   };
 }
@@ -147,6 +149,8 @@ function practiceCountParams() {
     inLibrary,
     video,
     visibilityState: document.visibilityState,
+    documentFocused: document.hasFocus(),
+    pauseWhenUnfocused: settingsCache.pauseWhenUnfocused,
   };
 }
 
@@ -881,14 +885,23 @@ export function elementInWatchPanelUiShell(node: Node | null): boolean {
   return false;
 }
 
-export function getWatchPanelPauseWhenUnfocused(): boolean {
-  return settingsCache.pauseWhenUnfocused;
-}
-
 export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void {
   runWatchPanelAfterJpPracticeStorageChange(nv, {
+    applyIncomingLibraryFromPersisted: (persisted) => {
+      const item = persisted?.library.find((v) => v.videoId === currentVideoId) ?? null;
+      if (Boolean(item) === inLibrary) return;
+      // Stop at the storage event, before an asynchronous UI refresh can admit more playback.
+      // A removal/clear ends this session. Do not write its remainder back into replaced data.
+      if (inLibrary) practiceMeter.reset();
+      inLibrary = Boolean(item);
+      libraryItemForCurrentVideo = item;
+      practiceMeter.recheckEligibility();
+      syncPracticeEnabledFromVideoBinding();
+      fireAsyncWatch(refreshState(currentVideoId));
+    },
     applyIncomingSettingsFromPersisted: (persisted) => {
       settingsCache = ensureSettingsShape({ ...defaultSettings(), ...persisted.settings });
+      practiceMeter.recheckEligibility();
       panelLocale = resolveLocale(settingsCache.uiLocale);
       panelT = createTranslator(panelLocale);
       applyPanelHostPosition();
@@ -938,6 +951,7 @@ export function attachWatchPanelRuntimeHooks(): void {
   });
   attachPracticePageFlushListeners({
     flush: flushWatchPanelPractice,
+    onEligibilityChange: () => practiceMeter.recheckEligibility(),
   });
   document.addEventListener('visibilitychange', () => completion.onDocumentVisibilityChange());
   startStorageSyncPoll(() => {

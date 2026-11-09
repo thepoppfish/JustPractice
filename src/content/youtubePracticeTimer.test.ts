@@ -13,6 +13,8 @@ const base = {
   inLibrary: true,
   video: { paused: false, ended: false } as const,
   visibilityState: 'visible' as DocumentVisibilityState,
+  documentFocused: true,
+  pauseWhenUnfocused: true,
 };
 
 describe('shouldCountPracticeTime', () => {
@@ -46,6 +48,13 @@ describe('shouldCountPracticeTime', () => {
 
   it('returns true when all gates pass', () => {
     expect(shouldCountPracticeTime(base)).toBe(true);
+  });
+
+  it('explains focus gating and honors the setting while always rejecting hidden tabs', () => {
+    const unfocused = { ...base, documentFocused: false };
+    expect(explainWhyNotCountingPractice(unfocused)).toBe('unfocused');
+    expect(shouldCountPracticeTime({ ...unfocused, pauseWhenUnfocused: false })).toBe(true);
+    expect(shouldCountPracticeTime({ ...unfocused, pauseWhenUnfocused: false, visibilityState: 'hidden' })).toBe(false);
   });
 });
 

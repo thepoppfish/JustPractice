@@ -1,3 +1,5 @@
+import { practiceViewBlockReason, type PracticeViewState } from './practiceCountingPolicy';
+
 /** Default cap for `currentTime` jumps treated as a seek (used when no wall-clock budget given). */
 export const MAX_PLAYBACK_DELTA_SEC = 2.5;
 
@@ -47,18 +49,17 @@ export function processPlaybackSample(input: PlaybackSampleInput): PlaybackSampl
   return { lastCurrentTime: currentTime, addedSeconds: delta, ignoredSeek: false };
 }
 
-export interface PracticeMeterEligibility {
+export interface PracticeMeterEligibility extends PracticeViewState {
   practiceEnabled: boolean;
   currentVideoId: string | null;
   inLibrary: boolean;
-  visibilityState: DocumentVisibilityState;
   videoEnded: boolean;
 }
 
 export function isEligibleForPlaybackMeter(e: PracticeMeterEligibility): boolean {
   if (!e.practiceEnabled || !e.currentVideoId) return false;
   if (!e.inLibrary) return false;
-  if (e.visibilityState !== 'visible') return false;
+  if (practiceViewBlockReason(e) !== null) return false;
   if (e.videoEnded) return false;
   return true;
 }
@@ -92,6 +93,8 @@ export interface PracticePlaybackMeter {
   stop: () => void;
   /** Re-evaluate which video to track (e.g. after player DOM swap). */
   rebind: () => void;
+  /** Sample immediately at focus/visibility/settings boundaries instead of waiting for the interval. */
+  recheckEligibility: () => void;
   reset: () => void;
   getPendingWholeSeconds: () => number;
   /** Whole seconds ready to persist; keeps sub-second remainder in the meter. */
@@ -145,9 +148,10 @@ export function createPracticePlaybackMeter(
     const video = boundVideo;
     const nowMs = Date.now();
     const eligible = isEligibleForPlaybackMeter(options.getEligibility());
+    const wasEligible = lastEligible;
     lastEligible = eligible;
 
-    if (!video || !eligible) {
+    if (!video || !eligible || !wasEligible) {
       lastCurrentTime = video ? video.currentTime : null;
       lastSampleAtMs = nowMs;
       lastDeltaSec = 0;
@@ -179,6 +183,7 @@ export function createPracticePlaybackMeter(
 
   function start(): void {
     rebind();
+    sample();
     if (sampleTimer !== null) return;
     sampleTimer = setInterval(sample, PLAYBACK_SAMPLE_INTERVAL_MS);
   }
@@ -192,6 +197,7 @@ export function createPracticePlaybackMeter(
     detachListeners = null;
     boundVideo = null;
     lastCurrentTime = null;
+    lastEligible = false;
   }
 
   function reset(): void {
@@ -200,6 +206,7 @@ export function createPracticePlaybackMeter(
     pendingFractional = 0;
     lastDeltaSec = 0;
     lastIgnoredSeek = false;
+    lastEligible = false;
   }
 
   function getPendingWholeSeconds(): number {
@@ -236,7 +243,7 @@ export function createPracticePlaybackMeter(
     const flushPart =
       flushInMs !== null && flushInMs >= 0 ? ` (flush ~${Math.ceil(flushInMs / 1000)}s)` : '';
     if (!d.bound) return `media: no video bound${flushPart}`;
-    if (!d.eligible) return `media: idle (tab hidden/off) · pending ${d.pendingWholeSeconds}s${flushPart}`;
+    if (!d.eligible) return `media: idle (hidden/unfocused/not saved) · pending ${d.pendingWholeSeconds}s${flushPart}`;
     if (d.lastDeltaSec > 0) {
       return `media +${d.lastDeltaSec.toFixed(2)}s · pending ${d.pendingWholeSeconds}s${flushPart}`;
     }
@@ -248,6 +255,7 @@ export function createPracticePlaybackMeter(
     start,
     stop,
     rebind,
+    recheckEligibility: sample,
     reset,
     getPendingWholeSeconds,
     consumeWholeSeconds,

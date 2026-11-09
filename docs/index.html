@@ -61,7 +61,7 @@
           <article class="feature-card">
             <h3>Practice timer</h3>
             <p>
-              Counts watch time while YouTube plays (visible, focused tab). Daily goals and streaks
+              Automatically counts playback for saved videos in a visible tab. Focus is also required by default. Daily goals and streaks
               on the dashboard.
             </p>
           </article>
@@ -142,7 +142,7 @@
             loading="lazy"
           ></iframe>
         </div>
-        <p class="video-hint">Short walkthrough: saving videos and using the panel.</p>
+        <p class="video-hint">Original saving walkthrough. Current behavior: saved videos count automatically while playing in a visible tab; focus is required by default. Pause playback or switch tabs to pause tracking.</p>
       </section>
 
       <section id="install" aria-labelledby="install-title">
@@ -190,10 +190,11 @@ npm run build</code></pre>
         <ul class="usage-list">
           <li>Toolbar popup for today&rsquo;s progress; open the dashboard for full stats.</li>
           <li>
-            On YouTube watch: floating panel — save to library, set level, practice timer, mini
-            calendar.
+            On YouTube watch or Shorts: use the floating panel to save a video and choose a level.
+            Saved videos count automatically while playing in a visible tab; there is no separate practice switch.
           </li>
           <li>Right-click video links &rarr; JustPractice &rarr; pick a level.</li>
+          <li>Pause playback or hide the tab to stop counting. By default, the YouTube page must also have focus. Turn off the focus setting to count a visible video in another window; hidden tabs never count.</li>
           <li>
             Settings: level framework (JLPT / CEFR / Custom), UI language (EN, FR, JA, HE, ES, DE).
           </li>

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { runWatchPanelOnVideoChanged } from './youtubeWatchLifecycle';
+import { emptyPersisted } from '../lib/storage';
+import { runWatchPanelAfterJpPracticeStorageChange, runWatchPanelOnVideoChanged } from './youtubeWatchLifecycle';
 
 function makeSteps(overrides: Partial<Parameters<typeof runWatchPanelOnVideoChanged>[0]> = {}) {
   return {
@@ -37,5 +38,28 @@ describe('runWatchPanelOnVideoChanged', () => {
     await runWatchPanelOnVideoChanged(steps);
     expect(steps.resetPracticeToggleAndPending).toHaveBeenCalled();
     expect(steps.runHasVideoFlow).toHaveBeenCalledWith('new');
+  });
+});
+
+describe('storage changes update counting eligibility before resync', () => {
+  it.each(['saved', 'removed', 'cleared'] as const)('applies %s library state synchronously', (state) => {
+    const persisted = state === 'cleared' ? undefined : emptyPersisted();
+    if (persisted && state === 'saved') {
+      persisted.library.push({ videoId: 'abc123', title: 'Practice', channel: 'Test', difficulty: null, addedAt: 1 });
+    }
+    const calls: string[] = [];
+    let saved = state !== 'saved';
+    runWatchPanelAfterJpPracticeStorageChange(persisted, {
+      applyIncomingLibraryFromPersisted: (data) => {
+        saved = Boolean(data?.library.some((v) => v.videoId === 'abc123'));
+        calls.push('eligibility');
+      },
+      applyIncomingSettingsFromPersisted: () => calls.push('settings'),
+      schedulePostStorageResync: () => {
+        expect(saved).toBe(state === 'saved');
+        calls.push('resync');
+      },
+    });
+    expect(calls).toEqual(state === 'cleared' ? ['eligibility', 'resync'] : ['eligibility', 'settings', 'resync']);
   });
 });

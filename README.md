@@ -1,6 +1,6 @@
 # JustPractice (Chrome extension)
 
-Track **YouTube** practice watch time, keep a **local library** of saved videos, and tag difficulty with **JLPT** (N5–N1), **CEFR** (A1–C2), or your own **custom** ordered levels. One active framework in settings at a time; other tags stay in the library as **Legacy**. Set **daily goals** with optional reminders. **English**, **French**, **Japanese**, **Hebrew**, **Spanish**, or **German** UI (browser default optional). Everything stays in **`chrome.storage.local`** on this browser profile.
+Track **YouTube** practice watch time, keep a **local library** of saved videos, and tag difficulty with **JLPT** (N5–N1), **CEFR** (A1–C2), or your own **custom** ordered levels. One active framework in settings at a time; other tags stay in the library as **Legacy**. Set **daily goals** and follow your progress. **English**, **French**, **Japanese**, **Hebrew**, **Spanish**, or **German** UI (browser default optional). Practice data stays in **`chrome.storage.local`** on this browser profile.
 
 ## Website
 
@@ -37,12 +37,14 @@ Output is written to `dist/`.
 
 ## Usage
 
-1. **Home / Subscriptions / search:** Hover a video **thumbnail**. A **JustPractice** strip appears at the bottom. Pick a **level** (or unrated, optional Legacy entries when mixing frameworks) and **save**.
-2. **Right‑click:** On YouTube, right‑click a watch or Shorts link, the **video**, or the **page** → **JustPractice** → **Unrated** or levels for the active framework to save.
-3. **Watch / Shorts:** Use the floating panel — **Save to library**, **Level**, **Count practice time**, and (when saved) the mini calendar. Practice seconds accrue while the player **plays**, the tab is **visible**, and (by default) **focused**.
+1. **Save a video:** Open a YouTube watch or Shorts page, then choose **Save to library** in the floating panel. Optionally choose a difficulty under **Level**.
+2. **Save from a link:** On YouTube, right-click a watch or Shorts link, the video, or the page → **JustPractice** → **Unrated** or a level for the active framework.
+3. **Practice automatically:** A saved video counts while it plays in a visible tab. There is no separate practice switch. Pause playback or switch to another tab to pause tracking. By default the YouTube page must also have focus: another window or DevTools taking focus pauses counting. Disable **Pause counting when YouTube loses focus** to allow a visible video in an inactive window to count. Hidden tabs never count, with either setting.
 4. Click the toolbar icon for the **popup**, or **Open full stats & settings** for the full dashboard (`chrome://extensions` → this extension → **Extension options**). Change **Level framework** (JLPT, CEFR, or **Custom** with your own list) and **Language** under dashboard **Settings**.
 
 Persisted data lives under the storage key **`jpPractice`**.
+
+Practice progress is batched about every 30 seconds and flushed when the page loses focus or is hidden. The linked tutorial is an older recording of the saving flow; these instructions describe current counting behavior.
 
 ## Backups
 

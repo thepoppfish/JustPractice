@@ -72,7 +72,7 @@ export function libraryWelcomeHtml(t: DashTranslate): string {
         <p class="library-welcome-lead">
           ${escapeHtml(t('dash.libraryWelcomeLead'))}
         </p>
-        <p class="library-welcome-hint">${escapeHtml(t('dash.libraryWelcomeHintOpen'))}<strong>${escapeHtml(t('panel.countPractice'))}</strong>${escapeHtml(t('dash.libraryWelcomeHintClose'))}</p>
+        <p class="library-welcome-hint">${escapeHtml(t('dash.libraryWelcomeHint'))}</p>
         <a class="library-welcome-link" href="https://www.youtube.com" target="_blank" rel="noreferrer">${escapeHtml(t('dash.openYoutube'))}</a>
       </div>
     </div>`;

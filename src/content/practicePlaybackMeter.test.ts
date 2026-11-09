@@ -13,6 +13,8 @@ const eligibleBase: PracticeMeterEligibility = {
   currentVideoId: 'abc',
   inLibrary: true,
   visibilityState: 'visible',
+  documentFocused: true,
+  pauseWhenUnfocused: true,
   videoEnded: false,
 };
 
@@ -123,6 +125,18 @@ describe('processPlaybackSample', () => {
 });
 
 describe('isEligibleForPlaybackMeter', () => {
+  it.each([
+    ['visible', true, true, true],
+    ['visible', false, true, false],
+    ['visible', true, false, true],
+    ['visible', false, false, true],
+    ['hidden', true, true, false],
+    ['hidden', false, true, false],
+    ['hidden', true, false, false],
+    ['hidden', false, false, false],
+  ] as const)('visibility=%s, focus=%s, requireFocus=%s gives %s', (visibilityState, documentFocused, pauseWhenUnfocused, expected) => {
+    expect(isEligibleForPlaybackMeter({ ...eligibleBase, visibilityState, documentFocused, pauseWhenUnfocused })).toBe(expected);
+  });
   it('requires practice on, library membership, video id, and visible tab', () => {
     expect(isEligibleForPlaybackMeter(eligibleBase)).toBe(true);
     expect(isEligibleForPlaybackMeter({ ...eligibleBase, practiceEnabled: false })).toBe(false);
@@ -227,6 +241,70 @@ describe('createPracticePlaybackMeter (interval sampler)', () => {
 
     video.currentTime = 3.0;
     vi.advanceTimersByTime(PLAYBACK_SAMPLE_INTERVAL_MS);
+    expect(meter.getPendingWholeSeconds()).toBe(1);
+    meter.stop();
+  });
+
+  it('excludes unfocused playback and resumes from the focus boundary', () => {
+    const video = fakeVideo();
+    let focused = true;
+    const meter = createPracticePlaybackMeter({
+      getVideo: () => video,
+      getEligibility: () => ({ ...eligibleBase, documentFocused: focused }),
+      onAccumulated: () => {},
+    });
+    meter.start();
+    video.currentTime = 1;
+    vi.advanceTimersByTime(1000);
+    focused = false;
+    meter.recheckEligibility();
+    video.currentTime = 6;
+    vi.advanceTimersByTime(5000);
+    expect(meter.getPendingWholeSeconds()).toBe(1);
+    focused = true;
+    meter.recheckEligibility();
+    video.currentTime = 7;
+    vi.advanceTimersByTime(1000);
+    expect(meter.getPendingWholeSeconds()).toBe(2);
+    meter.stop();
+  });
+
+  it('applies focus-setting changes immediately without crediting the inactive interval', () => {
+    const video = fakeVideo();
+    let requireFocus = true;
+    const meter = createPracticePlaybackMeter({
+      getVideo: () => video,
+      getEligibility: () => ({ ...eligibleBase, documentFocused: false, pauseWhenUnfocused: requireFocus }),
+      onAccumulated: () => {},
+    });
+    meter.start();
+    video.currentTime = 10;
+    vi.advanceTimersByTime(1000);
+    requireFocus = false;
+    meter.recheckEligibility();
+    video.currentTime = 11;
+    vi.advanceTimersByTime(1000);
+    expect(meter.getPendingWholeSeconds()).toBe(1);
+    requireFocus = true;
+    meter.recheckEligibility();
+    video.currentTime = 13;
+    vi.advanceTimersByTime(1000);
+    expect(meter.getPendingWholeSeconds()).toBe(1);
+    meter.stop();
+  });
+
+  it('does not count an inactive gap when focus resumes between interval samples', () => {
+    const video = fakeVideo();
+    let focused = false;
+    const meter = createPracticePlaybackMeter({ getVideo: () => video,
+      getEligibility: () => ({ ...eligibleBase, documentFocused: focused }), onAccumulated: () => {} });
+    meter.start();
+    video.currentTime = 1.5;
+    focused = true;
+    vi.advanceTimersByTime(1000);
+    expect(meter.getPendingWholeSeconds()).toBe(0);
+    video.currentTime = 2.5;
+    vi.advanceTimersByTime(1000);
     expect(meter.getPendingWholeSeconds()).toBe(1);
     meter.stop();
   });

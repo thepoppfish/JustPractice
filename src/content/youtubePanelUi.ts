@@ -112,8 +112,6 @@ export function syncWatchPanelLabels(p: {
       addBtn.removeAttribute('title');
     }
   }
-  const practiceLb = p.shadowRoot.querySelector('[part="practice-label"]');
-  if (practiceLb) practiceLb.textContent = p.panelT('panel.countPractice');
   const calLeg = p.shadowRoot.querySelector('[part="cal-legend"]');
   if (calLeg) calLeg.textContent = p.panelT('dash.practiceDayCreditHint');
   p.onAfter?.();
