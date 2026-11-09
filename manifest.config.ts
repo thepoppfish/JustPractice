@@ -3,7 +3,7 @@ import { defineManifest } from '@crxjs/vite-plugin';
 export default defineManifest({
   manifest_version: 3,
   name: 'JustPractice',
-  version: '1.0.2',
+  version: '1.0.3',
   description:
     'Track saved YouTube videos automatically. Build a local library with JLPT, CEFR, or custom levels and set daily goals.',
   permissions: ['storage', 'contextMenus', 'alarms', 'scripting'],

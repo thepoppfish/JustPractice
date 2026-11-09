@@ -51,6 +51,8 @@ export function switchActiveView(root: HTMLElement, activeView: DashView): void 
     const v = btn.getAttribute('data-view') as DashView | null;
     if (!v) return;
     btn.className = activeView === v ? 'nav-item is-active' : 'nav-item';
+    if (activeView === v) btn.setAttribute('aria-current', 'page');
+    else btn.removeAttribute('aria-current');
   });
   root.querySelectorAll<HTMLElement>('[data-view-panel]').forEach((panel) => {
     const v = panel.getAttribute('data-view-panel') as DashView | null;
@@ -73,6 +75,7 @@ export function patchLibraryLevelFilterChips(root: HTMLElement, vm: DashboardVie
     else if (raw === 'legacy') active = vm.libraryLevelFilter === 'legacy';
     else active = vm.libraryLevelFilter === raw;
     btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-pressed', String(active));
   });
 }
 

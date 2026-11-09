@@ -12,10 +12,10 @@ import {
 } from '../lib/welcomeConfig';
 import {
   createTranslator,
+  applyUiLocale,
   LOCALE_DROPDOWN,
   resolveLocale,
   SUPPORTED_RESOLVED_LOCALES,
-  type ResolvedLocale,
 } from '../i18n';
 import {
   buildHelloSlides,
@@ -100,27 +100,27 @@ function languageStepHtml(): string {
     .map((row) => {
       const isSel = state.uiLocale !== null && row.value === state.uiLocale;
       const cls = ['welcome-lang-chip', isSel ? 'is-selected' : ''].filter(Boolean).join(' ');
-      return `<button type="button" class="${cls}" data-locale="${escapeAttr(row.value)}">${escapeHtml(`${row.flag} ${row.nativeName}`)}</button>`;
+      return `<label class="${cls}"><input type="radio" name="ui-locale" value="${escapeAttr(row.value)}" data-locale="${escapeAttr(row.value)}"${isSel ? ' checked' : ''} /><bdi lang="${row.value}" dir="auto">${escapeHtml(`${row.flag} ${row.nativeName}`)}</bdi></label>`;
     })
     .join('');
 
   const slide = helloAnimationLocked ? buildHelloSlides().find((s) => s.locale === state.uiLocale) : initialHelloSlide();
 
   return `
-    <h2 class="welcome-step-title visually-hidden">${escapeHtml(t('welcome.stepLanguage'))}</h2>
+    <h2 class="welcome-step-title visually-hidden" tabindex="-1">${escapeHtml(t('welcome.stepLanguage'))}</h2>
     <div class="welcome-hello-hero">
       <div class="welcome-hello-glow" aria-hidden="true"></div>
-      <div class="welcome-hello-stage" aria-live="polite" aria-atomic="true">
+      <div class="welcome-hello-stage" aria-hidden="true">
         <p class="welcome-hello-word" dir="${slide?.dir ?? 'ltr'}" lang="${escapeAttr(slide?.locale ?? 'en')}">${escapeHtml(slide?.hello ?? '')}</p>
       </div>
-      <p class="welcome-hello-locale-label">${escapeHtml(slide ? `${slide.flag} ${slide.label}` : '')}</p>
+      <p class="welcome-hello-locale-label" aria-hidden="true">${escapeHtml(slide ? `${slide.flag} ${slide.label}` : '')}</p>
       <div class="welcome-hello-dots" aria-hidden="true">${helloDotsHtml()}</div>
       <p class="welcome-carousel-sub">${escapeHtml(t('welcome.subtitle'))}</p>
       <p class="welcome-carousel-pick">${escapeHtml(t('welcome.pickLanguage'))}</p>
     </div>
-    <div class="welcome-lang-grid" role="listbox" aria-label="${escapeAttr(t('welcome.pickLanguage'))}">
+    <fieldset class="welcome-lang-grid"><legend class="visually-hidden">${escapeHtml(t('welcome.pickLanguage'))}</legend>
       ${chips}
-    </div>`;
+    </fieldset>`;
 }
 
 function frameworkStepHtml(): string {
@@ -147,9 +147,9 @@ function frameworkStepHtml(): string {
     .join('');
 
   return `
-    <h2 class="welcome-step-title">${escapeHtml(t('welcome.frameworkTitle'))}</h2>
+    <h2 class="welcome-step-title" tabindex="-1">${escapeHtml(t('welcome.frameworkTitle'))}</h2>
     <p class="welcome-step-lead">${escapeHtml(t('welcome.frameworkHint'))}</p>
-    <div class="welcome-framework-grid">${cards}</div>`;
+    <fieldset class="welcome-framework-grid"><legend class="visually-hidden">${escapeHtml(t('welcome.frameworkTitle'))}</legend>${cards}</fieldset>`;
 }
 
 function ensureGoalDefaults(): void {
@@ -163,11 +163,11 @@ function goalStepHtml(): string {
   ensureGoalDefaults();
   const presets = WELCOME_GOAL_PRESET_MINUTES.map((minutes) => {
     const sel = state.goalMinutes === minutes;
-    return `<button type="button" class="welcome-goal-chip${sel ? ' is-selected' : ''}" data-goal-minutes="${minutes}">${escapeHtml(t('welcome.goalPresetMin', { minutes }))}</button>`;
+    return `<button type="button" class="welcome-goal-chip${sel ? ' is-selected' : ''}" data-goal-minutes="${minutes}" aria-pressed="${sel}">${escapeHtml(t('welcome.goalPresetMin', { minutes }))}</button>`;
   }).join('');
 
   return `
-    <h2 class="welcome-step-title">${escapeHtml(t('welcome.goalTitle'))}</h2>
+    <h2 class="welcome-step-title" tabindex="-1">${escapeHtml(t('welcome.goalTitle'))}</h2>
     <p class="welcome-step-lead">${escapeHtml(t('welcome.goalHint'))}</p>
     <div class="welcome-goal-row">${presets}</div>
     <div class="welcome-goal-field">
@@ -175,6 +175,7 @@ function goalStepHtml(): string {
       <input
         type="text"
         id="welcome-goal-minutes"
+        dir="ltr"
         class="welcome-goal-input"
         inputmode="numeric"
         pattern="[0-9]*"
@@ -206,7 +207,7 @@ function tutorialStepHtml(): string {
     : `<div class="welcome-video-wrap"><div class="welcome-video-placeholder">${escapeHtml(t('welcome.tutorialVideoComingSoon'))}</div></div>`;
 
   return `
-    <h2 class="welcome-step-title">${escapeHtml(t('welcome.tutorialTitle'))}</h2>
+    <h2 class="welcome-step-title" tabindex="-1">${escapeHtml(t('welcome.tutorialTitle'))}</h2>
     <p class="welcome-step-lead">${escapeHtml(t('welcome.tutorialHint'))}</p>
     ${videoBlock}`;
 }
@@ -214,7 +215,7 @@ function tutorialStepHtml(): string {
 function doneStepHtml(): string {
   return `
     <div class="welcome-done-icon" aria-hidden="true">✓</div>
-    <h2 class="welcome-step-title">${escapeHtml(t('welcome.doneTitle'))}</h2>
+    <h2 class="welcome-step-title" tabindex="-1">${escapeHtml(t('welcome.doneTitle'))}</h2>
     <p class="welcome-step-lead">${escapeHtml(t('welcome.doneSubtitle'))}</p>
     <p class="welcome-pin-hint">${escapeHtml(t('welcome.pinHint'))}</p>
     <div class="welcome-actions">
@@ -248,7 +249,7 @@ function progressHtml(): string {
         i === state.step ? ' is-active'
         : i < state.step ? ' is-done'
         : '';
-      return `<button type="button" class="welcome-progress-dot${cls}" aria-label="${escapeAttr(label)}" aria-current="${i === state.step ? 'step' : 'false'}"></button>`;
+      return `<li${i === state.step ? ' aria-current="step"' : ''}><span class="welcome-progress-dot${cls}" aria-hidden="true"></span><span class="visually-hidden">${escapeHtml(label)}</span></li>`;
     })
     .join('');
 }
@@ -265,7 +266,7 @@ function navHtml(): string {
 
 function render(): void {
   document.title = t('welcome.pageTitle');
-  document.documentElement.lang = state.uiLocale ?? resolveLocale('auto');
+  applyUiLocale(state.uiLocale ?? resolveLocale('auto'));
 
   app.innerHTML = `
     <div class="welcome-shell">
@@ -274,7 +275,7 @@ function render(): void {
         <h1 class="welcome-brand">JustPractice</h1>
       </header>
       <main class="welcome-card" aria-label="${escapeAttr(t('welcome.progressAria', { current: state.step + 1, total: STEP_COUNT }))}">
-        <div class="welcome-progress" aria-hidden="true">${progressHtml()}</div>
+        <ol class="welcome-progress" aria-label="${escapeAttr(t('welcome.progressAria', { current: state.step + 1, total: STEP_COUNT }))}">${progressHtml()}</ol>
         ${stepBodyHtml()}
         ${navHtml()}
         <p class="welcome-privacy">${escapeHtml(t('welcome.privacy'))}</p>
@@ -331,6 +332,7 @@ function applyLocaleChoice(locale: UiLocaleChoice): void {
   if (carouselIndex < 0) carouselIndex = 0;
   t = createTranslator(locale);
   render();
+  app.querySelector<HTMLInputElement>(`input[data-locale="${locale}"]`)?.focus();
 }
 
 function readGoalFromDom(): void {
@@ -362,28 +364,30 @@ async function goToStep(next: number): Promise<void> {
     await persistOnboarding();
   }
   state.step = Math.max(0, Math.min(STEP_COUNT - 1, next));
-  if (state.step === 0) helloAnimationLocked = false;
+  if (state.step === 0) helloAnimationLocked = state.uiLocale !== null;
   render();
+  app.querySelector<HTMLElement>('.welcome-step-title')?.focus();
   if (state.step === 4 && !state.saved) {
     await persistOnboarding();
   }
 }
 
 function wireStepEvents(): void {
-  app.querySelectorAll<HTMLButtonElement>('.welcome-lang-chip').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const locale = btn.dataset.locale as UiLocaleChoice | undefined;
+  app.querySelectorAll<HTMLInputElement>('input[data-locale]').forEach((input) => {
+    input.addEventListener('focus', stopHelloAnimation);
+    input.addEventListener('change', () => {
+      const locale = input.dataset.locale as UiLocaleChoice | undefined;
       if (!locale) return;
       applyLocaleChoice(locale);
     });
   });
 
-  app.querySelectorAll<HTMLLabelElement>('.welcome-framework-card').forEach((card) => {
-    card.addEventListener('click', () => {
-      const input = card.querySelector<HTMLInputElement>('input[type="radio"]');
-      if (!input) return;
+  app.querySelectorAll<HTMLInputElement>('input[name="level-framework"]').forEach((input) => {
+    input.addEventListener('change', () => {
       state.levelFramework = input.value as LevelFramework;
-      render();
+      app.querySelectorAll('.welcome-framework-card').forEach((card) => {
+        card.classList.toggle('is-selected', card.contains(input));
+      });
     });
   });
 
@@ -393,7 +397,9 @@ function wireStepEvents(): void {
       if (!Number.isFinite(minutes)) return;
       state.goalMinutes = minutes;
       state.goalInput = String(minutes);
-      render();
+      const input = app.querySelector<HTMLInputElement>('#welcome-goal-minutes');
+      if (input) input.value = state.goalInput;
+      syncGoalChips();
     });
   });
 
@@ -402,12 +408,7 @@ function wireStepEvents(): void {
     state.goalInput = el.value.replace(/\D/g, '').slice(0, 3);
     el.value = state.goalInput;
     state.goalMinutes = parseDailyGoalMinutesInput(state.goalInput);
-    app.querySelectorAll('.welcome-goal-chip').forEach((chip) => {
-      chip.classList.toggle(
-        'is-selected',
-        Number((chip as HTMLButtonElement).dataset.goalMinutes) === state.goalMinutes,
-      );
-    });
+    syncGoalChips();
   });
 
   app.querySelector('#welcome-back')?.addEventListener('click', () => {
@@ -435,6 +436,14 @@ function wireStepEvents(): void {
 
   app.querySelector('#welcome-open-dashboard')?.addEventListener('click', () => {
     void chrome.runtime.openOptionsPage();
+  });
+}
+
+function syncGoalChips(): void {
+  app.querySelectorAll<HTMLButtonElement>('.welcome-goal-chip').forEach((chip) => {
+    const selected = Number(chip.dataset.goalMinutes) === state.goalMinutes;
+    chip.classList.toggle('is-selected', selected);
+    chip.setAttribute('aria-pressed', String(selected));
   });
 }
 

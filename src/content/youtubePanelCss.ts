@@ -1,11 +1,14 @@
 ﻿/** Shadow-DOM styles for the watch-page floating panel. */
+import accessibilityCss from '../styles/accessibility.css?inline';
+
 export function watchPanelShadowCss(): string {
-  return `      :host {
+  return `${accessibilityCss}
+      :host {
         display: block;
         box-sizing: border-box;
       }
       .wrap {
-        background: rgba(15, 15, 15, 0.94);
+        background: #15171c;
         color: #eee;
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 10px;
@@ -41,6 +44,10 @@ export function watchPanelShadowCss(): string {
       }
       .collapse-btn:hover { color: #fff; }
       .drag-handle {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        text-align: start;
         flex: 1;
         min-width: 0;
         cursor: grab;
@@ -48,8 +55,8 @@ export function watchPanelShadowCss(): string {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 11px;
-        color: #888;
+        font-size: 12px;
+        color: var(--jp-muted);
       }
       .drag-handle:active { cursor: grabbing; }
       .panel-main {
@@ -65,7 +72,7 @@ export function watchPanelShadowCss(): string {
       .row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
       .row.level-row {
         justify-content: space-between;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         gap: 10px;
       }
       .level-controls {
@@ -133,7 +140,7 @@ export function watchPanelShadowCss(): string {
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        font-size: 9px;
+        font-size: 11px;
         font-weight: 700;
         color: #eee;
         text-align: center;
@@ -143,7 +150,7 @@ export function watchPanelShadowCss(): string {
         z-index: 2;
       }
       .daily-ring-muted {
-        color: #666;
+        color: var(--jp-muted);
         font-weight: 600;
       }
       .player-xp-mini {
@@ -184,14 +191,14 @@ export function watchPanelShadowCss(): string {
         color: #1a1208;
       }
       .player-level-badge {
-        font-size: 9px;
+        font-size: 11px;
         font-weight: 800;
         color: #ffb347;
         letter-spacing: 0.02em;
         white-space: nowrap;
       }
       .player-prestige-badge {
-        font-size: 8px;
+        font-size: 11px;
         font-weight: 800;
         color: #ffd966;
         letter-spacing: 0.02em;
@@ -225,15 +232,15 @@ export function watchPanelShadowCss(): string {
         line-height: 1.2;
       }
       .player-xp-progress {
-        font-size: 8px;
+        font-size: 11px;
         font-weight: 700;
         color: #ccc;
         white-space: nowrap;
       }
       .player-xp-remaining {
-        font-size: 7px;
+        font-size: 11px;
         font-weight: 600;
-        color: #888;
+        color: var(--jp-muted);
         white-space: nowrap;
       }
       .player-xp-remaining[hidden] {
@@ -272,7 +279,7 @@ export function watchPanelShadowCss(): string {
       button.secondary { background: #333; border-color: #555; }
       button.secondary.is-complete { background: rgba(66, 198, 111, 0.22); border-color: rgba(66, 198, 111, 0.55); color: #b8f0cc; }
       button:hover { filter: brightness(1.08); }
-      .hint { font-size: 11px; color: #888; line-height: 1.35; margin-top: 6px; }
+      .hint { font-size: 12px; color: var(--jp-muted); line-height: 1.5; margin-top: 8px; }
       .status { font-size: 11px; color: #9cf; min-height: 14px; }
       .library-banner[hidden] {
         display: none !important;
@@ -333,7 +340,7 @@ export function watchPanelShadowCss(): string {
         display: block;
         margin-top: 8px;
         padding: 6px 8px;
-        font-size: 10px;
+        font-size: 11px;
         line-height: 1.35;
         font-family: ui-monospace, Consolas, monospace;
         color: #c8f0c8;
@@ -388,15 +395,15 @@ export function watchPanelShadowCss(): string {
         font-variant-numeric: tabular-nums;
         color: #f2f2f2;
       }
-      .cal-streak-cap { font-size: 10px; color: #888; flex: 1; min-width: 0; }
+      .cal-streak-cap { font-size: 11px; color: var(--jp-muted); flex: 1; min-width: 0; }
       .cal-grid { display: flex; flex-direction: column; gap: 4px; }
-      .cal-legend { font-size: 10px; color: #666; line-height: 1.35; margin: 6px 0 0; }
+      .cal-legend { font-size: 11px; color: var(--jp-muted); line-height: 1.35; margin: 6px 0 0; }
       .cal-weekday-row {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         gap: 2px;
       }
-      .cal-wd { font-size: 9px; color: #666; text-align: center; }
+      .cal-wd { font-size: 11px; color: var(--jp-muted); text-align: center; }
       .cal-cells {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
@@ -407,7 +414,7 @@ export function watchPanelShadowCss(): string {
         padding: 3px 2px;
         border-radius: 4px;
         background: rgba(255,255,255,0.04);
-        font-size: 10px;
+        font-size: 11px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -416,10 +423,9 @@ export function watchPanelShadowCss(): string {
       .cal-cell-empty { background: transparent; min-height: 34px; }
       .cal-cell-today { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
       .cal-cell-future {
-        opacity: 0.48;
         background: rgba(255, 255, 255, 0.03);
       }
-      .cal-cell-future .cal-day-num { color: #777; }
+      .cal-cell-future .cal-day-num { color: var(--jp-subtle); }
       .cal-cell--none {
         background: rgba(224, 77, 77, 0.12);
         border: 1px solid rgba(224, 77, 77, 0.28);
@@ -433,18 +439,17 @@ export function watchPanelShadowCss(): string {
         border: 1px solid rgba(232, 184, 74, 0.55);
       }
       .cal-day-num { font-weight: 600; color: #eee; line-height: 1.2; }
-      .cal-day-min { font-size: 9px; line-height: 1.1; margin-top: 2px; color: #fff; }
-      .cal-day-min--missed { font-size: 10px; font-weight: 500; opacity: 0.55; }
-      .cal-day-min--under { font-size: 10px; font-weight: 500; }
+      .cal-day-min { font-size: 11px; line-height: 1.1; margin-top: 2px; color: #fff; }
+      .cal-day-min--missed { font-size: 11px; font-weight: 500; color: var(--jp-muted); }
+      .cal-day-min--under { font-size: 11px; font-weight: 500; }
       .cal-cell--none .cal-day-min,
       .cal-cell--active .cal-day-min,
       .cal-cell--goal .cal-day-min { color: #fff; }
       .cal-cell--neutral {
-        opacity: 0.55;
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.06);
       }
-      .cal-cell--neutral .cal-day-num { color: #999; }
+      .cal-cell--neutral .cal-day-num { color: var(--jp-subtle); }
       .year-hm-chart { width: 100%; }
       .year-hm-body {
         display: grid;
@@ -460,9 +465,9 @@ export function watchPanelShadowCss(): string {
         align-self: stretch;
       }
       .year-hm-wd {
-        font-size: 9px;
+        font-size: 11px;
         line-height: 1;
-        color: #666;
+        color: var(--jp-muted);
         text-align: right;
         display: flex;
         align-items: center;
@@ -492,7 +497,7 @@ export function watchPanelShadowCss(): string {
       .year-hm-cell--active { background: #42c66f; }
       .year-hm-cell--goal { background: #e8b84a; }
       .year-hm-cell--today { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.85); }
-      .year-hm-keys { display: flex; justify-content: center; margin: 0; font-size: 9px; color: #666; }
+      .year-hm-keys { display: flex; justify-content: center; margin: 0; font-size: 11px; color: var(--jp-muted); }
       .year-hm-keys-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; }
       .month-hm-legend { margin: 4px 0 0; justify-content: center; }
       .year-hm-key { display: inline-flex; align-items: center; gap: 4px; }
@@ -500,13 +505,13 @@ export function watchPanelShadowCss(): string {
       .year-hm-key-dot--none { background: #e04d4d; }
       .year-hm-key-dot--active { background: #42c66f; }
       .year-hm-key-dot--goal { background: #e8b84a; }
-      .year-hm-key-icon--flawless-month { font-size: 10px; color: #c4b5fd; }
+      .year-hm-key-icon--flawless-month { font-size: 11px; color: #c4b5fd; }
       .year-hm-key-icon--flawless-year { width: 9px; height: 9px; border-radius: 2px; border: 2px solid rgba(255,204,51,0.85); background: transparent; box-sizing: border-box; }
-      .year-hm-month-flawless { margin-left: 1px; font-size: 8px; color: #c4b5fd; vertical-align: super; }
-      .month-hm-legend { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0 0 6px; font-size: 8px; color: #666; }
+      .year-hm-month-flawless { margin-left: 1px; font-size: 11px; color: #c4b5fd; vertical-align: super; }
+      .month-hm-legend { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0 0 6px; font-size: 11px; color: var(--jp-muted); }
       .month-hm-legend-mark { font-weight: 700; color: #eee; }
       .month-hm-legend-swatch { width: 8px; height: 8px; border-radius: 2px; background: rgba(88,108,138,0.55); border: 1px solid rgba(128,158,198,0.55); }
-      .year-hm-month-goal-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; font-size: 8px; color: #f5d76e; border: 1px solid rgba(232,184,74,0.45); border-radius: 3px; background: rgba(232,184,74,0.15); }
+      .year-hm-month-goal-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; font-size: 11px; color: #f5d76e; border: 1px solid rgba(232,184,74,0.45); border-radius: 3px; background: rgba(232,184,74,0.15); }
       .calendar-section:has(.year-hm--month-open) .cal-legend {
         display: none;
       }
@@ -525,7 +530,7 @@ export function watchPanelShadowCss(): string {
       .year-hm-month-slot-scale { width: 100%; transform-origin: center center; transition: transform 0.2s ease, opacity 0.2s ease; }
       .year-hm-month-slot--center { flex: 0 0 200px; width: 200px; }
       .year-hm-month-slot--prev, .year-hm-month-slot--next { flex: 0 0 128px; width: 128px; cursor: pointer; }
-      .year-hm-month-slot--prev .year-hm-month-slot-scale, .year-hm-month-slot--next .year-hm-month-slot-scale { transform: scale(0.72); opacity: 0.38; }
+      .year-hm-month-slot--prev .year-hm-month-slot-scale, .year-hm-month-slot--next .year-hm-month-slot-scale { transform: scale(0.72); opacity: 1; }
       .year-hm-month-slot--center .year-hm-month-slot-scale { transform: scale(1); opacity: 1; }
       .year-hm-month-detail--peek .month-hm-time, .year-hm-month-detail--peek .month-hm-total { display: none; }
       .year-hm-month-slot--empty { width: 0; opacity: 0; pointer-events: none; overflow: hidden; }
@@ -546,10 +551,12 @@ export function watchPanelShadowCss(): string {
       .year-hm-back-label { white-space: nowrap; }
       .year-hm-month-heading { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
       .year-hm-month-title { font-size: 12px; font-weight: 700; line-height: 1.2; }
-      .month-hm-total { margin: 0; font-size: 9px; color: #888; }
+      .month-hm-total { margin: 0; font-size: 11px; color: var(--jp-muted); }
       .month-hm-chart { width: 100%; }
+      .month-hm-week { display: contents; }
+      .year-hm-month-title { margin: 0; }
       .month-hm-dow-header { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-bottom: 2px; }
-      .month-hm-dow { font-size: 8px; color: #666; text-align: center; }
+      .month-hm-dow { font-size: 11px; color: var(--jp-muted); text-align: center; }
       .month-hm-cells { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; min-width: 0; width: 100%; }
       .month-hm-cell { min-height: 32px; border-radius: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 2px 1px; box-sizing: border-box; }
       .month-hm-cell--empty { visibility: hidden; pointer-events: none; }
@@ -560,14 +567,20 @@ export function watchPanelShadowCss(): string {
       .month-hm-cell--active { background: rgba(66,198,111,0.2); border: 1px solid rgba(66,198,111,0.4); }
       .month-hm-cell--goal { background: rgba(232,184,74,0.25); border: 1px solid rgba(232,184,74,0.45); }
       .month-hm-cell--today { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.75); }
-      .month-hm-day-num { font-size: 9px; font-weight: 700; }
-      .month-hm-time { font-size: 8px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+      .month-hm-day-num { font-size: 11px; font-weight: 700; }
+      .month-hm-time { font-size: 11px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
       .month-hm-cell--none .month-hm-time,
       .month-hm-cell--active .month-hm-time,
       .month-hm-cell--goal .month-hm-time { color: #fff; }
-      .month-hm-time--under, .month-hm-time--missed { font-size: 10px; font-weight: 500; }
-      .month-hm-time--missed { opacity: 0.55; }
-      .month-hm-time--empty { opacity: 0.35; }`;
+      .month-hm-time--under, .month-hm-time--missed { font-size: 11px; font-weight: 500; }
+      .month-hm-time--missed, .month-hm-time--empty { color: var(--jp-subtle); }
+      .cal-day-num, .cal-wd { font-size: 12px; }
+      .player-xp-remaining, .daily-ring-muted { color: var(--jp-muted); }
+      .player-xp-remaining { white-space: normal; }
+      .title { text-align: start; unicode-bidi: plaintext; }
+      .cal-weekday-row, .cal-cells, .year-hm-chart, .year-hm-month-carousel { direction: ltr; }
+      .year-hm-month-flawless, .year-hm-month-goal-badge { margin-left: 0; margin-inline-start: 4px; }
+      :host([dir='rtl']) .cal-header-year button { transform: scaleX(-1); }`;
 }
 
 /** Appended to legacy shadow panels missing browse-mode hide rules. */

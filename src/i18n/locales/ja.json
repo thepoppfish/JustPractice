@@ -447,5 +447,9 @@
   "dash.restoreUnsupportedVersion": "このバックアップのバージョンには対応していません。JustPracticeを更新するか、対応するエクスポートを選択してください。",
   "dash.restoreTooLarge": "バックアップが大きすぎます。8 MB未満のJSONエクスポートを選択してください。",
   "dash.restoreSummary": "保存済み動画{videos}本（完了{completed}本）と練習時間{minutes}分を復元します。",
-  "dash.libraryWelcomeHint": "動画を一時停止するか別のタブに切り替えると計測が止まります。フォーカスの設定は「設定」にあります。"
+  "dash.libraryWelcomeHint": "動画を一時停止するか別のタブに切り替えると計測が止まります。フォーカスの設定は「設定」にあります。",
+  "yearHeatmap.prevYear": "前年",
+  "yearHeatmap.nextYear": "翌年",
+  "panel.moveHint": "矢印キーでパネルを移動します。Shiftキーを押すと大きく移動します。",
+  "yearHeatmap.keyboardHelp": "矢印キーで日や週を移動し、Home/Endで先頭・末尾に移動、Enterで月を開きます。"
 }

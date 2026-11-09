@@ -1,0 +1,24 @@
+/* Shared readable text and keyboard focus colors, including the isolated YouTube panel. */
+:root,
+:host {
+  --jp-muted: #b7bdc8;
+  --jp-subtle: #a5aeba;
+  --jp-focus: #ffd08a;
+}
+
+:is(:root, :host) :is(button, a, input, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--jp-focus);
+  outline-offset: 3px;
+}
+
+bdi {
+  unicode-bidi: isolate;
+}
+
+.year-hm-keyboard-help {
+  margin: 8px 0;
+  color: var(--jp-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: start;
+}

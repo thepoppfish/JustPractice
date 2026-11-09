@@ -101,6 +101,9 @@ export function syncWatchPanelLabels(p: {
   if (!p.shadowRoot) return;
   const dh = p.shadowRoot.querySelector('[part="drag-hint"]');
   if (dh) dh.textContent = p.panelT('panel.dragToMove');
+  const move = p.shadowRoot.querySelector('[part="drag-handle"]');
+  move?.setAttribute('aria-label', p.panelT('panel.moveHint'));
+  move?.setAttribute('title', p.panelT('panel.moveHint'));
   const lvl = p.shadowRoot.querySelector('[part="level-label"]');
   if (lvl) lvl.textContent = p.panelT('common.level');
   const addBtn = p.shadowRoot.querySelector('[part="add"]') as HTMLButtonElement | null;
@@ -189,6 +192,7 @@ export function updateDailyGoalRing(p: {
   const goals = p.getGoals();
   const target = goals.dailyTargetSec;
   const done = p.getTodayPracticeSeconds();
+  wrap.removeAttribute('aria-hidden');
 
   if (target === null || target <= 0) {
     fg.setAttribute('stroke-dasharray', '0 100');
@@ -196,6 +200,7 @@ export function updateDailyGoalRing(p: {
     label.textContent = '—';
     label.classList.add('daily-ring-muted');
     wrap.title = p.panelT('panel.dailyGoalNoTarget');
+    wrap.setAttribute('aria-label', wrap.title);
     return;
   }
 
@@ -208,6 +213,7 @@ export function updateDailyGoalRing(p: {
     pair: formatGoalPairLineLive(done, target),
     percent: String(Math.round(pct * 100)),
   });
+  wrap.setAttribute('aria-label', wrap.title);
 }
 
 let xpToastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -318,6 +324,27 @@ export function attachPanelDrag(
   onCommitPosition: (left: number, top: number) => void,
 ): void {
   handle.style.touchAction = 'none';
+  function positionAt(x: number, y: number): void {
+    const left = Math.max(8, Math.min(x, window.innerWidth - host.offsetWidth - 8));
+    const top = Math.max(8, Math.min(y, window.innerHeight - host.offsetHeight - 8));
+    host.style.left = `${left}px`;
+    host.style.top = `${top}px`;
+    host.style.right = 'auto';
+    host.style.bottom = 'auto';
+    host.style.setProperty('--jp-panel-max-height', 'calc(100dvh - 16px)');
+  }
+  const steps: Record<string, readonly [number, number]> = {
+    ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1],
+  };
+  handle.addEventListener('keydown', (event) => {
+    const delta = steps[event.key];
+    if (!delta) return;
+    event.preventDefault();
+    const rect = host.getBoundingClientRect();
+    const step = event.shiftKey ? 40 : 10;
+    positionAt(rect.left + delta[0] * step, rect.top + delta[1] * step);
+    onCommitPosition(parseFloat(host.style.left), parseFloat(host.style.top));
+  });
   handle.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     e.preventDefault();
@@ -326,17 +353,7 @@ export function attachPanelDrag(
     const offsetY = e.clientY - rect.top;
 
     const move = (ev: PointerEvent): void => {
-      let nx = ev.clientX - offsetX;
-      let ny = ev.clientY - offsetY;
-      const w = host.offsetWidth;
-      const h = host.offsetHeight;
-      nx = Math.max(8, Math.min(nx, window.innerWidth - w - 8));
-      ny = Math.max(8, Math.min(ny, window.innerHeight - h - 8));
-      host.style.left = `${nx}px`;
-      host.style.top = `${ny}px`;
-      host.style.right = 'auto';
-      host.style.bottom = 'auto';
-      host.style.setProperty('--jp-panel-max-height', 'calc(100dvh - 16px)');
+      positionAt(ev.clientX - offsetX, ev.clientY - offsetY);
     };
 
     const up = (_ev: PointerEvent): void => {

@@ -22,6 +22,8 @@ const buildOptions = {
   target: 'chrome120',
   sourcemap: true,
   logLevel: 'info',
+  // Content styles are embedded in the shadow root, including shared CSS imported with ?inline.
+  loader: { '.css': 'text' },
   define: {
     'process.env.NODE_ENV': '"production"',
   },

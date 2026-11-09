@@ -52,6 +52,38 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
 
   let hoveredMonth: string | null = null;
   let activeMonth: { year: number; monthIndex: number } | null = null;
+  let selectedDate: string | null = null;
+  const dayButtons = [...yearLayer.querySelectorAll<HTMLButtonElement>('button[data-date]')];
+  function setYearTabStop(button: HTMLButtonElement): void {
+    dayButtons.forEach((day) => { day.tabIndex = day === button ? 0 : -1; });
+  }
+  const initialDay = dayButtons.find((day) => day.classList.contains('year-hm-cell--today')) ?? dayButtons[0];
+  if (initialDay) setYearTabStop(initialDay);
+  const keyboardHelp = opts.translate ? document.createElement('p') : null;
+  if (keyboardHelp) {
+    keyboardHelp.id = `jp-year-keyboard-help-${opts.variant}`;
+    keyboardHelp.className = 'year-hm-keyboard-help';
+    keyboardHelp.textContent = opts.translate!('yearHeatmap.keyboardHelp');
+    yearLayer.appendChild(keyboardHelp);
+    dayButtons.forEach((day) => day.setAttribute('aria-describedby', keyboardHelp.id));
+  }
+
+  function onYearKeyDown(event: KeyboardEvent): void {
+    const index = dayButtons.indexOf(event.target as HTMLButtonElement);
+    if (index < 0) return;
+    const deltas: Record<string, number> = { ArrowLeft: -7, ArrowRight: 7, ArrowUp: -1, ArrowDown: 1 };
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? dayButtons.length - 1
+      : event.key in deltas ? Math.max(0, Math.min(dayButtons.length - 1, index + deltas[event.key])) : -1;
+    if (next < 0) return;
+    event.preventDefault();
+    setYearTabStop(dayButtons[next]);
+    dayButtons[next].focus();
+  }
+
+  function focusMonthHeading(): void {
+    const heading = monthLayer.querySelector<HTMLElement>('[data-year-hm-month-slot="center"] .year-hm-month-title');
+    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+  }
 
   const cellsRoot = () => yearLayer.querySelector('.year-hm-cells');
 
@@ -108,6 +140,7 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
       navPrevLabel: opts.navPrevMonthLabel,
       navNextLabel: opts.navNextMonthLabel,
       formatMonthTotal: opts.formatMonthTotal,
+      statusLabel: opts.statusLabel,
       ...monthExtras,
     });
     yearLayer.hidden = true;
@@ -155,6 +188,8 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
     const parsed = parseDateKey(dk);
     if (!parsed) return;
     openMonth(parsed.year, parsed.month - 1);
+    selectedDate = dk;
+    focusMonthHeading();
   }
 
   function onScopeClick(e: Event): void {
@@ -164,6 +199,8 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
     if (t.closest('[data-year-hm-back]')) {
       e.preventDefault();
       showYearView();
+      const target = dayButtons.find((day) => day.dataset.date === selectedDate) ?? initialDay;
+      if (target) { setYearTabStop(target); target.focus({ preventScroll: true }); }
       return;
     }
 
@@ -171,17 +208,22 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
       if (t.closest('[data-year-hm-month-prev]:not(:disabled)')) {
         e.preventDefault();
         shiftMonth(-1);
+        const next = monthLayer.querySelector<HTMLButtonElement>('[data-year-hm-month-prev]:not(:disabled)');
+        if (next) next.focus(); else focusMonthHeading();
         return;
       }
       if (t.closest('[data-year-hm-month-next]:not(:disabled)')) {
         e.preventDefault();
         shiftMonth(1);
+        const next = monthLayer.querySelector<HTMLButtonElement>('[data-year-hm-month-next]:not(:disabled)');
+        if (next) next.focus(); else focusMonthHeading();
         return;
       }
       const sideSlot = t.closest<HTMLElement>('[data-year-hm-month-slot="prev"], [data-year-hm-month-slot="next"]');
       if (sideSlot?.dataset.monthIndex != null) {
         e.preventDefault();
         openMonth(activeMonth.year, Number(sideSlot.dataset.monthIndex));
+        focusMonthHeading();
       }
     }
   }
@@ -196,12 +238,15 @@ export function attachYearHeatmapInteractive(opts: AttachYearHeatmapInteractiveO
   yearLayer.addEventListener('pointerover', onCellPointerOver);
   yearLayer.addEventListener('pointerout', onCellPointerOut);
   yearLayer.addEventListener('click', onYearLayerClick);
+  yearLayer.addEventListener('keydown', onYearKeyDown);
   scope.addEventListener('click', onScopeClick);
 
   return () => {
+    keyboardHelp?.remove();
     yearLayer.removeEventListener('pointerover', onCellPointerOver);
     yearLayer.removeEventListener('pointerout', onCellPointerOut);
     yearLayer.removeEventListener('click', onYearLayerClick);
+    yearLayer.removeEventListener('keydown', onYearKeyDown);
     scope.removeEventListener('click', onScopeClick);
   };
 }

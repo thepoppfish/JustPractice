@@ -22,10 +22,10 @@ ${watchPanelShadowCss()}
     <div class="wrap">
       <div class="drag-strip">
         <button type="button" class="collapse-btn" part="collapse" aria-expanded="true">▲</button>
-        <div class="drag-handle" part="drag-handle"><span class="grip">⠿</span><span part="drag-hint">${escapeHtml(labels.dragToMove)}</span></div>
+        <button type="button" class="drag-handle" part="drag-handle"><span class="grip" aria-hidden="true">⠿</span><span part="drag-hint">${escapeHtml(labels.dragToMove)}</span></button>
       </div>
       <div class="panel-main">
-        <div class="title" part="title">${escapeHtml(APP_NAME)}</div>
+        <div class="title" part="title" dir="auto">${escapeHtml(APP_NAME)}</div>
         <div class="status" part="status"></div>
         <div
           class="library-banner"
@@ -56,14 +56,14 @@ ${watchPanelShadowCss()}
               ${levelOptionsHtml}
             </select>
           </div>
-          <div class="player-xp-mini" part="player-xp" aria-label="Rank">
+          <div class="player-xp-mini" part="player-xp" role="group">
             <span class="player-level-badge" part="player-level-badge">—</span>
             <span class="player-prestige-badge" part="player-prestige-badge" hidden></span>
             <div class="player-xp-track" aria-hidden="true">
               <div class="player-xp-fill" part="player-xp-fill"></div>
             </div>
             <span class="player-xp-label" part="player-xp-label">
-              <span class="player-xp-progress" part="player-xp-progress">—</span>
+              <span class="player-xp-progress" part="player-xp-progress" dir="ltr">—</span>
               <span class="player-xp-remaining" part="player-xp-remaining" hidden></span>
             </span>
             <span class="player-xp-toast" part="player-xp-toast" hidden aria-live="polite"></span>
@@ -94,7 +94,7 @@ ${watchPanelShadowCss()}
               />
             </svg>
             <svg class="daily-ring-fx" part="daily-ring-fx" viewBox="0 0 36 36" aria-hidden="true"></svg>
-            <span class="daily-ring-label daily-ring-muted" part="daily-ring-label">—</span>
+            <span class="daily-ring-label daily-ring-muted" part="daily-ring-label" dir="ltr">—</span>
           </div>
         </div>
         <div class="hint" part="hint"></div>
@@ -107,7 +107,7 @@ ${watchPanelShadowCss()}
             </div>
             <div class="cal-header-month" data-year-hm-nav-month hidden></div>
           </div>
-          <div class="cal-streak" part="cal-streak" dir="ltr" role="status"></div>
+          <div class="cal-streak" part="cal-streak" role="status"></div>
           <div class="cal-grid" part="cal-grid"></div>
           <p class="cal-legend" part="cal-legend"></p>
         </div>
