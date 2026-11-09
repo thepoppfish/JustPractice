@@ -98,22 +98,44 @@ export function setWatchPanelHostVisible(panelHostId: string, visible: boolean):
   host.style.display = visible ? '' : 'none';
 }
 
-/** Keep a dragged panel on-screen (custom left/top only). */
+/** Keep default and saved positions on-screen after resize or content changes. */
 export function clampWatchPanelHostToViewport(host: HTMLElement, pad = 8): void {
-  if (host.style.left === 'auto' || host.style.top === 'auto') return;
-  const left = Number.parseFloat(host.style.left);
-  const top = Number.parseFloat(host.style.top);
+  const rect = host.getBoundingClientRect();
+  const left = host.style.left === 'auto' ? rect.left : Number.parseFloat(host.style.left);
+  const top = host.style.top === 'auto' ? rect.top : Number.parseFloat(host.style.top);
   if (!Number.isFinite(left) || !Number.isFinite(top)) return;
 
-  const rect = host.getBoundingClientRect();
   const w = rect.width > 0 ? rect.width : host.offsetWidth;
   const h = rect.height > 0 ? rect.height : host.offsetHeight;
   const maxL = Math.max(pad, window.innerWidth - w - pad);
   const maxT = Math.max(pad, window.innerHeight - h - pad);
   const nextL = Math.min(Math.max(pad, left), maxL);
   const nextT = Math.min(Math.max(pad, top), maxT);
-  if (nextL !== left) host.style.left = `${nextL}px`;
-  if (nextT !== top) host.style.top = `${nextT}px`;
+  if (nextL !== left) {
+    host.style.left = `${nextL}px`;
+    host.style.right = 'auto';
+  }
+  if (nextT !== top) {
+    host.style.top = `${nextT}px`;
+    host.style.bottom = 'auto';
+  }
+}
+
+let viewportTracking: { host: HTMLElement; dispose: () => void } | undefined;
+
+function observeWatchPanelViewport(host: HTMLElement): void {
+  if (viewportTracking?.host === host) return;
+  viewportTracking?.dispose();
+  const clamp = () => {
+    if (host.isConnected) clampWatchPanelHostToViewport(host);
+  };
+  const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(clamp);
+  observer?.observe(host);
+  window.addEventListener('resize', clamp);
+  viewportTracking = { host, dispose: () => {
+    observer?.disconnect();
+    window.removeEventListener('resize', clamp);
+  } };
 }
 
 export function applyDefaultWatchPanelHostStyle(host: HTMLElement): void {
@@ -122,6 +144,8 @@ export function applyDefaultWatchPanelHostStyle(host: HTMLElement): void {
   host.style.setProperty('font-family', 'system-ui, Segoe UI, Roboto, sans-serif', 'important');
   host.style.setProperty('font-size', '13px', 'important');
   host.style.setProperty('max-width', '300px', 'important');
+  host.style.setProperty('width', 'min(300px, calc(100vw - 16px))', 'important');
+  host.style.setProperty('--jp-panel-max-height', 'calc(100dvh - 104px)');
   host.style.setProperty('display', 'block', 'important');
   host.style.setProperty('visibility', 'visible', 'important');
   host.style.setProperty('opacity', '1', 'important');
@@ -141,6 +165,7 @@ export function forceWatchPanelHostVisible(host: HTMLElement): void {
     (document.body ?? document.documentElement).appendChild(host);
   }
   requestAnimationFrame(() => clampWatchPanelHostToViewport(host));
+  observeWatchPanelViewport(host);
 }
 
 export function extractWatchPanelUiFromShadow(sr: ShadowRoot): WatchPanelUiRefs {
@@ -156,6 +181,7 @@ export function extractWatchPanelUiFromShadow(sr: ShadowRoot): WatchPanelUiRefs 
 /** Creates the floating host + shadow panel once; wires static listeners. */
 export function ensureWatchPanelIfAbsent(opts: EnsureWatchPanelOptions): void {
   const existing = document.getElementById(opts.panelHostId) as HTMLElement | null;
+  if (existing) observeWatchPanelViewport(existing);
   if (
     existing &&
     isWatchPanelHostLive(existing) &&

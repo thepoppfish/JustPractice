@@ -134,7 +134,7 @@
   "settings.saveCustomLevels": "Enregistrer les niveaux",
   "dash.goalsNoTarget": "Pas d’objectif",
   "dash.restoreReadError": "Impossible de lire ce fichier. Utilisez un JSON exporté par l’extension.",
-  "dash.restoreBadFormat": "La sauvegarde doit être un objet JSON (même format qu’Exporter JSON).",
+  "dash.restoreBadFormat": "Choisissez un export JSON JustPractice valide. Vos données actuelles n’ont pas été modifiées.",
   "dash.confirmRestoreBody": "Remplacer toutes les données {app} sur cet appareil par cette sauvegarde ? Les données actuelles seront perdues si vous ne les avez pas exportées.",
   "dash.confirmClearBody": "Effacer toutes les données {app} ? Bibliothèque, temps de pratique et réglages seront supprimés. Irréversible.",
   "dash.restoreFailed": "Échec de la restauration.",
@@ -452,5 +452,8 @@
   "achievement.meta_well_rounded.title": "Polyvalent",
   "achievement.meta_well_rounded.description": "Enregistrez 10 vidéos et marquez-en 10 comme terminées.",
   "achievement.meta_momentum.title": "Prenant de l'élan",
-  "achievement.meta_momentum.description": "Enregistrez 10 heures de pratique et maintenez une série de 7 jours."
+  "achievement.meta_momentum.description": "Enregistrez 10 heures de pratique et maintenez une série de 7 jours.",
+  "dash.restoreUnsupportedVersion": "Cette sauvegarde utilise une version non prise en charge. Mettez JustPractice à jour ou choisissez un export compatible.",
+  "dash.restoreTooLarge": "Cette sauvegarde est trop volumineuse. Choisissez un export JSON de moins de 8 Mo.",
+  "dash.restoreSummary": "Restaurer {videos} vidéos enregistrées ({completed} terminées) et {minutes} minutes de pratique."
 }

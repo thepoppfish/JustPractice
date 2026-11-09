@@ -1,5 +1,5 @@
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
-import { readPersisted, writePersisted } from '../lib/storage';
+import { readPersisted, withStorageTransaction } from '../lib/storage';
 
 export async function enrichLibraryItemFromOEmbed(
   videoId: string,
@@ -15,25 +15,34 @@ export async function enrichLibraryItemFromOEmbed(
     const r = await fetch(oembed);
     if (!r.ok) return;
     const j = (await r.json()) as { title?: string; author_name?: string };
-    let changed = false;
-    const fillTitle =
-      mode === 'overwrite' ||
-      item.title === 'Unknown title' ||
-      !item.title.trim() ||
-      isPlaceholderYoutubePageTitle(item.title);
-    const fillChannel =
-      mode === 'overwrite' ||
-      item.channel === 'Unknown channel' ||
-      !item.channel.trim();
-    if (j.title?.trim() && fillTitle) {
-      item.title = j.title.trim();
-      changed = true;
-    }
-    if (j.author_name?.trim() && fillChannel) {
-      item.channel = j.author_name.trim();
-      changed = true;
-    }
-    if (changed) await writePersisted(p);
+    await withStorageTransaction(async ({ read, write }) => {
+      const latest = await read();
+      const row = latest.library.find((x) => x.videoId === videoId);
+      // A removed/re-added entry is a different save. Never revive the old row
+      // or replace fields edited while this request was in flight.
+      if (!row || row.addedAt !== item.addedAt) return;
+      let changed = false;
+      const fillTitle = row.title === item.title && (
+        mode === 'overwrite' ||
+        row.title === 'Unknown title' ||
+        !row.title.trim() ||
+        isPlaceholderYoutubePageTitle(row.title)
+      );
+      const fillChannel = row.channel === item.channel && (
+        mode === 'overwrite' ||
+        row.channel === 'Unknown channel' ||
+        !row.channel.trim()
+      );
+      if (j.title?.trim() && fillTitle) {
+        row.title = j.title.trim();
+        changed = true;
+      }
+      if (j.author_name?.trim() && fillChannel) {
+        row.channel = j.author_name.trim();
+        changed = true;
+      }
+      if (changed) await write(latest);
+    });
   } catch {
     /* network / parse */
   }

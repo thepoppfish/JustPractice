@@ -134,7 +134,7 @@
   "settings.saveCustomLevels": "Guardar niveles personalizados",
   "dash.goalsNoTarget": "Sin objetivo",
   "dash.restoreReadError": "No se pudo leer el archivo. Asegúrate de que sea JSON válido de una exportación.",
-  "dash.restoreBadFormat": "La copia de seguridad debe ser un objeto JSON (mismo formato que Exportar JSON).",
+  "dash.restoreBadFormat": "Elige una exportación JSON válida de JustPractice. Tus datos actuales no se han modificado.",
   "dash.confirmRestoreBody": "¿Reemplazar todos los datos de {app} en este dispositivo con esta copia? Se perderán los datos actuales si no los exportaste antes.",
   "dash.confirmClearBody": "¿Borrar todos los datos de {app}? Se eliminan biblioteca, tiempo de práctica y ajustes. No se puede deshacer.",
   "dash.restoreFailed": "La restauración falló.",
@@ -452,5 +452,8 @@
   "achievement.meta_well_rounded.title": "Equilibrado",
   "achievement.meta_well_rounded.description": "Guarda 10 vídeos y marca 10 como completados.",
   "achievement.meta_momentum.title": "Ganando impulso",
-  "achievement.meta_momentum.description": "Registra 10 horas de práctica y mantén una racha de 7 días."
+  "achievement.meta_momentum.description": "Registra 10 horas de práctica y mantén una racha de 7 días.",
+  "dash.restoreUnsupportedVersion": "Esta copia usa una versión no compatible. Actualiza JustPractice o elige una exportación compatible.",
+  "dash.restoreTooLarge": "Esta copia es demasiado grande. Elige una exportación JSON de menos de 8 MB.",
+  "dash.restoreSummary": "Restaurar {videos} vídeos guardados ({completed} completados) y {minutes} minutos de práctica."
 }
