@@ -14,13 +14,15 @@ import {
 } from './practiceStats';
 import { SCHEMA_VERSION, defaultPlayerProgress, defaultSettings, type PersistedData } from './storage';
 
-function mockData(over: Partial<PersistedData> = {}): PersistedData {
+function mockData(over: Omit<Partial<PersistedData>, 'settings'> & { settings?: Partial<PersistedData['settings']> } = {}): PersistedData {
   const base: PersistedData = {
     schemaVersion: SCHEMA_VERSION,
     library: [],
     extensionInstalledDateKey: '2000-01-01',
     dailySeconds: {},
     videoSeconds: {},
+    videoPlaybackPositionSec: {},
+    videoDailySeconds: {},
     settings: defaultSettings(),
     playerProgress: defaultPlayerProgress(),
   };
@@ -38,7 +40,7 @@ function mockData(over: Partial<PersistedData> = {}): PersistedData {
 describe('secondsByLevelBucket', () => {
   it('groups legacy tags separately when JLPT active', () => {
     const data = mockData({
-      library: [{ videoId: 'a', title: '', channel: '', addedAt: 1, difficulty: 'B2' }],
+      library: [{ videoId: 'a', title: '', channel: '', addedAt: 1, difficulty: 'B2', completedAt: null, durationSec: null }],
       videoSeconds: { a: 100 },
       settings: { levelFramework: 'jlpt' },
     });
@@ -50,8 +52,8 @@ describe('secondsByLevelBucket', () => {
   it('uses custom level order when framework is custom', () => {
     const data = mockData({
       library: [
-        { videoId: 'a', title: '', channel: '', addedAt: 1, difficulty: 'Easy' },
-        { videoId: 'b', title: '', channel: '', addedAt: 2, difficulty: 'N1' },
+        { videoId: 'a', title: '', channel: '', addedAt: 1, difficulty: 'Easy', completedAt: null, durationSec: null },
+        { videoId: 'b', title: '', channel: '', addedAt: 2, difficulty: 'N1', completedAt: null, durationSec: null },
       ],
       videoSeconds: { a: 10, b: 20 },
       settings: { levelFramework: 'custom', customLevels: ['Easy', 'Hard'] },

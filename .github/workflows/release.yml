@@ -16,15 +16,22 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: '24'
+          node-version-file: .node-version
           cache: npm
       - run: npm ci
+      - run: npm run lint
+      - run: npm run audit:dependencies
+      - run: npm run typecheck
       - run: npm run build
+      - run: npm run lint
       - run: npm test
       - run: npm run package
+      - run: npm run verify:packaging-paths
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:smoke
       - name: Publish runtime archives
         env:
           GH_TOKEN: ${{ github.token }}

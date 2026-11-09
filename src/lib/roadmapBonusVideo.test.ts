@@ -67,7 +67,7 @@ describe('roadmapBonusVideo', () => {
             title: 'On path',
             channel: '',
             difficulty: null,
-            side: 'center',
+            side: 'center' as const,
           },
         ],
       },

@@ -40,7 +40,7 @@ describe('resolveTodayPathUi', () => {
 
   it('shows no-goal state when daily target unset', () => {
     const data = dataWithLibrary([], {
-      settings: { ...emptyPersisted().settings, goals: {} },
+      settings: { ...emptyPersisted().settings, goals: { dailyTargetSec: null, weeklyTargetSec: null, monthlyTargetSec: null } },
     });
     const ui = resolveTodayPathUi(data, todayKey, false);
     expect(ui.showNoGoal).toBe(true);

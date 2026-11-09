@@ -2,7 +2,6 @@ import { MSG, type SetSettingsPayload } from '../lib/messages';
 import type { AppSettings } from '../lib/storage';
 import { sendMsg } from './youtubeMessaging';
 import {
-  applyDefaultWatchPanelHostStyle,
   extractWatchPanelUiFromShadow,
   type EnsureWatchPanelOptions,
   type WatchPanelUiRefs,

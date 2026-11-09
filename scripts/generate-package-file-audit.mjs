@@ -4,10 +4,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { collectDistClosure, distDir, norm, root } from './package-dist-closure.mjs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const docsDir = path.join(root, 'docs');
 
 const SKIP_DIRS = new Set(['node_modules', '.git']);
@@ -112,7 +110,7 @@ function auditDist() {
 }
 
 function auditRepo() {
-  walkDir(root, '', (rel, abs) => {
+  walkDir(root, '', (rel) => {
     if (rel.startsWith('dist/')) return;
     const cat = categorizeRepoFile(rel);
     if (cat) addEntry(rel, cat.required, cat.category, cat.notes);

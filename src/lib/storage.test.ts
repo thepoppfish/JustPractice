@@ -280,6 +280,7 @@ describe('normalizeCustomLevels', () => {
 
 describe('library completion helpers', () => {
   const item = (completedAt: number | null): LibraryItem => ({
+    durationSec: null,
     videoId: 'x',
     title: 'T',
     channel: 'C',

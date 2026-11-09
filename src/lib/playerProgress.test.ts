@@ -30,6 +30,8 @@ function mockData(over: Partial<PersistedData> = {}): PersistedData {
     extensionInstalledDateKey: '2026-01-01',
     dailySeconds: {},
     videoSeconds: {},
+    videoPlaybackPositionSec: {},
+    videoDailySeconds: {},
     settings: defaultSettings(),
     playerProgress: defaultPlayerProgress(),
     ...over,

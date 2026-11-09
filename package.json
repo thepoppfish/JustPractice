@@ -14,26 +14,35 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint ."
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
+    "test:smoke": "playwright test",
+    "audit:dependencies": "node scripts/check-dependency-audit.mjs",
+    "verify:packaging-paths": "node scripts/verify-packaging-paths.mjs"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.2.1",
+    "@crxjs/vite-plugin": "^3.0.0",
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.65.0",
     "@types/chrome": "^0.0.287",
     "@types/d3": "^7.4.3",
     "@types/jsdom": "^28.0.3",
+    "@types/node": "^24.19.2",
     "esbuild": "^0.25.0",
     "eslint": "^9.39.4",
     "globals": "^16.5.0",
     "jsdom": "^29.1.1",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.5",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.59.3",
-    "vite": "^6.0.11",
-    "vitest": "^3.2.4"
+    "typescript-eslint": "^8.72.1",
+    "vite": "^6.4.6",
+    "vitest": "^4.1.12"
   },
   "dependencies": {
     "animejs": "^4.4.1",
     "d3": "^7.9.0"
+  },
+  "engines": {
+    "node": ">=24.15.0 <25"
   }
 }

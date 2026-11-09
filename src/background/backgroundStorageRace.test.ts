@@ -44,7 +44,7 @@ function holdNextStorageWrite() {
   vi.mocked(chrome.storage.local.set).mockImplementationOnce(async (values) => {
     started.resolve();
     await finished.promise;
-    await write(values);
+    await write(values, () => {});
   });
   return { started: started.promise, finish: () => finished.resolve() };
 }

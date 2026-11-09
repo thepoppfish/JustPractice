@@ -92,14 +92,10 @@ function createZip(zipPath) {
 
   if (platform() === 'win32') {
     const quote = (value) => `'${value.replaceAll("'", "''")}'`;
-    const ps = [
-      'Compress-Archive',
-      '-Path',
-      quote(path.join(stageDir, '*')),
-      '-DestinationPath',
-      quote(zipPath),
-      '-Force',
-    ].join(' ');
+    // ZipFile takes literal directory paths: spaces, apostrophes, Unicode and
+    // brackets must never be interpreted as PowerShell wildcards or code.
+    const ps = `Add-Type -AssemblyName System.IO.Compression.FileSystem; ` +
+      `[System.IO.Compression.ZipFile]::CreateFromDirectory(${quote(stageDir)}, ${quote(zipPath)})`;
     const r = spawnSync('powershell', ['-NoProfile', '-Command', ps], { stdio: 'pipe' });
     if (r.status !== 0) {
       throw new Error(r.stderr?.toString() || 'Compress-Archive failed');
