@@ -29,8 +29,8 @@ test('watch practice display counts pending playback once across polls and persi
     await video.play();
   });
   // Cross two 15-second storage polls and the normal 30-second practice flush.
-  await expect.poll(() => page.locator('video').evaluate(video => video.currentTime), { timeout: 45_000, intervals: [1000] }).toBeGreaterThan(36);
-  const mediaSeconds = await page.locator('video').evaluate(video => video.currentTime);
+  await expect.poll(() => page.locator('video').evaluate(video => (video as HTMLVideoElement).currentTime), { timeout: 45_000, intervals: [1000] }).toBeGreaterThan(36);
+  const mediaSeconds = await page.locator('video').evaluate(video => (video as HTMLVideoElement).currentTime);
   const caption = await panel.locator('[part="daily-practice-caption"]').innerText();
   const displayedSeconds = Number(caption.match(/(\d+) min/)?.[1] ?? 0) * 60 + Number(caption.match(/(\d+) s(?:\s|$)/)?.[1] ?? 0);
   expect(displayedSeconds).toBeGreaterThanOrEqual(Math.floor(mediaSeconds) - 4);
