@@ -54,17 +54,17 @@ export function buildMergedDailyForPanel(
 }
 
 /**
- * Apply remote daily seconds without regressing today's total when local practice
- * has unflushed pending seconds or a fresher optimistic stored value.
+ * Merge persisted/optimistically flushed seconds only. The playback meter adds
+ * its unflushed remainder when rendering; storing that remainder here would
+ * count it again on every storage event or calendar poll.
  */
 export function mergeIncomingDailySnapshot(
   current: Record<string, number>,
   incoming: Record<string, number>,
-  pendingTodaySeconds: number,
   nowMs: number = Date.now(),
 ): Record<string, number> {
   const todayKey = dateKeyFromTimestamp(nowMs);
-  const localTodayTotal = (current[todayKey] ?? 0) + Math.max(0, pendingTodaySeconds);
+  const localTodayTotal = current[todayKey] ?? 0;
   const incomingToday = incoming[todayKey] ?? 0;
   return {
     ...incoming,
@@ -81,17 +81,17 @@ export function streakCaption(
   t: (k: string, p?: Record<string, string | number>) => string,
   streak: number,
 ): string {
-  if (streak <= 0) return t('dash.streakNone');
-  if (streak === 1) return t('dash.streakOne');
-  return t('dash.streakMany', { n: String(streak) });
+  if (streak <= 0) return t('calendar.streakNone');
+  if (streak === 1) return t('calendar.streakOne');
+  return t('calendar.streakMany', { n: String(streak) });
 }
 
 export function streakAriaLabel(
   t: (k: string, p?: Record<string, string | number>) => string,
   streak: number,
 ): string {
-  if (streak <= 0) return t('dash.streakAriaNone');
-  return t('dash.streakAria', { n: String(streak) });
+  if (streak <= 0) return t('calendar.streakAriaNone');
+  return t('calendar.streakAria', { n: String(streak) });
 }
 export function paintCalStreak(p: {
   shadowRoot: ShadowRoot | null;
@@ -194,7 +194,7 @@ function renderWatchPanelYearHeatmap(p: RenderWatchPanelCalendarParams): void {
       (key, params) => p.panelT(key, params),
       dailyGoalSec != null,
     ),
-    ariaLabel: p.panelT('dash.yearHeatmapAria'),
+    ariaLabel: p.panelT('calendar.yearHeatmapAria'),
   });
 
   if (panelHeatmapDetach) {
@@ -365,5 +365,5 @@ export function renderWatchPanelCalendar(p: RenderWatchPanelCalendarParams): voi
     panelT: p.panelT,
   });
   const calLeg = p.shadowRoot.querySelector('[part="cal-legend"]');
-  if (calLeg) calLeg.textContent = p.panelT('dash.practiceDayCreditHint');
+  if (calLeg) calLeg.textContent = p.panelT('calendar.practiceDayCreditHint');
 }

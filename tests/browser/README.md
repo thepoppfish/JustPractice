@@ -24,6 +24,14 @@ these smoke tests do not claim that manual signoff or spoken screen-reader
 coverage. Storage races, rejected ticks and invalid restores also have unit
 regression coverage.
 
+The production watch bundle also has a portable size budget and classic-script
+parse check. An installed-browser case exercises completion particles and their
+cleanup with motion enabled, protecting the focused D3 imports used to reduce
+the bundle. Shared-style observations retry a current control during asynchronous
+storage repaints; their expected colors, dimensions and radii remain fixed.
+An actual canvas-stream playback case crosses two calendar polls and a practice
+flush, checking that the displayed duration adds unflushed seconds only once.
+
 CI runs on Linux and Windows, retains the runtime ZIP and browser artifacts,
 and never publishes a release. A passing smoke check establishes installation
 and key wiring; it does not establish real-video playback accuracy or replace

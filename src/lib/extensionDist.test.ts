@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Script } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -28,10 +29,16 @@ describe('extension dist (YouTube content script packaging)', () => {
     expect(js.some((f) => f.includes('loader'))).toBe(false);
   });
 
-  it.skipIf(!distReady)('bundle contains panel host and boot', () => {
+  it.skipIf(!distReady)('bundle is a classic script with panel markup and startup diagnostic', () => {
     const bundle = fs.readFileSync(bundlePath, 'utf8');
-    expect(bundle).toContain('jp-practice-yt-panel-host');
-    expect(bundle).toContain('mountWatchPanelShellSync');
-    expect(bundle).toContain('boot();');
+    expect(bundle.includes('jp-practice-yt-panel-host'), 'panel host marker').toBe(true);
+    expect(bundle.includes('[JustPractice] YouTube content script boot'), 'startup diagnostic').toBe(true);
+    // Parsing as a classic script rejects accidental imports/split module entry
+    // points while allowing production function names to be minified.
+    expect(() => new Script(bundle)).not.toThrow();
+  });
+
+  it.skipIf(!distReady)('keeps the standalone watch bundle within its portable size budget', () => {
+    expect(fs.statSync(bundlePath).size).toBeLessThanOrEqual(350 * 1024);
   });
 });

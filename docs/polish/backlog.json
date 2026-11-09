@@ -597,8 +597,18 @@
     "source": "scripts/build-youtube-bundle.mjs:17; src/dashboard/dashboardTemplates.ts; src/content/youtubeWatchPanelRuntime.ts:154",
     "image": null,
     "size": "M",
-    "status": "open",
+    "status": "in-progress",
     "pr": null,
-    "verification": null
+    "verification": "Payload optimization and repeated 25/100/500-item library benchmarks are implemented. Sustained playback exposed a pre-existing inflated display total; its correction and regression coverage are included. Final corrected-build playback measurements and exact-head CI remain pending.",
+    "pendingChecks": [
+      "Final corrected-build controlled and live ten-minute playback profiles",
+      "Full exact-head Linux/Windows checks and retained runtime candidate"
+    ],
+    "checks": [
+      {
+        "text": "Measured results, investigation budgets and remaining checks",
+        "href": "performance.md"
+      }
+    ]
   }
 ]

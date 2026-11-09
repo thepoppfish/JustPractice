@@ -12,6 +12,7 @@ const label = {
   merged: 'Merged',
   'implemented-awaiting-review': 'Implemented · PR open',
   'verification-pending': 'Implemented · verification outstanding',
+  'in-progress': 'Implementation and verification in progress',
   open: 'Open',
 };
 const counts = items.reduce((result, item) => {

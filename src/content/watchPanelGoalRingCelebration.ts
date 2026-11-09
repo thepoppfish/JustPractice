@@ -3,7 +3,9 @@
  * Choreographed with anime.js; particle/ripple DOM via d3.
  */
 import { animate, createTimeline, type JSAnimation, type Timeline } from 'animejs';
-import * as d3 from 'd3';
+import { range } from 'd3-array';
+import { select, type Selection } from 'd3-selection';
+import { symbol, symbolStar } from 'd3-shape';
 
 const RING_CX = 18;
 const RING_CY = 18;
@@ -18,7 +20,7 @@ export type BurstParticleSpec = { id: number; angle: number };
 
 /** Evenly spaced burst angles (tests + spark layout). */
 export function buildBurstParticleSpecs(count: number): BurstParticleSpec[] {
-  return d3.range(count).map((i) => ({
+  return range(count).map((i) => ({
     id: i,
     angle: (i / count) * Math.PI * 2,
   }));
@@ -64,8 +66,7 @@ export function playDailyGoalRingCompleteCelebration(shadowRoot: ShadowRoot | nu
 
   if (label) playLabelPop(label, reduced);
 
-  const root = d3
-    .select(fx)
+  const root = select(fx)
     .selectAll<SVGGElement, number>('g.daily-ring-celebration')
     .data([0])
     .join('g')
@@ -127,11 +128,11 @@ function playLabelPop(label: HTMLElement, reduced: boolean): void {
 }
 
 function clearFxLayer(fx: SVGSVGElement): void {
-  d3.select(fx).selectAll('g.daily-ring-celebration').remove();
+  select(fx).selectAll('g.daily-ring-celebration').remove();
 }
 
 function playVictorySweep(
-  root: d3.Selection<SVGGElement, number, SVGSVGElement, unknown>,
+  root: Selection<SVGGElement, number, SVGSVGElement, unknown>,
   reduced: boolean,
 ): void {
   const sweep = root
@@ -159,12 +160,12 @@ function playVictorySweep(
 }
 
 function playRipples(
-  root: d3.Selection<SVGGElement, number, SVGSVGElement, unknown>,
+  root: Selection<SVGGElement, number, SVGSVGElement, unknown>,
   reduced: boolean,
 ): void {
   const ripples = root
     .selectAll<SVGCircleElement, number>('circle.daily-ring-ripple')
-    .data(d3.range(reduced ? 1 : RIPPLE_COUNT))
+    .data(range(reduced ? 1 : RIPPLE_COUNT))
     .join('circle')
     .attr('class', 'daily-ring-ripple')
     .attr('cx', RING_CX)
@@ -187,7 +188,7 @@ function playRipples(
   });
 }
 
-function playSparkBurst(root: d3.Selection<SVGGElement, number, SVGSVGElement, unknown>): void {
+function playSparkBurst(root: Selection<SVGGElement, number, SVGSVGElement, unknown>): void {
   const specs = buildBurstParticleSpecs(SPARK_COUNT).map((s) => ({
     ...s,
     angle: s.angle + (Math.random() - 0.5) * 0.4,
@@ -221,7 +222,7 @@ function playSparkBurst(root: d3.Selection<SVGGElement, number, SVGSVGElement, u
     });
   });
 
-  const starPath = d3.symbol().type(d3.symbolStar).size(24);
+  const starPath = symbol().type(symbolStar).size(24);
   const starSpecs = buildBurstParticleSpecs(STAR_COUNT).map((s, i) => ({
     ...s,
     angle: s.angle + Math.PI / STAR_COUNT,
@@ -259,7 +260,7 @@ function playSparkBurst(root: d3.Selection<SVGGElement, number, SVGSVGElement, u
   });
 }
 
-function playCenterCheck(root: d3.Selection<SVGGElement, number, SVGSVGElement, unknown>): void {
+function playCenterCheck(root: Selection<SVGGElement, number, SVGSVGElement, unknown>): void {
   const check = root
     .append('path')
     .attr('class', 'daily-ring-check')

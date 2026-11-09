@@ -8,10 +8,10 @@ import type { YearHeatmapPracticeData } from './yearHeatmapMonth';
 import type { YearHeatmapTranslate, YearHeatmapStatusLabelFn } from './yearHeatmapHtml';
 
 export function monthHeatmapLegendHtml(t: YearHeatmapTranslate): string {
-  const red = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--none"></span>${escapeHtml(String(t('dash.chartKeyNone')))}</span>`;
-  const green = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--active"></span>${escapeHtml(String(t('dash.chartKeyActive')))}</span>`;
-  const missed = `<span class="year-hm-key"><span class="month-hm-legend-mark" aria-hidden="true">X</span>${escapeHtml(String(t('dash.monthHeatmapLegendX')))}</span>`;
-  return `<div class="month-hm-legend year-hm-keys-row" role="group" aria-label="${escapeAttr(String(t('dash.monthHeatmapLegendAria')))}">${red}${green}${missed}</div>`;
+  const red = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--none"></span>${escapeHtml(String(t('calendar.chartKeyNone')))}</span>`;
+  const green = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--active"></span>${escapeHtml(String(t('calendar.chartKeyActive')))}</span>`;
+  const missed = `<span class="year-hm-key"><span class="month-hm-legend-mark" aria-hidden="true">X</span>${escapeHtml(String(t('calendar.monthHeatmapLegendX')))}</span>`;
+  return `<div class="month-hm-legend year-hm-keys-row" role="group" aria-label="${escapeAttr(String(t('calendar.monthHeatmapLegendAria')))}">${red}${green}${missed}</div>`;
 }
 
 function monthDayClass(cell: MonthDetailCell): string {

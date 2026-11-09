@@ -268,7 +268,7 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
               backToYearLabel: vm.t('yearHeatmap.backToYear'),
               keysHtml: '',
               flawlessYearBadgeLabel: vm.t('dash.yearFlawlessBadge'),
-              ariaLabel: vm.t('dash.yearHeatmapAria'),
+              ariaLabel: vm.t('calendar.yearHeatmapAria'),
             })}`;
             })()}
 
@@ -281,15 +281,15 @@ export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {
               </div>
               <div class="chart-keys" aria-hidden="true">
                 <span class="chart-key"
-                  ><span class="chart-key-dot chart-key-dot--none"></span>${escapeHtml(vm.t('dash.chartKeyNone'))}</span
+                  ><span class="chart-key-dot chart-key-dot--none"></span>${escapeHtml(vm.t('calendar.chartKeyNone'))}</span
                 >
                 <span class="chart-key"
-                  ><span class="chart-key-dot chart-key-dot--active"></span>${escapeHtml(vm.t('dash.chartKeyActive'))}</span
+                  ><span class="chart-key-dot chart-key-dot--active"></span>${escapeHtml(vm.t('calendar.chartKeyActive'))}</span
                 >
                 ${
                   vm.dailyGoalSec != null ?
                     `<span class="chart-key"
-                  ><span class="chart-key-dot chart-key-dot--goal"></span>${escapeHtml(vm.t('dash.chartKeyGoal'))}</span
+                  ><span class="chart-key-dot chart-key-dot--goal"></span>${escapeHtml(vm.t('calendar.chartKeyGoal'))}</span
                 >`
                   : ''
                 }

@@ -206,6 +206,8 @@ export async function saveWatchPanelVideoToLibrary(p: {
       difficulty,
       snapshotTitle: p.getLibrarySnapshot()?.title?.slice(0, 80),
     });
+    ui.difficultySelect.focus();
+    ui.difficultySelect.scrollIntoView?.({ block: 'nearest' });
     return;
   }
 

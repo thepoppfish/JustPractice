@@ -88,3 +88,11 @@ Runtime packaging walks the manifest/HTML/JS dependency closure, excludes source
 maps and development files, and verifies a root manifest. Linux/Windows CI
 produces review artifacts; publishing is a separate maintainer action.
 [Contributor and release commands](../CONTRIBUTING.md).
+
+The watch entry remains one classic script, with minified JavaScript and embedded
+CSS. Its locale loader omits dashboard/onboarding namespaces; shared calendar
+messages have their own namespace, and a build guard rejects page-only message
+references in the content dependency graph. Extension pages retain the full
+dictionaries. Focused D3 imports preserve the celebration without loading the
+umbrella package. CI checks the watch payload against a 350 KiB budget; manual
+profiling tools retain timing, CPU and memory evidence separately from CI.

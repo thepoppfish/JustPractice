@@ -34,6 +34,39 @@ than adding tests that repeat the implementation. Review Hebrew, long titles,
 empty states, keyboard access and native 200% zoom when layout changes.
 See [the architecture](docs/ARCHITECTURE.md) and [browser scope](tests/browser/README.md).
 
+## Performance investigations
+
+After building and installing Playwright Chromium, run these separately on an
+otherwise idle machine. The watch command takes ten minutes of actual playback:
+
+```sh
+npm run profile:library -- --label before --output output/performance
+npm run profile:watch -- --label before --seconds 600 --output output/performance
+```
+
+After a measured change, rebuild and repeat with `--label after` in the same
+directory. Completed labels are protected from accidental overwrite. Library
+sizes/repeats can be changed with `--sizes 25,100,500 --repeats 5`; watch duration
+supports 60–3600 seconds. Read `--help` for each script. The default profile is
+synthetic and source controlled; no local review artifacts are required.
+
+For a real-site follow-up, add `--live-video bT_g9030hx0` to the watch command
+and choose a new label. This uses the public project tutorial in a disposable,
+anonymous YouTube session, with muted native looping and normal network/player
+code. It can fail if playback needs consent/sign-in or the service is unavailable;
+record that limitation rather than substituting a hidden or inactive player.
+Real-page heap/long tasks include YouTube work. The JSON also records observed
+media advancement, loops and practice/position writes for interpretation.
+
+Retain JSON, screenshots, `.cpuprofile` files and interaction traces. Open CPU
+profiles in Chrome DevTools' JavaScript Profiler and trace ZIPs with Playwright's
+trace viewer. Timings include automation observation and paint frames; the
+background worker is warm, and memory means renderer JS heap/DOM, not total
+browser memory. The canvas stream excludes real YouTube rendering, ads, network
+and decoding costs. A short run can expose growth but cannot establish that
+arbitrarily long sessions have no leak. These are manual investigation tools,
+not hardware-sensitive CI pass/fail timing tests.
+
 PRs should state the concrete problem, resulting behavior, relevant checks and
 limitations. Preserve the original requirements in
 `docs/polish/backlog.json`; update statuses/evidence and run `npm run review:polish`.

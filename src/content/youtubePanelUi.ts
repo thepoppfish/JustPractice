@@ -115,7 +115,7 @@ export function syncWatchPanelLabels(p: {
     }
   }
   const calLeg = p.shadowRoot.querySelector('[part="cal-legend"]');
-  if (calLeg) calLeg.textContent = p.panelT('dash.practiceDayCreditHint');
+  if (calLeg) calLeg.textContent = p.panelT('calendar.practiceDayCreditHint');
   p.onAfter?.();
 }
 

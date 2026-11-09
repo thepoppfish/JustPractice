@@ -44,7 +44,7 @@ export function librarySecondaryActionsHtml(item: LibraryItem, prefix: string, t
         <option value="" ${item.difficulty === null ? 'selected' : ''}>${escapeHtml(t('common.unrated'))}</option>
         ${tags.map((tag) => `<option value="${escapeAttr(tag)}" ${item.difficulty === tag ? 'selected' : ''}>${escapeHtml(tag)}</option>`).join('')}
       </select>` : ''}
-      <button type="button" id="${escapeAttr(id)}-completion" class="btn-secondary-sm" data-library-complete="${escapeAttr(item.videoId)}" data-complete="${item.completedAt == null}">${escapeHtml(t(item.completedAt == null ? 'library.markComplete' : 'dash.undoComplete'))}</button>
+      <button type="button" id="${escapeAttr(id)}-completion" class="btn-secondary-sm" data-library-complete="${escapeAttr(item.videoId)}" data-complete="${item.completedAt == null}">${escapeHtml(t(item.completedAt == null ? 'library.markComplete' : 'library.markIncomplete'))}</button>
       <button type="button" id="${escapeAttr(id)}-remove" class="btn-remove" data-remove="${escapeAttr(item.videoId)}">${escapeHtml(t('common.remove'))}</button>
     </div>
   </details>`;

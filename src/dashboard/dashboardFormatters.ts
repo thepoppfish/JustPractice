@@ -110,14 +110,14 @@ export function statBucketLabel(raw: string, t: DashTranslate): string {
 }
 
 export function streakCaption(t: DashTranslate, streak: number): string {
-  if (streak <= 0) return t('dash.streakNone');
-  if (streak === 1) return t('dash.streakOne');
-  return t('dash.streakMany', { n: String(streak) });
+  if (streak <= 0) return t('calendar.streakNone');
+  if (streak === 1) return t('calendar.streakOne');
+  return t('calendar.streakMany', { n: String(streak) });
 }
 
 export function streakAriaLabel(t: DashTranslate, streak: number): string {
-  if (streak <= 0) return t('dash.streakAriaNone');
-  return t('dash.streakAria', { n: String(streak) });
+  if (streak <= 0) return t('calendar.streakAriaNone');
+  return t('calendar.streakAria', { n: String(streak) });
 }
 
 export function yearHeatmapStatusLabel(

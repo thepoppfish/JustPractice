@@ -104,20 +104,21 @@ test('primary controls share tokens across dashboard, popup, onboarding and watc
     await chrome.runtime.sendMessage({ type: 'ADD_OR_UPDATE_LIBRARY', payload: { videoId: 'lmnopqrstuv', title: 'Shared styles', channel: 'Synthetic', durationSec: 600 } });
   });
   await page.reload();
-  const colors: unknown[] = [];
   const style = (el: Element) => { const css = getComputedStyle(el); return { background: css.backgroundColor, color: css.color, radius: css.borderRadius, minHeight: css.minHeight, boxSizing: css.boxSizing }; };
-  colors.push(await page.locator('.library-primary').evaluate(style));
+  // Storage-driven paints can replace a node between locator resolution and
+  // style evaluation. Retry the observation against the current control.
+  const assertPrimaryStyle = (locator: ReturnType<typeof page.locator>) => expect.poll(() => locator.evaluate(style)).toEqual({ background: 'rgb(255, 139, 86)', color: 'rgb(32, 17, 9)', radius: '8px', minHeight: '44px', boxSizing: 'border-box' });
+  await assertPrimaryStyle(page.locator('.library-primary'));
   await page.goto(url('dashboard'));
   await page.locator('[data-view="stats"]').click();
-  colors.push(await page.locator('.stats-today .jp-primary').evaluate(style));
+  await assertPrimaryStyle(page.locator('.stats-today .jp-primary'));
   await page.goto(url('welcome'));
-  colors.push(await page.locator('#welcome-continue').evaluate(style));
+  await assertPrimaryStyle(page.locator('#welcome-continue'));
   await context.route('https://www.youtube.com/watch?v=abcdefghijk', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="en"><head><title>Synthetic fixture - YouTube</title></head><body><main><ytd-watch-flexy video-id="abcdefghijk"><h1 class="title">Synthetic fixture</h1><div id="channel-name"><a>Synthetic channel</a></div><video controls></video></ytd-watch-flexy></main></body></html>' }));
   await page.goto('https://www.youtube.com/watch?v=abcdefghijk');
   const panel = page.locator('#jp-practice-yt-panel-host');
   await expect(panel.locator('[part="add"]')).toBeVisible();
-  colors.push(await panel.locator('[part="add"]').evaluate(style));
-  expect(colors).toEqual(Array(4).fill({ background: 'rgb(255, 139, 86)', color: 'rgb(32, 17, 9)', radius: '8px', minHeight: '44px', boxSizing: 'border-box' }));
+  await assertPrimaryStyle(panel.locator('[part="add"]'));
   await expect(panel.locator('[part="daily-practice-caption"]')).toContainText('Today: 0 min');
   const audit = await new AxeBuilder({ page }).include('#jp-practice-yt-panel-host').analyze();
   await testInfo.attach('axe-shared-watch', { body: JSON.stringify(audit), contentType: 'application/json' });

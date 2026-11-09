@@ -6,6 +6,11 @@ automation API can inspect controls and send keys but cannot capture or listen
 to system audio. An accessibility-tree inspection cannot establish what a
 reader actually announces.
 
+An attempt to download and run the NVDA portable setup was rejected by automatic
+approval review with “blocked by policy”; no more specific reason was returned.
+The installer did not run. Use an existing reader or perform the check manually;
+this restriction is not evidence that the application passes or fails.
+
 Use an installed NVDA or Windows Narrator with Chrome, a disposable browser
 profile and a build from the current PR stack. The public release predates
 these changes. Build with `npm ci` and `npm run build`, then load `dist/`

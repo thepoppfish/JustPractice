@@ -55,8 +55,10 @@ if (fs.existsSync(bundlePath)) {
   if (!bundle.includes('jp-practice-yt-panel-host')) {
     errors.push('bundle missing panel host id jp-practice-yt-panel-host');
   }
-  if (!bundle.includes('function boot(') && !bundle.includes('boot();')) {
-    errors.push('bundle missing boot()');
+  // Function names change in a production minification pass. Keep a stable
+  // startup diagnostic check; installed-browser smoke checks prove execution.
+  if (!bundle.includes('[JustPractice] YouTube content script boot')) {
+    errors.push('bundle missing the content-script startup diagnostic');
   }
   if (bundle.includes('youtube.ts-loader')) {
     errors.push('bundle must not reference youtube.ts-loader');

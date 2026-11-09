@@ -3,7 +3,7 @@
 *{box-sizing:border-box}body{margin:0;background:#101318;color:#ebedf2;font:16px/1.65 system-ui}main{max-width:1080px;margin:auto;padding:32px 24px}a{color:#ffc18e}a:focus-visible,summary:focus-visible{outline:3px solid #ffd08a;outline-offset:4px}h1,h2{line-height:1.25}h2{font-size:22px}article{padding:24px 0;border-bottom:1px solid #46505f;scroll-margin-top:24px}nav{display:flex;flex-wrap:wrap;gap:12px}.status{color:#b1edc0;font-weight:600}.pending{padding:12px;background:#35261b;border-left:3px solid #ffa466}details{color:#b7bdc8}summary{cursor:pointer}li{margin:8px 0}code{overflow-wrap:anywhere}.note{padding:16px;background:#202630;border-radius:8px}
 </style><main><h1>JustPractice · baseline progress</h1>
 <p>All 21 original requirements retained. Updated 2026-11-09.</p>
-<p class="note">5 Merged · 14 Implemented · PR open · 1 Implemented · verification outstanding · 1 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
+<p class="note">5 Merged · 14 Implemented · PR open · 1 Implemented · verification outstanding · 1 Implementation and verification in progress. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
 <p><a href="../../output/playwright/baseline-2026-11-09/baseline-review.html#backlog">Original review</a> · <a href="backlog.json">Machine-readable tracker</a> · <a href="dependency-review.md">Dependency review</a></p>
 <p>Screenshot and trace links refer to local review artifacts under <code>output/playwright/</code>; they are not part of the extension or the public documentation deployment. Public PRs include the maintained code and CI artifacts.</p>
 <nav aria-label="Baseline items"><a href="#JP-01">JP-01</a><a href="#JP-02">JP-02</a><a href="#JP-03">JP-03</a><a href="#JP-04">JP-04</a><a href="#JP-05">JP-05</a><a href="#JP-06">JP-06</a><a href="#JP-07">JP-07</a><a href="#JP-08">JP-08</a><a href="#JP-09">JP-09</a><a href="#JP-10">JP-10</a><a href="#JP-11">JP-11</a><a href="#JP-12">JP-12</a><a href="#JP-13">JP-13</a><a href="#JP-14">JP-14</a><a href="#JP-15">JP-15</a><a href="#JP-16">JP-16</a><a href="#JP-17">JP-17</a><a href="#JP-18">JP-18</a><a href="#JP-19">JP-19</a><a href="#JP-20">JP-20</a><a href="#JP-21">JP-21</a></nav>
@@ -209,11 +209,11 @@
 </article>
 <article id="JP-21">
 <h2>JP-21 · Measure large-library and content-script costs before optimizing</h2>
-<p class="status">Open</p>
+<p class="status">Implementation and verification in progress</p>
 <p>Profile startup, search, playback sampling/calendar updates, large libraries, and memory over a long YouTube session. Then consider minification, selective rendering, and reducing unnecessary DOM replacement where measurements support it.</p>
 <p><strong>Acceptance:</strong> Retain before/after traces and choose budgets for time to usable panel, search latency, long tasks, and memory. No optimization should regress tracking or packaging.</p>
-
-
-
+<p><strong>Verification:</strong> Payload optimization and repeated 25/100/500-item library benchmarks are implemented. Sustained playback exposed a pre-existing inflated display total; its correction and regression coverage are included. Final corrected-build playback measurements and exact-head CI remain pending.</p>
+<p class="pending"><strong>Outstanding:</strong> Final corrected-build controlled and live ten-minute playback profiles; Full exact-head Linux/Windows checks and retained runtime candidate</p>
+<ul><li><a href="performance.md">Measured results, investigation budgets and remaining checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>The packaged ZIP is 284,940 bytes across 24 runtime files. The standalone YouTube script is roughly 627 KB uncompressed and has no minification option; it includes locale/UI code. The dashboard builds multiple view sections, including hidden ones. No representative long-session or 100+ video performance trace was taken.</p></details>
 </article></main></html>
