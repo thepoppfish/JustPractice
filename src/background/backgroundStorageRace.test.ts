@@ -103,6 +103,31 @@ afterEach(async () => {
 });
 
 describe('background storage concurrency', () => {
+  it.each(['remove', 'clear', 'restore'] as const)(
+    'ignores a stale practice tick queued behind %s',
+    async (action) => {
+      await practiceTick(30);
+      const write = holdNextStorageWrite();
+      const backup = emptyPersisted();
+      backup.dailySeconds[DAY] = 900;
+      const mutation = action === 'remove'
+        ? handleBackgroundMessage({ type: MSG.REMOVE_LIBRARY, payload: { videoId: VIDEO_ID } })
+        : action === 'clear'
+          ? handleBackgroundMessage({ type: MSG.CLEAR_ALL_EXTENSION_DATA })
+          : handleBackgroundMessage({ type: MSG.RESTORE_EXTENSION_STORAGE, payload: { [STORAGE_KEY]: backup } });
+      await write.started;
+      const lateTick = practiceTick(60);
+      write.finish();
+      await mutation;
+      const snapshot = structuredClone(stored);
+      expect(await lateTick).toMatchObject({ ok: true, xpGained: 0 });
+      expect(stored).toEqual(snapshot);
+      const data = await readPersisted();
+      expect(data.library).toEqual([]);
+      expect(data.dailySeconds).toEqual(action === 'remove' ? { [DAY]: 30 } : action === 'restore' ? { [DAY]: 900 } : {});
+    },
+  );
+
   it('keeps both simultaneous practice ticks, including sub-minute XP carry', async () => {
     await Promise.all([practiceTick(30), practiceTick(30)]);
 
@@ -292,6 +317,8 @@ describe('background storage concurrency', () => {
   it('serializes practice updates with backup replacement', async () => {
     const write = holdNextStorageWrite();
     const backup = emptyPersisted();
+    // This restored video remains saved, so the queued tick should still be accepted.
+    backup.library = structuredClone((stored[STORAGE_KEY] as PersistedData).library);
     backup.dailySeconds[DAY] = 600;
     backup.videoSeconds[VIDEO_ID] = 600;
     const restore = handleBackgroundMessage({

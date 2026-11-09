@@ -29,6 +29,8 @@ export async function refreshWatchPanelCalendarSnapshot(
 }
 
 export interface WatchPanelStorageChangePipeline {
+  /** Update eligibility immediately when a saved video is added, removed, or all data is cleared. */
+  applyIncomingLibraryFromPersisted: (newValue: PersistedData | undefined) => void;
   /** When `newValue.settings` is present, merge into in-memory settings and refresh panel chrome. */
   applyIncomingSettingsFromPersisted: (newValue: PersistedData) => void;
   /** Always runs (e.g. `GET_STATE` resync + timers) — typically wrapped in `fireAsyncWatch`. */
@@ -43,6 +45,7 @@ export function runWatchPanelAfterJpPracticeStorageChange(
   newValue: PersistedData | undefined,
   pipeline: WatchPanelStorageChangePipeline,
 ): void {
+  pipeline.applyIncomingLibraryFromPersisted(newValue);
   if (newValue?.settings && typeof newValue.settings === 'object') {
     pipeline.applyIncomingSettingsFromPersisted(newValue);
   }
