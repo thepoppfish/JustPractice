@@ -1,4 +1,4 @@
-import { test as base, expect, type BrowserContext } from '@playwright/test';
+import { test as base, expect, type BrowserContext, type Worker } from '@playwright/test';
 import path from 'node:path';
 
 export const test = base.extend<{ context: BrowserContext; extensionId: string }>({
@@ -31,3 +31,20 @@ export const test = base.extend<{ context: BrowserContext; extensionId: string }
 
 
 export { expect };
+
+export async function setQuotaFailure(worker: Worker, enabled: boolean): Promise<void> {
+  await worker.evaluate((fail) => {
+    const scope = globalThis as typeof globalThis & { __jpRestoreStorage?: () => void };
+    scope.__jpRestoreStorage?.();
+    if (!fail) return;
+    const original = chrome.storage.local.set.bind(chrome.storage.local);
+    Object.defineProperty(chrome.storage.local, 'set', {
+      configurable: true, writable: true,
+      value: async () => { throw new Error('QUOTA_BYTES quota exceeded'); },
+    });
+    scope.__jpRestoreStorage = () => {
+      Object.defineProperty(chrome.storage.local, 'set', { configurable: true, writable: true, value: original });
+      delete scope.__jpRestoreStorage;
+    };
+  }, enabled);
+}

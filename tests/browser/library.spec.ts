@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, setQuotaFailure } from './fixtures';
 import AxeBuilder from '@axe-core/playwright';
 
 for (const locale of ['en', 'he'] as const) {
@@ -115,13 +115,7 @@ test('failed undo retains its offer and succeeds after a real storage retry', as
   await page.reload();
   await page.locator('summary').click();
   await page.locator('[data-remove]').click();
-  await worker.evaluate(() => {
-    const original = chrome.storage.local.set.bind(chrome.storage.local);
-    Object.defineProperty(chrome.storage.local, 'set', { configurable: true, value: async () => {
-      Object.defineProperty(chrome.storage.local, 'set', { configurable: true, value: original });
-      throw new Error('QUOTA_BYTES quota exceeded');
-    } });
-  });
+  await setQuotaFailure(worker, true);
   await page.locator('[data-undo-removal]').click();
   await expect(page.locator('.jp-library-undo-error')).toBeVisible();
   expect(await worker.evaluate(async () => (await chrome.storage.local.get('jpPractice')).jpPractice.library)).toEqual([]);
@@ -129,6 +123,7 @@ test('failed undo retains its offer and succeeds after a real storage retry', as
   const audit = await new AxeBuilder({ page }).analyze();
   await testInfo.attach('axe-undo-error', { body: JSON.stringify(audit), contentType: 'application/json' });
   expect(audit.violations).toEqual([]);
+  await setQuotaFailure(worker, false);
   await page.locator('[data-undo-removal]').click();
   await expect(page.locator('.item')).toHaveCount(1);
   await expect(page.locator('.jp-library-undo-error')).toBeHidden();

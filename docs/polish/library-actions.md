@@ -35,7 +35,7 @@ open state and identified focus survive storage paints.
 
 Validation on 9 November 2026:
 
-- 404 unit tests in 57 files, including metadata-exact undo, failed writes,
+- 405 unit tests in 57 files, including metadata-exact undo, failed writes,
   stale ticks/enrichment, conflicts, duplicate undo, expiry and profile replacement.
 - Type checks, zero-warning lint, production build, dependency audit, runtime ZIP
   verification and Windows paths with spaces/apostrophe/Unicode/brackets pass.

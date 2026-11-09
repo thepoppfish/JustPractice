@@ -32,3 +32,27 @@ it('holds Undo disabled until its parent removal settles, then transfers focus a
   expect(sendMessage.mock.calls.filter(([m]) => m.type === MSG.UNDO_LIBRARY_REMOVAL)).toHaveLength(1);
   await vi.waitFor(() => expect(document.activeElement).toBe(document.querySelector('[data-dismiss-undo]')));
 });
+
+it('keeps a failed Undo visible when a delayed synchronization returns the same offer', async () => {
+  const offer = { token: 'same-removal', title: 'Practice fixture', expiresAt: Date.now() + 86400000 };
+  let rejectWrite!: (error: Error) => void;
+  const sendMessage = vi.fn((message: { type: string }) => message.type === MSG.UNDO_LIBRARY_REMOVAL
+    ? new Promise((_resolve, reject) => { rejectWrite = reject; })
+    : Promise.resolve({ ok: true, undo: offer }));
+  vi.stubGlobal('chrome', { runtime: { sendMessage }, storage: { onChanged: { addListener: vi.fn(), removeListener: vi.fn() } } });
+  document.body.innerHTML = '<main></main>';
+  const root = document.querySelector('main')!;
+  const ui = libraryUndoUi(root, createTranslator('en'), async () => {});
+  await vi.waitFor(() => expect(document.querySelector<HTMLElement>('.jp-library-undo')!.hidden).toBe(false));
+  document.querySelector<HTMLButtonElement>('[data-undo-removal]')!.click();
+  await vi.waitFor(() => expect(typeof rejectWrite).toBe('function'));
+  await ui.refresh(); // A storage notification is queued while the Undo write is pending.
+  rejectWrite(new Error('QUOTA_BYTES quota exceeded'));
+  await vi.waitFor(() => expect(sendMessage.mock.calls.filter(([m]) => m.type === MSG.GET_LIBRARY_UNDO)).toHaveLength(2));
+  await vi.waitFor(() => {
+    const error = document.querySelector<HTMLElement>('.jp-library-undo-error')!;
+    expect(error.hidden).toBe(false);
+    expect(error.textContent).toContain('Could not undo');
+    expect(document.querySelector<HTMLButtonElement>('[data-undo-removal]')!.disabled).toBe(false);
+  });
+});

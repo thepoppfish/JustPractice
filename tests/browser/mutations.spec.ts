@@ -1,23 +1,6 @@
-import { test, expect } from './fixtures';
-import type { Page, Worker } from '@playwright/test';
+import { test, expect, setQuotaFailure } from './fixtures';
+import type { Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-
-async function setQuotaFailure(worker: Worker, enabled: boolean): Promise<void> {
-  await worker.evaluate((fail) => {
-    const scope = globalThis as typeof globalThis & { __jpRestoreStorage?: () => void };
-    scope.__jpRestoreStorage?.();
-    if (!fail) return;
-    const original = chrome.storage.local.set.bind(chrome.storage.local);
-    Object.defineProperty(chrome.storage.local, 'set', {
-      configurable: true, writable: true,
-      value: async () => { throw new Error('QUOTA_BYTES quota exceeded'); },
-    });
-    scope.__jpRestoreStorage = () => {
-      Object.defineProperty(chrome.storage.local, 'set', { configurable: true, writable: true, value: original });
-      delete scope.__jpRestoreStorage;
-    };
-  }, enabled);
-}
 
 async function setTransportFailure(page: Page, enabled: boolean): Promise<void> {
   await page.evaluate((fail) => {

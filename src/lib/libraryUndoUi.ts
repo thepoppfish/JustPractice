@@ -97,8 +97,11 @@ export class LibraryUndoUi {
     try {
       const result = await sendChecked<{ ok: true; undo: LibraryUndoOffer | null }>({ type: MSG.GET_LIBRARY_UNDO });
       if (gen !== this.generation || this.pending) return;
-      this.offer = result.undo ?? null;
-      if (this.offer) { this.success = false; this.failure = ''; }
+      const next = result.undo ?? null;
+      const changed = next?.token !== this.offer?.token;
+      this.offer = next;
+      if (this.offer) this.success = false;
+      if (changed) this.failure = '';
       this.render();
     } catch { /* A failed initial read must not claim there is an undo offer. */ }
   }
