@@ -18,8 +18,8 @@ local baseline report.
 - PR #5 open: mutation feedback and recovery (JP-09), plus follow-ups to JP-07/08.
 - PR #6 open: library undo and card/action hierarchy (JP-10, JP-15).
 - PR #7 open: statistics, settings and shared visual styles (JP-16–18).
-- Next: privacy/data-flow documentation and the case study (JP-19–20), measured
-  performance (JP-21), and the outstanding spoken-reader verification for JP-07.
+- PR #8 open: privacy/data flow, permission review and project case study (JP-19–20).
+- Next: measured performance (JP-21), and the outstanding spoken-reader verification for JP-07.
 
 Local visual evidence is retained under `output/playwright/` rather than shipped
 inside the extension. The original review is

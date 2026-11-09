@@ -6,7 +6,7 @@ export default defineManifest({
   version: '1.0.3',
   description:
     'Track saved YouTube videos automatically. Build a local library with JLPT, CEFR, or custom levels and set daily goals.',
-  permissions: ['storage', 'contextMenus', 'alarms', 'scripting'],
+  permissions: ['storage', 'contextMenus', 'scripting'],
   host_permissions: [
     'https://www.youtube.com/*',
     'https://youtube.com/*',

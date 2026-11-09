@@ -1,5 +1,10 @@
 # Project slimdown plan
 
+> Historical planning snapshot, retained for context. Counts and proposed
+> removals below predate the November 2026 polish work; do not execute them as
+> current instructions. Use [the docs guide](README.md),
+> [current checks](../CONTRIBUTING.md) and [polish tracker](polish/README.md).
+
 **Goal:** Reduce repo size and clutter before / while hosting on GitHub — without breaking `npm run build`, `npm test`, or `npm run package`.
 
 **Full file list:** [PROJECT-SLIMDOWN-INVENTORY.csv](./PROJECT-SLIMDOWN-INVENTORY.csv) (199 tracked paths, generated from git)
