@@ -111,6 +111,10 @@
       {
         "text": "Verification report with screenshots and acceptance checks",
         "href": "../../output/playwright/counting-guidance-2026-11-09/verification.html"
+      },
+      {
+        "text": "PR #9 follow-up: saved-video Details focuses/reveals the level selector without re-saving; installed-browser regression passed",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/9"
       }
     ]
   },
@@ -597,20 +601,27 @@
     "source": "scripts/build-youtube-bundle.mjs:17; src/dashboard/dashboardTemplates.ts; src/content/youtubeWatchPanelRuntime.ts:154",
     "image": null,
     "size": "M",
-    "status": "in-progress",
+    "status": "verification-pending",
     "pr": 9,
-    "verification": "Payload optimization and repeated 25/100/500-item library benchmarks are implemented. Sustained playback exposed a pre-existing inflated display total; its correction and regression coverage are included. Final corrected-build playback measurements and exact-head CI remain pending.",
+    "verification": "411 unit tests / 58 files and 18 installed-browser cases pass locally and on Linux/Windows. Final 25/100/500-item startup/search fits chosen budgets. The retained 346,144-byte watch bundle is 50.8% smaller; the 24-file ZIP is 17.4% smaller. Corrected controlled playback saved and displayed 598 seconds over 600 seconds, with zero page errors/steady long tasks and +0.30 MiB post-GC heap. Actual YouTube discards media around 43 seconds on two videos even without the extension; sustained live-service acceptance remains manual.",
     "pendingChecks": [
-      "Final corrected-build controlled and live ten-minute playback profiles",
-      "Full exact-head Linux/Windows checks and retained runtime candidate"
+      "Manual ten-minute actual YouTube playback in normal Chrome; automated service failure reproduced without the extension"
     ],
     "checks": [
       {
-        "text": "Measured results, investigation budgets and remaining checks",
+        "text": "Implementation, measurements, budgets, source hashes and validation",
         "href": "performance.md"
       },
       {
-        "text": "Draft PR; final measurements and CI pending",
+        "text": "Before/after traces, raw results, six-locale screenshots and retained candidate",
+        "href": "../../output/playwright/performance-2026-11-09/verification.html"
+      },
+      {
+        "text": "Required normal-Chrome live-playback check",
+        "href": "live-playback-check.md"
+      },
+      {
+        "text": "PR #9 and cross-platform checks",
         "href": "https://github.com/thepoppfish/JustPractice/pull/9"
       }
     ]

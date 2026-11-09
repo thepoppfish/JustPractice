@@ -1,8 +1,8 @@
 # Watch payload and measured performance (JP-21)
 
-Verification is in progress. The final ten-minute playback checks, exact-head
-cross-platform checks and retained candidate are still required before this item
-can be marked implemented. No release, merge or publication is part of this work.
+Controlled verification has passed. The source has passed local and
+Linux/Windows checks; actual sustained YouTube playback needs a manual result after the service failures
+described below. No release, merge or publication is part of this work.
 
 ## Measured changes
 
@@ -11,19 +11,23 @@ daily-display correction is 346,228 bytes (SHA-256
 `b5f88a4bf6da734e9338012dbc517f061bd15241fca84d22c07d071df4befd29`).
 This is a 50.8% payload reduction, independent of machine timing. Minification,
 focused D3 imports and omission of dashboard/onboarding messages account for the
-reduction. Shared calendar labels retain all six translations under a shared
+reduction. The corrected final bundle is 346,144 bytes, SHA-256
+`8b2e834d47f17f20789f171d6fa019de6cefc0c6ba29d06af78e9622722046d9`.
+The retained candidate ZIP is 267,465 bytes, 17.4% smaller than PR #8's 323,683-byte
+ZIP. It contains 24 runtime files and a root manifest; source maps stay outside
+the archive. Shared calendar labels retain all six translations under a shared
 namespace; extension pages retain complete dictionaries. A build guard rejects
 page-only message references in watch dependencies. A classic-script parser and
 350 KiB size check protect packaging.
 
 Five fresh dashboard documents per library size, with three search interactions
-per trial, have completed before and after that build:
+per trial, have completed for the original and final corrected build:
 
-| Saved videos | Before startup max | After startup max | Before search max | After search max |
+| Saved videos | Before startup max | Corrected startup max | Before search max | Corrected search max |
 | --- | ---: | ---: | ---: | ---: |
-| 25 | 277.8 ms | 204.1 ms | 63.8 ms | 49.6 ms |
-| 100 | 242.4 ms | 287.2 ms | 94.5 ms | 90.8 ms |
-| 500 | 690.8 ms | 795.6 ms | 316.8 ms | 353.3 ms |
+| 25 | 277.8 ms | 187.3 ms | 63.8 ms | 47.6 ms |
+| 100 | 242.4 ms | 271.2 ms | 94.5 ms | 80.1 ms |
+| 500 | 690.8 ms | 730.6 ms | 316.8 ms | 338.5 ms |
 
 Both builds fit the chosen investigation budgets. These observations do not
 establish a general dashboard speedup; the change targets watch payload size.
@@ -31,6 +35,9 @@ Startup uses a warm background worker and includes automation observation and
 two animation frames. Search includes one match, no match and clearing the query.
 Twenty percent of the saved fixtures are completed and excluded from the active
 library. The 500-item case is a stress workload.
+The intermediate pre-display-correction trials remain in `after-library.json`;
+the final numbers above are in `corrected-library.json` and identify the same
+bundle hash as the retained candidate.
 
 ## Playback finding and follow-up
 
@@ -41,8 +48,65 @@ seconds into its baseline, then the renderer added those seconds again.
 Persisted practice remained accurate. The correction keeps synchronized/flushed
 seconds separate from the meter's unflushed remainder. Regression coverage
 exercises repeated polls, stale snapshots and the normal playback/save intervals.
-Final measurements must identify the corrected bundle rather than reuse the
-earlier optimized build's results.
+The corrected build completed 600.051 seconds with 598 seconds both persisted
+and displayed (9 minutes 58 seconds). Its observed usable panel time was 134.6 ms,
+with no page errors or steady-state long tasks after the first minute. Post-GC
+renderer heap grew from 3.01 to 3.31 MiB (+0.30 MiB), with 827 final DOM nodes.
+Listeners remained at 57 throughout the corrected run; the older baseline had
+44. The data supports bounded growth over this window, not a claim of lower
+absolute memory use or unlimited leak freedom.
+
+The final run identifies source `fc6396c` and the retained candidate's exact
+watch-bundle hash. Earlier intermediate runs were collected with edits based on
+`59cfc83`; their `source` field names that base commit, while their bundle hashes
+identify the actual measured payload. They are retained separately from the
+final corrected build. The original before-bundle hash also matches the retained
+PR #8 ZIP directly.
+
+## Actual YouTube service limitation
+
+The public project tutorial played initially, then YouTube emptied the media
+source around 43 seconds and displayed “Something went wrong. Refresh or try
+again later.” The same failure reproduced without the extension in headless
+and visible Chromium, and on a second public video (the Blender Foundation's
+Big Buck Bunny). The extension's saved total stopped with actual playback.
+This is evidence against attributing the observed failure to this extension;
+it does not establish YouTube's underlying cause or qualify as sustained
+live-playback verification.
+
+The profiler now retains player text/readiness and a full diagnostic screenshot
+when a media source is discarded, and fails the run. A live session must advance
+media for at least 85% of its window to qualify as sustained playback. The
+invalid, intentionally terminated headless run is retained for diagnosis and
+excluded from acceptance. No restriction is bypassed or repeatedly retried.
+The corrected installed build's diagnostic run also stopped around 44 seconds:
+44 seconds were both persisted and displayed, with no extension page errors.
+Its new guard rejected the discarded media source and retained the full player
+error screenshot; the run is not counted as successful sustained playback.
+Follow [the manual live-playback check](live-playback-check.md) in normal Chrome
+and report the actual outcome. This requirement remains open independently of
+the controlled playback and installed-browser tests.
+
+## Checks and retained candidate
+
+The corrected source passed 411 unit tests in 58 files and all 18 installed
+browser cases locally, including actual playback across two calendar polls and
+a normal save interval. Type checks, zero-warning lint before/after the build,
+dependency policy, production/runtime verification and special-character Windows
+packaging passed. Linux and Windows passed the same full sequence for runtime
+commit `72f2f30` in [run 42664942999](https://github.com/thepoppfish/JustPractice/actions/runs/42664942999)
+and the profiling-guard follow-up `fc6396c` in
+[run 42666669215](https://github.com/thepoppfish/JustPractice/actions/runs/42666669215).
+There were no skipped or retried browser cases in the inspected Linux artifact.
+
+The local immutable candidate is `justpractice-1.0.3-pr9.zip`, SHA-256
+`641e0d80d2c9133e4a8b52d0b33e200169be1cf836bca07606f18ad063ac0d7a`.
+Its watch bundle matches the inspected Linux CI runtime byte for byte. This is
+an unpublished candidate; it does not replace the public 1.0.1 release.
+
+[PR #9](https://github.com/thepoppfish/JustPractice/pull/9) is stacked on #8.
+JP-21 remains verification-pending for the manual real-service check. JP-07's
+actual reader check is independently outstanding.
 
 ## Scope, budgets and retained evidence
 

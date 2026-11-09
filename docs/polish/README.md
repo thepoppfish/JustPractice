@@ -22,10 +22,10 @@ local baseline report.
 - PR #6 open: library undo and card/action hierarchy (JP-10, JP-15).
 - PR #7 open: statistics, settings and shared visual styles (JP-16–18).
 - PR #8 open: privacy/data flow, permission review and project case study (JP-19–20).
-- In progress: measured performance (JP-21), including a playback-display
-  correction discovered during profiling. See [the measurements and remaining
-  checks](performance.md) and draft PR #9. Spoken-reader verification for JP-07
-  is outstanding.
+- PR #9: measured performance and payload reduction (JP-21), plus a practice
+  display correction and working Details shortcut. Controlled measurements and
+  automated checks pass. JP-21's [manual live-service check](live-playback-check.md)
+  and JP-07's [actual reader check](spoken-reader-check.md) remain outstanding.
 
 Local visual evidence is retained under `output/playwright/` rather than shipped
 inside the extension. The original review is

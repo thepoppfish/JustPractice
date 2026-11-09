@@ -68,6 +68,9 @@ server. No backend, account or API key is needed.
   semantics, focus restoration and logical layout properties support Hebrew.
 - **Reproducible delivery:** runtime-only ZIPs are verified from the dependency
   closure. Linux/Windows PR checks retain installable artifacts and browser traces.
+- **Measured payload:** profiling led to a 50.8% smaller standalone watch
+  script, with a 350 KiB build budget and retained before/after evidence.
+  [Measurements and limits](docs/polish/performance.md).
 
 See [the architecture and source map](docs/ARCHITECTURE.md).
 
@@ -90,7 +93,7 @@ npx playwright install chromium
 npm run test:smoke
 ```
 
-The source candidate passed **409 unit tests in 58 files** and **16 installed
+The source candidate passed **411 unit tests in 58 files** and **18 installed
 Chromium scenarios** on 9 November 2026. These are a dated snapshot, not a
 guarantee for later edits. [Current CI](https://github.com/thepoppfish/JustPractice/actions)
 and [full release checks](CONTRIBUTING.md#required-checks) are authoritative.
@@ -125,8 +128,9 @@ metadata, live streams, ads and browser shutdown timing need ongoing real-world
 testing. Uninstalling loses the browser's local extension data.
 
 The [21-item polish tracker](docs/polish/README.md) distinguishes merged fixes,
-open PRs and outstanding acceptance checks. Next work includes measured
-large-library/long-session performance and the spoken-reader review. Historical
+open PRs and outstanding acceptance checks. Manual acceptance still includes
+the actual screen-reader review and sustained live YouTube playback; automated
+Chromium service failures are recorded separately from controlled measurements. Historical
 planning/audit snapshots are indexed separately in [the docs guide](docs/README.md).
 
 Released under [GPL-3.0-or-later](LICENSE).
