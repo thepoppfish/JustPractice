@@ -598,7 +598,7 @@
     "image": null,
     "size": "M",
     "status": "in-progress",
-    "pr": null,
+    "pr": 9,
     "verification": "Payload optimization and repeated 25/100/500-item library benchmarks are implemented. Sustained playback exposed a pre-existing inflated display total; its correction and regression coverage are included. Final corrected-build playback measurements and exact-head CI remain pending.",
     "pendingChecks": [
       "Final corrected-build controlled and live ten-minute playback profiles",
@@ -608,6 +608,10 @@
       {
         "text": "Measured results, investigation budgets and remaining checks",
         "href": "performance.md"
+      },
+      {
+        "text": "Draft PR; final measurements and CI pending",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/9"
       }
     ]
   }

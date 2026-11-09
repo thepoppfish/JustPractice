@@ -209,11 +209,11 @@
 </article>
 <article id="JP-21">
 <h2>JP-21 · Measure large-library and content-script costs before optimizing</h2>
-<p class="status">Implementation and verification in progress</p>
+<p class="status">Implementation and verification in progress · <a href="https://github.com/thepoppfish/JustPractice/pull/9">PR #9</a></p>
 <p>Profile startup, search, playback sampling/calendar updates, large libraries, and memory over a long YouTube session. Then consider minification, selective rendering, and reducing unnecessary DOM replacement where measurements support it.</p>
 <p><strong>Acceptance:</strong> Retain before/after traces and choose budgets for time to usable panel, search latency, long tasks, and memory. No optimization should regress tracking or packaging.</p>
 <p><strong>Verification:</strong> Payload optimization and repeated 25/100/500-item library benchmarks are implemented. Sustained playback exposed a pre-existing inflated display total; its correction and regression coverage are included. Final corrected-build playback measurements and exact-head CI remain pending.</p>
 <p class="pending"><strong>Outstanding:</strong> Final corrected-build controlled and live ten-minute playback profiles; Full exact-head Linux/Windows checks and retained runtime candidate</p>
-<ul><li><a href="performance.md">Measured results, investigation budgets and remaining checks</a></li></ul>
+<ul><li><a href="performance.md">Measured results, investigation budgets and remaining checks</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/9">Draft PR; final measurements and CI pending</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>The packaged ZIP is 284,940 bytes across 24 runtime files. The standalone YouTube script is roughly 627 KB uncompressed and has no minification option; it includes locale/UI code. The dashboard builds multiple view sections, including hidden ones. No representative long-session or 100+ video performance trace was taken.</p></details>
 </article></main></html>

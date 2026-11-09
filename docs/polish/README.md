@@ -5,6 +5,9 @@ The 21 original requirements and their acceptance criteria are preserved in
 open pull requests; an implementation is not evidence that every acceptance
 check passed.
 
+The [acceptance audit](completion-audit.md) maps every original item to its
+retained evidence and explicitly identifies the remaining checks.
+
 Open [the current visual tracker](index.html), regenerated with
 `npm run review:polish`. It also links the current evidence from the original
 local baseline report.
@@ -21,7 +24,8 @@ local baseline report.
 - PR #8 open: privacy/data flow, permission review and project case study (JP-19–20).
 - In progress: measured performance (JP-21), including a playback-display
   correction discovered during profiling. See [the measurements and remaining
-  checks](performance.md). Spoken-reader verification for JP-07 is outstanding.
+  checks](performance.md) and draft PR #9. Spoken-reader verification for JP-07
+  is outstanding.
 
 Local visual evidence is retained under `output/playwright/` rather than shipped
 inside the extension. The original review is
