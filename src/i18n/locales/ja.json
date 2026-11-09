@@ -134,7 +134,7 @@
   "settings.saveCustomLevels": "カスタムレベルを保存",
   "dash.goalsNoTarget": "目標なし",
   "dash.restoreReadError": "ファイルを読めませんでした。エクスポートした JSON か確認してください。",
-  "dash.restoreBadFormat": "バックアップは JSON オブジェクトである必要があります（エクスポート形式と同じ）。",
+  "dash.restoreBadFormat": "有効なJustPracticeのJSONエクスポートを選択してください。現在のデータは変更されていません。",
   "dash.confirmRestoreBody": "この端末の {app} のデータをすべてこのバックアップで置き換えますか？先にエクスポートしていないと現在のデータは失われます。",
   "dash.confirmClearBody": "{app} のすべてのデータを消去しますか？ライブラリ・練習時間・設定が削除され、元に戻せません。",
   "dash.restoreFailed": "復元に失敗しました。",
@@ -452,5 +452,8 @@
   "achievement.meta_well_rounded.title": "バランス型",
   "achievement.meta_well_rounded.description": "動画を10本保存し、10本を完了にする。",
   "achievement.meta_momentum.title": "勢いづく",
-  "achievement.meta_momentum.description": "練習を10時間記録し、7日連続を維持する。"
+  "achievement.meta_momentum.description": "練習を10時間記録し、7日連続を維持する。",
+  "dash.restoreUnsupportedVersion": "このバックアップのバージョンには対応していません。JustPracticeを更新するか、対応するエクスポートを選択してください。",
+  "dash.restoreTooLarge": "バックアップが大きすぎます。8 MB未満のJSONエクスポートを選択してください。",
+  "dash.restoreSummary": "保存済み動画{videos}本（完了{completed}本）と練習時間{minutes}分を復元します。"
 }

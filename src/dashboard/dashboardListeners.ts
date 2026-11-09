@@ -1,6 +1,7 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionMessage } from '../lib/messages';
 import { APP_NAME } from '../lib/branding';
+import { BackupValidationError, MAX_BACKUP_BYTES, prepareBackup } from '../lib/backup';
 import {
   daysInCalendarMonth,
   normalizeCustomLevels,
@@ -378,6 +379,10 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     const file = restoreFileInput?.files?.[0];
     if (restoreFileInput) restoreFileInput.value = '';
     if (!file) return;
+    if (file.size > MAX_BACKUP_BYTES) {
+      window.alert(vm.t('dash.restoreTooLarge'));
+      return;
+    }
     let parsed: unknown;
     try {
       const text = await file.text();
@@ -386,11 +391,18 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       window.alert(vm.t('dash.restoreReadError'));
       return;
     }
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      window.alert(vm.t('dash.restoreBadFormat'));
+    let prepared: ReturnType<typeof prepareBackup>;
+    try {
+      prepared = prepareBackup(parsed);
+    } catch (error) {
+      const key = error instanceof BackupValidationError && error.reason === 'version'
+        ? 'dash.restoreUnsupportedVersion'
+        : error instanceof BackupValidationError && error.reason === 'size'
+          ? 'dash.restoreTooLarge' : 'dash.restoreBadFormat';
+      window.alert(vm.t(key));
       return;
     }
-    const ok = confirm(vm.t('dash.confirmRestoreBody', { app: APP_NAME }));
+    const ok = confirm(vm.t('dash.restoreSummary', prepared.summary) + '\n\n' + vm.t('dash.confirmRestoreBody', { app: APP_NAME }));
     if (!ok) return;
     const res = await send<{ ok: boolean; error?: string }>({
       type: MSG.RESTORE_EXTENSION_STORAGE,

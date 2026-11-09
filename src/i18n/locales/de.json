@@ -134,7 +134,7 @@
   "settings.saveCustomLevels": "Eigene Stufen speichern",
   "dash.goalsNoTarget": "Kein Ziel",
   "dash.restoreReadError": "Datei konnte nicht gelesen werden. Bitte gültiges Export-JSON verwenden.",
-  "dash.restoreBadFormat": "Backup muss ein JSON-Objekt sein (wie beim Export).",
+  "dash.restoreBadFormat": "Wähle einen gültigen JustPractice-JSON-Export. Deine aktuellen Daten wurden nicht geändert.",
   "dash.confirmRestoreBody": "Alle {app}-Daten auf diesem Gerät durch dieses Backup ersetzen? Aktuelle Daten gehen verloren, wenn du sie nicht exportiert hast.",
   "dash.confirmClearBody": "Alle Daten von {app} löschen? Bibliothek, Übungszeit und Einstellungen werden entfernt. Nicht rückgängig.",
   "dash.restoreFailed": "Wiederherstellung fehlgeschlagen.",
@@ -452,5 +452,8 @@
   "achievement.meta_well_rounded.title": "Vielseitig",
   "achievement.meta_well_rounded.description": "Speichere 10 Videos und markiere 10 als abgeschlossen.",
   "achievement.meta_momentum.title": "Schwung aufbauen",
-  "achievement.meta_momentum.description": "Logge 10 Stunden Übung und halte eine 7-Tage-Serie."
+  "achievement.meta_momentum.description": "Logge 10 Stunden Übung und halte eine 7-Tage-Serie.",
+  "dash.restoreUnsupportedVersion": "Diese Sicherung verwendet eine nicht unterstützte Version. Aktualisiere JustPractice oder wähle einen unterstützten Export.",
+  "dash.restoreTooLarge": "Diese Sicherung ist zu groß. Wähle einen JSON-Export mit weniger als 8 MB.",
+  "dash.restoreSummary": "{videos} gespeicherte Videos ({completed} abgeschlossen) und {minutes} Übungsminuten wiederherstellen."
 }

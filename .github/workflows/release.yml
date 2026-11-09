@@ -1,0 +1,47 @@
+name: Release extension
+
+on:
+  push:
+    tags: ['[0-9]*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run package
+      - name: Publish runtime archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          version=$(node -p "JSON.parse(require('fs').readFileSync('dist/manifest.json', 'utf8')).version")
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "$version" ]]; then
+            echo 'Release tag must match the manifest version.' >&2
+            exit 1
+          fi
+          cp "release/justpractice-$version.zip" release/justpractice.zip
+          if gh release view "$version" >/dev/null 2>&1; then
+            gh release upload "$version" \
+              "release/justpractice-$version.zip" release/justpractice.zip --clobber
+          else
+            gh release create "$version" \
+              "release/justpractice-$version.zip" release/justpractice.zip \
+              --target "$GITHUB_SHA" --title "JustPractice $version" \
+              --generate-notes --latest
+          fi

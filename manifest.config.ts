@@ -3,7 +3,7 @@ import { defineManifest } from '@crxjs/vite-plugin';
 export default defineManifest({
   manifest_version: 3,
   name: 'JustPractice',
-  version: '1.0.0',
+  version: '1.0.1',
   description:
     'Track YouTube practice time and a local library. Tag videos with JLPT (N5–N1), CEFR (A1–C2), or custom levels, goals, reminders — stored locally in Chrome.',
   permissions: ['storage', 'contextMenus', 'alarms', 'scripting'],

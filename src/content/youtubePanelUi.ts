@@ -338,6 +338,7 @@ export function attachPanelDrag(
       host.style.top = `${ny}px`;
       host.style.right = 'auto';
       host.style.bottom = 'auto';
+      host.style.setProperty('--jp-panel-max-height', 'calc(100dvh - 16px)');
     };
 
     const up = (_ev: PointerEvent): void => {

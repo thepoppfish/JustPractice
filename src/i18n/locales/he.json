@@ -134,7 +134,7 @@
   "settings.saveCustomLevels": "שמירת רמות מותאמות",
   "dash.goalsNoTarget": "ללא יעד",
   "dash.restoreReadError": "לא ניתן לקרוא את הקובץ. ודאו שזה JSON תקף מייצוא.",
-  "dash.restoreBadFormat": "הגיבוי חייב להיות אובייקט JSON (אותו פורמט כמו ייצוא JSON).",
+  "dash.restoreBadFormat": "בחרו קובץ ייצוא JSON תקין של JustPractice. הנתונים הנוכחיים שלכם לא השתנו.",
   "dash.confirmRestoreBody": "להחליף את כל נתוני {app} במכשיר זה בגיבוי זה? הנתונים הנוכחיים יימחקו אם לא ייצאתם אותם קודם.",
   "dash.confirmClearBody": "למחוק את כל הנתונים של {app}? זה מסיר את הספרייה, זמן התרגול וההגדרות. לא ניתן לבטל.",
   "dash.restoreFailed": "השחזור נכשל.",
@@ -452,5 +452,8 @@
   "achievement.meta_well_rounded.title": "מאוזן",
   "achievement.meta_well_rounded.description": "שמרו 10 סרטונים וסמנו 10 כהושלמו.",
   "achievement.meta_momentum.title": "בונים מומנטום",
-  "achievement.meta_momentum.description": "רשמו 10 שעות תרגול ושמרו על רצף של 7 ימים."
+  "achievement.meta_momentum.description": "רשמו 10 שעות תרגול ושמרו על רצף של 7 ימים.",
+  "dash.restoreUnsupportedVersion": "גרסת הגיבוי אינה נתמכת. עדכנו את JustPractice או בחרו קובץ ייצוא נתמך.",
+  "dash.restoreTooLarge": "קובץ הגיבוי גדול מדי. בחרו קובץ JSON קטן מ־8 MB.",
+  "dash.restoreSummary": "שחזור {videos} סרטונים שמורים ({completed} הושלמו) ו־{minutes} דקות תרגול."
 }

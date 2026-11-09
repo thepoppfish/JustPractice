@@ -4,10 +4,8 @@ import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import {
   dateKeyFromTimestamp,
   ensureSettingsShape,
-  normalizeImportedPersisted,
-  readPersisted,
-  STORAGE_KEY,
-  writePersisted,
+  withStorageTransaction,
+  type StorageTransaction,
   emptyPersisted,
 } from '../lib/storage';
 import {
@@ -28,10 +26,33 @@ import { normalizeRoadmapCompletionSnapshot } from '../lib/roadmapCompletionSnap
 import { normalizeTodayPathPlan } from '../lib/todayPathPlan';
 import { addVideoDailyPractice } from '../lib/videoDailyPractice';
 import { rebuildContextMenusFromStorage } from './backgroundContextMenus';
+import { prepareBackup } from '../lib/backup';
+import { restoreStorageSafely } from '../lib/storageRecovery';
 
 const MAX_TICK_SECONDS = 120;
 
 export async function handleBackgroundMessage(message: ExtensionMessage): Promise<ExtensionResponse> {
+  // Enrichment waits on YouTube outside the storage queue, then commits through
+  // its own short transaction. Other messages can keep recording practice.
+  if (message.type === MSG.ENRICH_LIBRARY_META) {
+    await enrichLibraryItemFromOEmbed(message.payload.videoId, 'overwrite');
+    return { ok: true };
+  }
+  if (message.type === MSG.BACKFILL_LIBRARY_DURATIONS) {
+    const limit =
+      typeof message.payload?.limit === 'number' && message.payload.limit > 0
+        ? Math.floor(message.payload.limit)
+        : 8;
+    const result = await backfillLibraryDurations(limit);
+    return { ok: true, ...result };
+  }
+  return withStorageTransaction((storage) => handleStorageMessage(message, storage));
+}
+
+async function handleStorageMessage(
+  message: ExtensionMessage,
+  { read: readPersisted, write: writePersisted }: StorageTransaction,
+): Promise<ExtensionResponse> {
   switch (message.type) {
     case MSG.GET_STATE: {
       const data = await readPersisted();
@@ -93,10 +114,6 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
         channel: row.channel,
         difficulty: row.difficulty,
       };
-    }
-    case MSG.ENRICH_LIBRARY_META: {
-      await enrichLibraryItemFromOEmbed(message.payload.videoId, 'overwrite');
-      return { ok: true };
     }
     case MSG.REMOVE_LIBRARY: {
       const p = await readPersisted();
@@ -269,17 +286,9 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
       return { ok: true };
     }
     case MSG.RESTORE_EXTENSION_STORAGE: {
-      const incoming = message.payload;
-      if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
-        return { ok: false, error: 'Backup must be a JSON object.' };
-      }
       try {
-        const normalized: Record<string, unknown> = { ...incoming };
-        if (Object.prototype.hasOwnProperty.call(normalized, STORAGE_KEY)) {
-          normalized[STORAGE_KEY] = normalizeImportedPersisted(normalized[STORAGE_KEY]);
-        }
-        await chrome.storage.local.clear();
-        await chrome.storage.local.set(normalized);
+        const { storage } = prepareBackup(message.payload);
+        await restoreStorageSafely(storage);
         return { ok: true };
       } catch (e) {
         return {
@@ -333,14 +342,6 @@ export async function handleBackgroundMessage(message: ExtensionMessage): Promis
       p.roadmapBonusPick = normalizeRoadmapBonusPick(message.payload.pick);
       await writePersisted(p);
       return { ok: true };
-    }
-    case MSG.BACKFILL_LIBRARY_DURATIONS: {
-      const limit =
-        typeof message.payload?.limit === 'number' && message.payload.limit > 0
-          ? Math.floor(message.payload.limit)
-          : 8;
-      const result = await backfillLibraryDurations(limit);
-      return { ok: true, ...result };
     }
     case MSG.PRESTIGE: {
       const p = await readPersisted();

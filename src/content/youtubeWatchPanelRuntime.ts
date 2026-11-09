@@ -63,7 +63,6 @@ import {
   ensureWatchPanelIfAbsent,
   migrateWatchPanelShadow,
   setWatchPanelHostVisible,
-  needsHomeFeedPanelAttention,
   shouldKeepWatchPanelVisibleWithoutVideoId,
   updateWatchPanelHint,
   watchPanelMarkupIsCurrent,
@@ -443,6 +442,7 @@ function applyPanelHostPosition(): void {
   const L = settingsCache.watchPanelLeft;
   const T = settingsCache.watchPanelTop;
   if (typeof L === 'number' && typeof T === 'number' && !Number.isNaN(L) && !Number.isNaN(T)) {
+    host.style.setProperty('--jp-panel-max-height', 'calc(100dvh - 16px)');
     host.style.left = `${L}px`;
     host.style.top = `${T}px`;
     host.style.right = 'auto';

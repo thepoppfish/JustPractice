@@ -1,5 +1,5 @@
 import { parseLengthSecondsFromWatchPageHtml } from '../lib/youtubeWatchPageDuration';
-import { readPersisted, writePersisted } from '../lib/storage';
+import { readPersisted, withStorageTransaction } from '../lib/storage';
 import type { LibraryItem } from '../lib/storageTypes';
 
 const FETCH_DELAY_MS = 220;
@@ -28,13 +28,15 @@ export async function enrichLibraryItemDuration(videoId: string): Promise<boolea
   const durationSec = await fetchVideoDurationSecFromYoutube(videoId);
   if (durationSec === null) return false;
 
-  const latest = await readPersisted();
-  const row = latest.library.find((x) => x.videoId === videoId);
-  if (!row || hasKnownDuration(row)) return false;
+  return withStorageTransaction(async ({ read, write }) => {
+    const latest = await read();
+    const row = latest.library.find((x) => x.videoId === videoId);
+    if (!row || row.addedAt !== item.addedAt || hasKnownDuration(row)) return false;
 
-  row.durationSec = durationSec;
-  await writePersisted(latest);
-  return true;
+    row.durationSec = durationSec;
+    await write(latest);
+    return true;
+  });
 }
 
 function hasKnownDuration(item: LibraryItem): boolean {

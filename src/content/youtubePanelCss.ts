@@ -10,11 +10,15 @@ export function watchPanelShadowCss(): string {
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 10px;
         padding: 0;
-        min-width: 220px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        max-height: var(--jp-panel-max-height, calc(100dvh - 104px));
         box-shadow: 0 8px 24px rgba(0,0,0,0.45);
         overflow: hidden;
       }
       .drag-strip {
+        flex-shrink: 0;
         display: flex;
         align-items: stretch;
         gap: 6px;
@@ -48,7 +52,14 @@ export function watchPanelShadowCss(): string {
         color: #888;
       }
       .drag-handle:active { cursor: grabbing; }
-      .panel-main { padding: 10px 12px 12px; }
+      .panel-main {
+        padding: 10px 12px 12px;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: #555 transparent;
+      }
       .wrap.collapsed .panel-main { display: none; }
       .grip { opacity: 0.85; letter-spacing: -1px; }
       .row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }

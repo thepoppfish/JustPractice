@@ -91,12 +91,13 @@ function createZip(zipPath) {
   if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
 
   if (platform() === 'win32') {
+    const quote = (value) => `'${value.replaceAll("'", "''")}'`;
     const ps = [
       'Compress-Archive',
       '-Path',
-      path.join(stageDir, '*'),
+      quote(path.join(stageDir, '*')),
       '-DestinationPath',
-      zipPath,
+      quote(zipPath),
       '-Force',
     ].join(' ');
     const r = spawnSync('powershell', ['-NoProfile', '-Command', ps], { stdio: 'pipe' });
