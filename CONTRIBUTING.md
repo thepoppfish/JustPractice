@@ -51,12 +51,18 @@ supports 60–3600 seconds. Read `--help` for each script. The default profile i
 synthetic and source controlled; no local review artifacts are required.
 
 For a real-site follow-up, add `--live-video bT_g9030hx0` to the watch command
-and choose a new label. This uses the public project tutorial in a disposable,
+and choose a new label. Add `--headed` to use a normal visible browser window.
+This uses the public project tutorial in a disposable,
 anonymous YouTube session, with muted native looping and normal network/player
 code. It can fail if playback needs consent/sign-in or the service is unavailable;
 record that limitation rather than substituting a hidden or inactive player.
 Real-page heap/long tasks include YouTube work. The JSON also records observed
 media advancement, loops and practice/position writes for interpretation.
+Discarded media sources produce a diagnostic screenshot and failure. A live
+run must advance media for at least 85% of its measured window to qualify as
+sustained playback; an idle/error page must not pass merely because its saved
+total correctly stopped increasing. Reader/bot/consent restrictions require
+separate attention, not automated retries around them.
 
 Retain JSON, screenshots, `.cpuprofile` files and interaction traces. Open CPU
 profiles in Chrome DevTools' JavaScript Profiler and trace ZIPs with Playwright's

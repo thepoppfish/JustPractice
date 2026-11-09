@@ -13,12 +13,13 @@ const option = (name, fallback) => {
   return args[index + 1];
 };
 if (args.includes('--help')) {
-  console.info('node scripts/profile-watch.mjs --label NAME --seconds 600 --output output/performance [--live-video VIDEO_ID] [--debug]');
+  console.info('node scripts/profile-watch.mjs --label NAME --seconds 600 --output output/performance [--live-video VIDEO_ID] [--headed] [--debug]');
   process.exit(0);
 }
 const label = option('--label', 'profile');
 const seconds = Number(option('--seconds', '600'));
 const liveVideo = option('--live-video', null);
+const headed = args.includes('--headed');
 if (!/^[a-z0-9-]+$/.test(label) || !Number.isInteger(seconds) || seconds < 60 || seconds > 3600) throw new Error('Use a simple label and 60–3600 seconds.');
 if (liveVideo && !/^[a-zA-Z0-9_-]{11}$/.test(liveVideo)) throw new Error('Use an 11-character YouTube video ID.');
 const root = process.cwd();
@@ -37,7 +38,7 @@ profile.videoDailySeconds = {};
 profile.videoPlaybackPositionSec = {};
 profile.dailySeconds = {};
 const context = await chromium.launchPersistentContext('', {
-  channel: 'chromium', headless: true, viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', locale: 'en-US',
+  channel: 'chromium', headless: !headed, viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', locale: 'en-US',
   args: [`--disable-extensions-except=${path.join(root, 'dist')}`, `--load-extension=${path.join(root, 'dist')}`],
 });
 const result = {
@@ -46,7 +47,7 @@ const result = {
   method: liveVideo
     ? 'Anonymous live YouTube page with a muted, natively looped public video; normal network/player code, visible tab and focus gating disabled. Whole-page renderer heap/long tasks include YouTube, not just extension work.'
     : 'Real HTMLVideoElement playing a canvas MediaStream at 5 fps, visible tab, focus gating disabled; synthetic YouTube page, no streaming/CDN/ad workload. Isolated installed extension. Renderer JS heap and DOM only, not total Chrome process memory.',
-  liveVideo,
+  liveVideo, headed,
   bundleBytes: (await fs.stat(path.join(root, 'dist/assets/youtube-content.bundle.js'))).size,
   bundleSha256: createHash('sha256').update(await fs.readFile(path.join(root, 'dist/assets/youtube-content.bundle.js'))).digest('hex'),
   samples: [], errors: [], console: [], fixture: profile,
@@ -121,17 +122,21 @@ try {
     const elapsed = (Date.now() - started) / 1000;
     const state = await worker.evaluate(async () => (await chrome.storage.local.get('jpPractice')).jpPractice);
     const sample = { elapsedSeconds: elapsed, heap: await cdp.send('Runtime.getHeapUsage'), dom: await cdp.send('Memory.getDOMCounters'),
-      ...await page.evaluate(() => ({ browserTimeMs: performance.now(), mediaTime: document.querySelector('video').currentTime, paused: document.querySelector('video').paused, ended: document.querySelector('video').ended, videoRect: document.querySelector('video').getBoundingClientRect().toJSON(), visibility: document.visibilityState,
+      ...await page.evaluate(() => ({ browserTimeMs: performance.now(), mediaTime: document.querySelector('video').currentTime, paused: document.querySelector('video').paused, ended: document.querySelector('video').ended, readyState: document.querySelector('video').readyState, mediaDuration: Number.isFinite(document.querySelector('video').duration) ? document.querySelector('video').duration : null, videoRect: document.querySelector('video').getBoundingClientRect().toJSON(), visibility: document.visibilityState,
         longTaskCount: globalThis.__jpProfile.longTasks.length, longestTaskMs: Math.max(0, ...globalThis.__jpProfile.longTasks.map(e => e.duration)), calendarReplacements: globalThis.__jpProfile.calendarReplacements,
         panelText: document.getElementById('jp-practice-yt-panel-host').shadowRoot.querySelector('[part="add"]').textContent,
         dailyCaption: document.getElementById('jp-practice-yt-panel-host').shadowRoot.querySelector('[part="daily-practice-caption"]').textContent,
         debug: document.getElementById('jp-practice-yt-panel-host').shadowRoot.querySelector('[part="jp-debug-strip"]').textContent,
         hint: document.getElementById('jp-practice-yt-panel-host').shadowRoot.querySelector('[part="hint"]').textContent })),
       settings: { pauseWhenUnfocused: state.settings.pauseWhenUnfocused },
-      ...(liveVideo ? { writes: await worker.evaluate(() => globalThis.__jpProfileWrites ?? null), ...await page.evaluate(() => globalThis.__jpProfile.live) } : {}),
+      ...(liveVideo ? { writes: await worker.evaluate(() => globalThis.__jpProfileWrites ?? null), ...await page.evaluate(() => ({ ...globalThis.__jpProfile.live, playerText: document.querySelector('#movie_player')?.innerText?.slice(0, 1200) ?? '' })) } : {}),
       persistedPractice: Object.values(state.dailySeconds).reduce((a, b) => a + b, 0) };
     result.samples.push(sample); await save();
     process.stdout.write(`${label}: ${Math.round(elapsed)}s, media ${sample.mediaTime.toFixed(1)}s, saved ${sample.persistedPractice}s, heap ${(sample.heap.usedSize / 1048576).toFixed(2)} MiB, DOM ${sample.dom.nodes}\n`);
+    if (liveVideo && elapsed > 10 && sample.paused && sample.readyState === 0) {
+      await page.screenshot({ path: path.join(dir, `${label}-playback-unavailable.png`) });
+      throw new Error('Live YouTube discarded its media source. Inspect the player text and diagnostic screenshot; this is not sustained-playback evidence.');
+    }
   };
   await sample();
   await (liveVideo ? page.locator('#jp-practice-yt-panel-host') : page).screenshot({ path: path.join(dir, `${label}-watch-start.png`) });
@@ -149,10 +154,11 @@ try {
   const last = result.samples.at(-1);
   const observedPlayback = liveVideo ? last.mediaAdvanceSec : result.elapsedSeconds;
   result.trackingWithinWindow = last.persistedPractice >= observedPlayback - 35 && last.persistedPractice <= observedPlayback + 5;
+  result.sustainedPlayback = !liveVideo || observedPlayback >= result.elapsedSeconds * 0.85;
   await (liveVideo ? page.locator('#jp-practice-yt-panel-host') : page).screenshot({ path: path.join(dir, `${label}-watch-end.png`) });
   await context.tracing.stop({ path: path.join(dir, `${label}-watch-trace.zip`) });
   result.complete = true; await save();
-  if (!result.trackingWithinWindow || result.errors.length) process.exitCode = 1;
+  if (!result.trackingWithinWindow || !result.sustainedPlayback || result.errors.length) process.exitCode = 1;
 } catch (error) {
   result.fatalError = error.message;
   await save();
