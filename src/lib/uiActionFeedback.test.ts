@@ -40,6 +40,7 @@ describe('mutation feedback and unsaved controls', () => {
     const pending = actions.run(button(), async () => { await send({ type: MSG.SET_SETTINGS, payload: { displayName: 'Name' } }); }, vi.fn());
     expect(input().disabled).toBe(true);
     expect(root.getAttribute('aria-busy')).toBe('true');
+    expect(document.querySelector<HTMLElement>('.jp-action-status')?.dataset.state).toBe('working');
     expect(await actions.run(button(), async () => { await send({ type: MSG.SET_SETTINGS, payload: {} }); }, vi.fn())).toBe(false);
     expect(transport).toHaveBeenCalledTimes(1);
     finish({ ok: true });
@@ -47,6 +48,7 @@ describe('mutation feedback and unsaved controls', () => {
     expect(input().disabled).toBe(false);
     expect(document.activeElement).toBe(button());
     expect(document.querySelector('[role="status"]')?.textContent).toBe('Changes saved.');
+    expect(document.querySelector<HTMLElement>('.jp-action-status')?.dataset.state).toBe('success');
   });
 
   it('keeps a different unsaved edit when a successful action paints new saved values', async () => {
@@ -132,4 +134,15 @@ describe('mutation feedback and unsaved controls', () => {
     expect(input().value).toBe('Saved');
     expect(root.querySelector('[role="alert"]')).toBeNull();
   });
+});
+
+it('opens an advanced disclosure if a pending edit fails after the user closes it', async () => {
+  root.innerHTML = '<details id="advanced" open><summary>Advanced</summary>'+markup+'</details>';
+  const actions = uiActionFeedback(root, t);
+  await actions.run(button(), async () => {
+    root.querySelector('details')!.open = false;
+    throw new Error('Storage unavailable');
+  }, vi.fn());
+  expect(root.querySelector('details')!.open).toBe(true);
+  expect(root.querySelector('[role="alert"]')).not.toBeNull();
 });

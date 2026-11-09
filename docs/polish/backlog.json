@@ -134,6 +134,10 @@
       {
         "text": "Verification report with screenshots and acceptance checks",
         "href": "../../output/playwright/accessibility-hebrew-2026-11-09/verification.html"
+      },
+      {
+        "text": "PR #7 follow-up: shared contrast/status tokens, subsection focus and self-contained shadow CSS",
+        "href": "visual-consistency.md"
       }
     ]
   },
@@ -161,6 +165,14 @@
       {
         "text": "PR #5 follow-up: move-label name and initial watch locale",
         "href": "https://github.com/thepoppfish/JustPractice/pull/5"
+      },
+      {
+        "text": "PR #7 follow-up: shared contrast/status tokens, subsection focus and self-contained shadow CSS",
+        "href": "visual-consistency.md"
+      },
+      {
+        "text": "Spoken-reader procedure and remaining limitation",
+        "href": "spoken-reader-check.md"
       }
     ],
     "pendingChecks": [
@@ -373,6 +385,10 @@
       {
         "text": "Quality batch verification, six screenshots, zoom and traces",
         "href": "../../output/playwright/quality-checks-2026-11-09/verification.html"
+      },
+      {
+        "text": "PR #7 follow-up: shared contrast/status tokens, subsection focus and self-contained shadow CSS",
+        "href": "visual-consistency.md"
       }
     ],
     "pendingChecks": []
@@ -421,9 +437,24 @@
     "source": "src/dashboard/dashboardFormatters.ts:159; src/dashboard/dashboardViewModel.ts:183; src/lib/practiceStats.ts:34",
     "image": "populated-stats.png",
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 7,
+    "verification": "Today leads with a readable value, one goal caption and a next action visible at 1024×768 in all six locales. Totals include completed videos; localized summaries and empty/no-goal/met/all-completed states are verified.",
+    "pendingChecks": [],
+    "checks": [
+      {
+        "text": "Implementation and validation notes",
+        "href": "visual-consistency.md"
+      },
+      {
+        "text": "Before/after screenshots, raw audits and retained candidate",
+        "href": "../../output/playwright/visual-consistency-2026-11-09/verification.html"
+      },
+      {
+        "text": "Reviewable PR and cross-platform checks",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/7"
+      }
+    ]
   },
   {
     "id": "JP-17",
@@ -438,9 +469,24 @@
     "source": "src/dashboard/dashboardTemplates.ts:620; src/dashboard/dashboard.css",
     "image": "settings-framework-detail.png",
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 7,
+    "verification": "Language/counting/backups have direct section navigation, visible labels and adjacent help. Save behavior is stated, advanced personalization stays reachable, and Clear is separated. Draft/retry, subsection focus, bulk list actions and cancellation are tested.",
+    "pendingChecks": [],
+    "checks": [
+      {
+        "text": "Implementation and validation notes",
+        "href": "visual-consistency.md"
+      },
+      {
+        "text": "Before/after screenshots, raw audits and retained candidate",
+        "href": "../../output/playwright/visual-consistency-2026-11-09/verification.html"
+      },
+      {
+        "text": "Reviewable PR and cross-platform checks",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/7"
+      }
+    ]
   },
   {
     "id": "JP-18",
@@ -455,9 +501,24 @@
     "source": "src/content/youtubePanelCss.ts:260; src/dashboard/dashboard.css; src/popup/popup.css; src/welcome/welcome.css",
     "image": "populated-path.png",
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 7,
+    "verification": "Shared tokens style all four surfaces, including actual watch shadow DOM. Primary colors, 8 px radius, 44 px border-box minimum height, neutral pending/green success/red error, six-locale 200% layouts and CSS-import bundling are verified.",
+    "pendingChecks": [],
+    "checks": [
+      {
+        "text": "Implementation and validation notes",
+        "href": "visual-consistency.md"
+      },
+      {
+        "text": "Before/after screenshots, raw audits and retained candidate",
+        "href": "../../output/playwright/visual-consistency-2026-11-09/verification.html"
+      },
+      {
+        "text": "Reviewable PR and cross-platform checks",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/7"
+      }
+    ]
   },
   {
     "id": "JP-19",

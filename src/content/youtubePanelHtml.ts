@@ -35,7 +35,7 @@ ${watchPanelShadowCss()}
           hidden
         ></div>
         <div class="row" part="save-row">
-          <button type="button" class="secondary" part="add" data-commit-parts="difficulty">${escapeHtml(labels.saveToLibrary)}</button>
+          <button type="button" class="jp-primary" part="add" data-commit-parts="difficulty">${escapeHtml(labels.saveToLibrary)}</button>
         </div>
         <div class="row" part="complete-row">
           <button type="button" class="secondary" part="complete-btn">${escapeHtml(labels.markComplete)}</button>
@@ -43,7 +43,7 @@ ${watchPanelShadowCss()}
         <div class="complete-prompt" part="complete-prompt" hidden>
           <p class="complete-prompt-text" part="complete-prompt-text"></p>
           <div class="complete-prompt-actions">
-            <button type="button" part="complete-prompt-yes"></button>
+            <button type="button" class="jp-primary" part="complete-prompt-yes"></button>
             <button type="button" class="secondary" part="complete-prompt-no"></button>
           </div>
         </div>
@@ -97,6 +97,7 @@ ${watchPanelShadowCss()}
             <span class="daily-ring-label daily-ring-muted" part="daily-ring-label" dir="ltr">—</span>
           </div>
         </div>
+        <p class="daily-practice-caption" part="daily-practice-caption"></p>
         <div class="hint" part="hint"></div>
         <div class="calendar-section">
           <div class="cal-header">

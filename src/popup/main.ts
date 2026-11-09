@@ -17,7 +17,8 @@ import { signatureOf } from '../lib/dataSignature';
 import { tagsForFramework, isLegacyLevelTag, isJlptTag, isCefrTag } from '../lib/levelTags';
 import { thumbnailUrlForVideoId } from '../lib/youtubeMeta';
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
-import { aggregatePracticeStats, formatDuration } from '../lib/practiceStats';
+import { aggregatePracticeStats } from '../lib/practiceStats';
+import { formatPracticeDuration } from '../lib/practiceDuration';
 import { levelFromTotalXp, MAX_ACCOUNT_LEVEL, xpIntoCurrentLevel } from '../lib/playerProgress';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { applyUiLocale, createTranslator, resolveLocale } from '../i18n';
@@ -230,19 +231,21 @@ async function renderAsync(): Promise<void> {
       </div>
       <div id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" tabindex="0"${activeTab === 'stats' ? '' : ' hidden'} class="panel${activeTab === 'stats' ? ' active' : ''}">
         <div class="stats-grid">
-          <div class="stat-card">
+          <div class="stat-card stat-card--today">
             <h2>${escapeHtml(t('common.today'))}</h2>
-            <bdi class="value">${formatDuration(today)}</bdi>
+            <bdi class="value">${escapeHtml(formatPracticeDuration(today, t))}</bdi>
           </div>
           <div class="stat-card">
             <h2>${escapeHtml(t('common.thisWeek'))}</h2>
-            <bdi class="value">${formatDuration(week)}</bdi>
+            <bdi class="value">${escapeHtml(formatPracticeDuration(week, t))}</bdi>
           </div>
           <div class="stat-card">
             <h2>${escapeHtml(t('common.allTime'))}</h2>
-            <bdi class="value">${formatDuration(all)}</bdi>
+            <bdi class="value">${escapeHtml(formatPracticeDuration(all, t))}</bdi>
           </div>
         </div>
+        <p class="help">${escapeHtml(t('stats.libraryCounts', { total: data.library.length, active: inProgress.length, completed: data.library.length - inProgress.length }))}</p>
+        <button type="button" class="jp-primary" id="popup-stats-next">${escapeHtml(t(inProgress.length ? 'stats.continuePractice' : data.library.length ? 'popup.openDashboard' : 'stats.startLibrary'))}</button>
         <p class="help stats-help">
           ${escapeHtml(t('popup.helpStats'))}
         </p>
@@ -267,6 +270,12 @@ async function renderAsync(): Promise<void> {
   `;
 
   attachPopupTabs(app, (tab) => { activeTab = tab as PopupTab; });
+  app.querySelector('#popup-stats-next')?.addEventListener('click', () => {
+    if (inProgress.length || !data.library.length) {
+      app.querySelector<HTMLButtonElement>('#tab-library')?.click();
+      app.querySelector<HTMLInputElement>('#popup-search')?.focus();
+    } else void chrome.runtime.openOptionsPage();
+  });
   app.querySelector('#open-dashboard')?.addEventListener('click', () => {
     void chrome.runtime.openOptionsPage();
   });
@@ -358,7 +367,7 @@ function libraryItemHtml(
         <div class="item-meta"><bdi>${escapeHtml(item.channel)}</bdi> · <bdi>${escapeHtml(lvl)}</bdi></div>
         ${libraryMetricsHtml(item, data, t)}
         <div class="item-actions">
-          <a class="library-primary" href="${escapeAttr(href)}" target="_blank" rel="noreferrer" aria-label="${escapeAttr(primary + ': ' + item.title)}">${escapeHtml(primary)}</a>
+          <a class="library-primary jp-primary" href="${escapeAttr(href)}" target="_blank" rel="noreferrer" aria-label="${escapeAttr(primary + ': ' + item.title)}">${escapeHtml(primary)}</a>
           ${librarySecondaryActionsHtml(item, 'popup', t)}
         </div>
       </div>

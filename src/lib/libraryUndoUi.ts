@@ -69,6 +69,7 @@ export class LibraryUndoUi {
 
   private render(): void {
     this.box.hidden = !this.offer && !this.success && !this.failure;
+    this.box.dataset.state = this.failure ? 'error' : this.success ? 'success' : 'notice';
     document.body.classList.toggle('has-library-undo', !this.box.hidden);
     this.message.textContent = this.failure && !this.offer ? '' : this.t(this.success ? 'library.restored' : 'library.removed');
     if (this.offer) this.title.textContent = this.offer.title;

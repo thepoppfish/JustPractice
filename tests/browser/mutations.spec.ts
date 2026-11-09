@@ -223,6 +223,7 @@ test('successful settings saves release their drafts while unrelated and failed 
   await page.locator('#goal-daily-min').fill('47');
   await page.locator('[data-view="settings"]').click();
   const message = page.locator('#custom-daily-message-input');
+  await page.locator('[data-settings-section="settings-personalization"]').click();
   await message.fill('First message');
   await message.press('Enter');
   await expect(message).toHaveValue('');

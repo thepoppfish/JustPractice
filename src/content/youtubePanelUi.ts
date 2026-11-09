@@ -1,8 +1,7 @@
 import {
-  formatGoalPairLineLive,
-  formatGoalSlashLive,
   ringDasharrayFromProgress,
 } from '../lib/goalFormat';
+import { formatPracticeDuration } from '../lib/practiceDuration';
 import { shouldShowWatchPanelLibraryChrome } from '../lib/youtubeIds';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { matchesActiveFramework, isLegacyLevelTag, tagsForFramework } from '../lib/levelTags';
@@ -192,6 +191,8 @@ export function updateDailyGoalRing(p: {
   const goals = p.getGoals();
   const target = goals.dailyTargetSec;
   const done = p.getTodayPracticeSeconds();
+  const caption = p.shadowRoot.querySelector<HTMLElement>('[part="daily-practice-caption"]');
+  if (caption) caption.textContent = `${p.panelT('common.today')}: ${formatPracticeDuration(done, p.panelT)}`;
   wrap.removeAttribute('aria-hidden');
 
   if (target === null || target <= 0) {
@@ -208,10 +209,10 @@ export function updateDailyGoalRing(p: {
   const pct = Math.min(1, done / target);
   fg.setAttribute('stroke-dasharray', ringDasharrayFromProgress(pct));
   fg.style.strokeDashoffset = '0';
-  label.textContent = formatGoalSlashLive(done, target);
+  label.textContent = `${Math.floor(pct * 100)}%`;
   wrap.title = p.panelT('panel.dailyGoalTooltip', {
-    pair: formatGoalPairLineLive(done, target),
-    percent: String(Math.round(pct * 100)),
+    pair: `${formatPracticeDuration(done, p.panelT)} / ${formatPracticeDuration(target, p.panelT)}`,
+    percent: String(Math.floor(pct * 100)),
   });
   wrap.setAttribute('aria-label', wrap.title);
 }

@@ -8,10 +8,10 @@ export function watchPanelShadowCss(): string {
         box-sizing: border-box;
       }
       .wrap {
-        background: #15171c;
-        color: #eee;
+        background: var(--jp-surface);
+        color: var(--jp-text);
         border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 10px;
+        border-radius: var(--jp-radius-md);
         padding: 0;
         min-width: 0;
         display: flex;
@@ -30,7 +30,7 @@ export function watchPanelShadowCss(): string {
         border-radius: 10px 10px 0 0;
       }
       .wrap.collapsed .drag-strip {
-        border-radius: 10px;
+        border-radius: var(--jp-radius-md);
       }
       .collapse-btn {
         flex: 0 0 auto;
@@ -38,8 +38,8 @@ export function watchPanelShadowCss(): string {
         padding: 2px 6px;
         font-size: 11px;
         line-height: 1.2;
-        background: #2a2a2a;
-        border-color: #555;
+        background: var(--jp-raised);
+        border-color: var(--jp-border);
         color: #ccc;
       }
       .collapse-btn:hover { color: #fff; }
@@ -65,7 +65,7 @@ export function watchPanelShadowCss(): string {
         overflow-y: auto;
         overscroll-behavior: contain;
         scrollbar-width: thin;
-        scrollbar-color: #555 transparent;
+        scrollbar-color: var(--jp-border) transparent;
       }
       .wrap.collapsed .panel-main { display: none; }
       .grip { opacity: 0.85; letter-spacing: -1px; }
@@ -108,7 +108,7 @@ export function watchPanelShadowCss(): string {
         animation: daily-ring-label-pop 0.85s ease-out;
       }
       @keyframes daily-ring-label-pop {
-        0%, 100% { color: #eee; transform: translate(-50%, -50%) scale(1); }
+        0%, 100% { color: var(--jp-text); transform: translate(-50%, -50%) scale(1); }
         35% { color: #b8ffd4; transform: translate(-50%, -50%) scale(1.18); }
         60% { color: #ffdd99; transform: translate(-50%, -50%) scale(1.06); }
       }
@@ -131,7 +131,7 @@ export function watchPanelShadowCss(): string {
         stroke: rgba(255, 255, 255, 0.12);
       }
       .daily-ring-fg {
-        stroke: #ff6b26;
+        stroke: var(--jp-accent);
         stroke-linecap: round;
         transition: stroke-dasharray 0.35s ease;
       }
@@ -140,9 +140,9 @@ export function watchPanelShadowCss(): string {
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 700;
-        color: #eee;
+        color: var(--jp-text);
         text-align: center;
         line-height: 1.1;
         max-width: 46px;
@@ -173,9 +173,9 @@ export function watchPanelShadowCss(): string {
         border-radius: 999px;
         font-size: 11px;
         font-weight: 800;
-        color: #fff;
-        background: linear-gradient(135deg, #ff6b26, #ffb347);
-        border: 1px solid rgba(255, 200, 120, 0.55);
+        color: var(--jp-success);
+        background: var(--jp-success-bg);
+        border: 1px solid var(--jp-success-border);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
         white-space: nowrap;
         pointer-events: none;
@@ -187,7 +187,7 @@ export function watchPanelShadowCss(): string {
         transform: translate(-50%, -72%) scale(1);
       }
       .player-xp-toast--rank-up {
-        background: linear-gradient(135deg, #ffd966, #ff6b26);
+        background: linear-gradient(135deg, #ffd966, var(--jp-accent));
         color: #1a1208;
       }
       .player-level-badge {
@@ -218,7 +218,7 @@ export function watchPanelShadowCss(): string {
       .player-xp-fill {
         height: 100%;
         border-radius: inherit;
-        background: linear-gradient(90deg, #ff6b26, #ffb347);
+        background: linear-gradient(90deg, var(--jp-accent), #ffb347);
         width: 0%;
         transition: width 0.35s ease;
       }
@@ -269,16 +269,17 @@ export function watchPanelShadowCss(): string {
       label { color: #bbb; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
       select, button {
         font: inherit;
-        border-radius: 6px;
+        border-radius: var(--jp-radius-sm);
         border: 1px solid rgba(255,255,255,0.2);
-        background: #2a2a2a;
+        background: var(--jp-raised);
         color: #fff;
         padding: 6px 8px;
       }
-      button { cursor: pointer; background: #1a66ff; border-color: #3d7cff; }
-      button.secondary { background: #333; border-color: #555; }
-      button.secondary.is-complete { background: rgba(66, 198, 111, 0.22); border-color: rgba(66, 198, 111, 0.55); color: #b8f0cc; }
+      button { cursor: pointer; background: var(--jp-raised); border-color: var(--jp-border); }
+      button.secondary { background: var(--jp-raised); border-color: var(--jp-border); }
+      button.secondary.is-complete { background: var(--jp-success-bg); border-color: var(--jp-success-border); color: var(--jp-success); }
       button:hover { filter: brightness(1.08); }
+      .daily-practice-caption { margin: 10px 0 0; color: var(--jp-muted); font-size: 13px; line-height: 1.5; }
       .hint { font-size: 12px; color: var(--jp-muted); line-height: 1.5; margin-top: 8px; }
       .status { font-size: 11px; color: #9cf; min-height: 14px; }
       .library-banner[hidden] {
@@ -309,8 +310,8 @@ export function watchPanelShadowCss(): string {
         margin-top: 8px;
         padding: 8px 9px;
         border-radius: 8px;
-        background: rgba(66, 198, 111, 0.12);
-        border: 1px solid rgba(66, 198, 111, 0.35);
+        background: var(--jp-raised);
+        border: 1px solid var(--jp-border);
       }
       .complete-prompt-text {
         margin: 0 0 8px;
@@ -330,8 +331,8 @@ export function watchPanelShadowCss(): string {
         padding: 5px 8px;
       }
       .complete-prompt-actions .secondary {
-        background: #333;
-        border-color: #555;
+        background: var(--jp-raised);
+        border-color: var(--jp-border);
       }
       .jp-debug-strip[hidden] {
         display: none !important;
@@ -346,7 +347,7 @@ export function watchPanelShadowCss(): string {
         color: #c8f0c8;
         background: rgba(0, 48, 24, 0.55);
         border: 1px solid rgba(80, 200, 120, 0.45);
-        border-radius: 6px;
+        border-radius: var(--jp-radius-sm);
         max-height: 110px;
         overflow: auto;
         white-space: pre-wrap;
@@ -438,7 +439,7 @@ export function watchPanelShadowCss(): string {
         background: rgba(232, 184, 74, 0.3);
         border: 1px solid rgba(232, 184, 74, 0.55);
       }
-      .cal-day-num { font-weight: 600; color: #eee; line-height: 1.2; }
+      .cal-day-num { font-weight: 600; color: var(--jp-text); line-height: 1.2; }
       .cal-day-min { font-size: 11px; line-height: 1.1; margin-top: 2px; color: #fff; }
       .cal-day-min--missed { font-size: 11px; font-weight: 500; color: var(--jp-muted); }
       .cal-day-min--under { font-size: 11px; font-weight: 500; }
@@ -509,7 +510,7 @@ export function watchPanelShadowCss(): string {
       .year-hm-key-icon--flawless-year { width: 9px; height: 9px; border-radius: 2px; border: 2px solid rgba(255,204,51,0.85); background: transparent; box-sizing: border-box; }
       .year-hm-month-flawless { margin-left: 1px; font-size: 11px; color: #c4b5fd; vertical-align: super; }
       .month-hm-legend { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0 0 6px; font-size: 11px; color: var(--jp-muted); }
-      .month-hm-legend-mark { font-weight: 700; color: #eee; }
+      .month-hm-legend-mark { font-weight: 700; color: var(--jp-text); }
       .month-hm-legend-swatch { width: 8px; height: 8px; border-radius: 2px; background: rgba(88,108,138,0.55); border: 1px solid rgba(128,158,198,0.55); }
       .year-hm-month-goal-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; font-size: 11px; color: #f5d76e; border: 1px solid rgba(232,184,74,0.45); border-radius: 3px; background: rgba(232,184,74,0.15); }
       .calendar-section:has(.year-hm--month-open) .cal-legend {
@@ -523,8 +524,8 @@ export function watchPanelShadowCss(): string {
       .year-hm-month-carousel-track { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; min-width: 0; }
       .year-hm-month-nav {
         flex-shrink: 0; width: 28px; height: 28px; padding: 0; font-size: 16px; line-height: 1;
-        color: #eee; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-        border-radius: 6px; cursor: pointer;
+        color: var(--jp-text); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+        border-radius: var(--jp-radius-sm); cursor: pointer;
       }
       .year-hm-month-nav:disabled { opacity: 0.28; cursor: default; }
       .year-hm-month-slot-scale { width: 100%; transform-origin: center center; transition: transform 0.2s ease, opacity 0.2s ease; }
@@ -534,7 +535,7 @@ export function watchPanelShadowCss(): string {
       .year-hm-month-slot--center .year-hm-month-slot-scale { transform: scale(1); opacity: 1; }
       .year-hm-month-detail--peek .month-hm-time, .year-hm-month-detail--peek .month-hm-total { display: none; }
       .year-hm-month-slot--empty { width: 0; opacity: 0; pointer-events: none; overflow: hidden; }
-      .year-hm-month-detail { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; border-radius: 6px; background: rgba(255,255,255,0.04); }
+      .year-hm-month-detail { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; border-radius: var(--jp-radius-sm); background: rgba(255,255,255,0.04); }
       .year-hm-month-detail--golden {
         background: linear-gradient(165deg, rgba(232,184,74,0.28), rgba(232,184,74,0.1) 50%, rgba(255,255,255,0.04));
         box-shadow: inset 0 0 0 1px rgba(232,184,74,0.35);
@@ -543,8 +544,8 @@ export function watchPanelShadowCss(): string {
       .year-hm-back {
         display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
         padding: 5px 10px; font-size: 11px; font-weight: 500; line-height: 1.2;
-        color: #eee; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-        border-radius: 6px; cursor: pointer;
+        color: var(--jp-text); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+        border-radius: var(--jp-radius-sm); cursor: pointer;
       }
       .year-hm-back:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.24); }
       .year-hm-back-icon { font-size: 13px; line-height: 1; opacity: 0.85; }

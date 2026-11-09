@@ -222,7 +222,7 @@ function doneStepHtml(): string {
     <p class="welcome-step-lead">${escapeHtml(t('welcome.doneSubtitle'))}</p>
     <p class="welcome-pin-hint">${escapeHtml(t('welcome.pinHint'))}</p>
     <div class="welcome-actions">
-      <button type="button" class="welcome-btn welcome-btn--primary" id="welcome-open-youtube">${escapeHtml(t('welcome.openYoutube'))}</button>
+      <button type="button" class="welcome-btn welcome-btn--primary jp-primary" id="welcome-open-youtube">${escapeHtml(t('welcome.openYoutube'))}</button>
       <button type="button" class="welcome-btn" id="welcome-open-dashboard">${escapeHtml(t('welcome.openDashboard'))}</button>
     </div>`;
 }
@@ -263,7 +263,7 @@ function navHtml(): string {
   return `
     <div class="welcome-actions welcome-actions--split${showBack ? '' : ' welcome-actions--continue-only'}">
       ${showBack ? `<button type="button" class="welcome-btn welcome-btn--ghost" id="welcome-back">${escapeHtml(t('welcome.back'))}</button>` : '<span></span>'}
-      <button type="button" class="welcome-btn welcome-btn--primary" id="welcome-continue">${escapeHtml(t('welcome.continue'))}</button>
+      <button type="button" class="welcome-btn welcome-btn--primary jp-primary" id="welcome-continue">${escapeHtml(t('welcome.continue'))}</button>
     </div>`;
 }
 
