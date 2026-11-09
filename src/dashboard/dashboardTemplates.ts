@@ -7,6 +7,9 @@ import {
   practiceCalendarDayVisual,
 } from '../lib/practiceStats';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
+import { libraryMetricsHtml, librarySecondaryActionsHtml, playbackForLibraryItem } from '../lib/libraryPresentation';
+import { tagsForFramework } from '../lib/levelTags';
+import type { LibraryItem } from '../lib/storage';
 import { thumbnailUrlForVideoId } from '../lib/youtubeMeta';
 import {
   formatLocaleOptionLabel,
@@ -136,39 +139,36 @@ ${dashboardTopbarMetricsHtml(vm)}
         </header>`;
 }
 
+function libraryCardHtml(vm: DashboardViewModel, item: LibraryItem): string {
+  const { href, resume } = playbackForLibraryItem(item, vm.data);
+  const lvl = difficultyLabelForCard(item.difficulty, vm.fw, vm.customLevels, vm.t);
+  const completed = item.completedAt != null;
+  const completedOn = completed ? formatCompletedDate(item.completedAt!, vm.resolvedLocale) : '';
+  const primary = vm.t(resume ? 'library.continue' : 'common.open');
+  return `<article class="video-card${completed ? ' video-card--completed' : ''}">
+    <div class="card-media">
+      <img class="card-thumb" src="${escapeAttr(thumbnailUrlForVideoId(item.videoId))}" width="320" height="180" alt="" loading="lazy" decoding="async" />
+      <span class="card-badge" dir="auto">${escapeHtml(lvl)}</span>
+      ${completed ? `<span class="card-badge card-badge--completed card-badge--level">${escapeHtml(vm.t('dash.completedBadge'))}</span>` : ''}
+    </div>
+    <div class="card-footer">
+      <h3 class="card-title" dir="auto">${escapeHtml(item.title)}</h3>
+      <bdi class="card-ch">${escapeHtml(item.channel)}</bdi>
+      ${completedOn ? `<span class="card-completed-date">${escapeHtml(vm.t('dash.completedOn', { date: completedOn }))}</span>` : ''}
+      ${libraryMetricsHtml(item, vm.data, vm.t)}
+      <a class="library-primary" href="${escapeAttr(href)}" target="_blank" rel="noreferrer" aria-label="${escapeAttr(primary + ': ' + item.title)}">${escapeHtml(primary)}</a>
+      ${librarySecondaryActionsHtml(item, completed ? 'completed' : 'library', vm.t, tagsForFramework(vm.fw, vm.customLevels))}
+    </div>
+  </article>`;
+}
+
 export function libraryPanelBodyHtml(vm: DashboardViewModel): string {
   if (vm.rows.length === 0) {
     return vm.libraryCount === 0 && vm.completedCount === 0
       ? libraryWelcomeHtml(vm.t)
       : `<div class="empty-board">${escapeHtml(vm.t('dash.libraryEmptyFiltered'))}</div>`;
   }
-  return `<div class="video-grid">
-              ${vm.rows
-                .map(({ item, seconds }) => {
-                  const href = `https://www.youtube.com/watch?v=${encodeURIComponent(item.videoId)}`;
-                  const thumb = thumbnailUrlForVideoId(item.videoId);
-                  const lvl = difficultyLabelForCard(item.difficulty, vm.fw, vm.customLevels, vm.t);
-                  return `
-                <article class="video-card">
-                  <a class="card-link" href="${href}" target="_blank" rel="noreferrer">
-                    <div class="card-media">
-                      <img class="card-thumb" src="${escapeAttr(thumb)}" width="320" height="180" alt="" loading="lazy" decoding="async" />
-                      <span class="card-badge">${escapeHtml(lvl)}</span>
-                      <div class="card-shade" aria-hidden="true"></div>
-                      <h3 class="card-title" dir="auto">${escapeHtml(item.title)}</h3>
-                    </div>
-                  </a>
-                  <div class="card-footer">
-                    <div class="card-meta">
-                      <bdi class="card-ch">${escapeHtml(item.channel)}</bdi>
-                      <bdi class="card-time">${formatDuration(seconds)}</bdi>
-                    </div>
-                    <button type="button" class="btn-remove" data-remove="${escapeAttr(item.videoId)}">${escapeHtml(vm.t('common.remove'))}</button>
-                  </div>
-                </article>`;
-                })
-                .join('')}
-            </div>`;
+  return `<div class="video-grid">${vm.rows.map(({ item }) => libraryCardHtml(vm, item)).join('')}</div>`;
 }
 
 export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
@@ -183,56 +183,14 @@ ${vm.filterChipsInner}
 }
 
 export function dashboardCompletedSectionHtml(vm: DashboardViewModel): string {
-  const body =
-    vm.completedRows.length === 0 ?
-      `<div class="empty-board">${escapeHtml(vm.t('dash.completedEmpty'))}</div>`
-    : `<div class="video-grid completed-grid">
-              ${vm.completedRows
-                .map(({ item, seconds }) => {
-                  const href = `https://www.youtube.com/watch?v=${encodeURIComponent(item.videoId)}`;
-                  const thumb = thumbnailUrlForVideoId(item.videoId);
-                  const lvl = difficultyLabelForCard(item.difficulty, vm.fw, vm.customLevels, vm.t);
-                  const completedOn =
-                    item.completedAt != null ?
-                      formatCompletedDate(item.completedAt, vm.resolvedLocale)
-                    : '';
-                  return `
-                <article class="video-card video-card--completed">
-                  <a class="card-link" href="${href}" target="_blank" rel="noreferrer">
-                    <div class="card-media">
-                      <img class="card-thumb" src="${escapeAttr(thumb)}" width="320" height="180" alt="" loading="lazy" decoding="async" />
-                      <span class="card-badge card-badge--completed">${escapeHtml(vm.t('dash.completedBadge'))}</span>
-                      <span class="card-badge card-badge--level" dir="auto">${escapeHtml(lvl)}</span>
-                      <div class="card-shade" aria-hidden="true"></div>
-                      <h3 class="card-title" dir="auto">${escapeHtml(item.title)}</h3>
-                    </div>
-                  </a>
-                  <div class="card-footer">
-                    <div class="card-meta">
-                      <bdi class="card-ch">${escapeHtml(item.channel)}</bdi>
-                      <bdi class="card-time">${formatDuration(seconds)}</bdi>
-                      ${
-                        completedOn ?
-                          `<span class="card-completed-date">${escapeHtml(vm.t('dash.completedOn', { date: completedOn }))}</span>`
-                        : ''
-                      }
-                    </div>
-                    <div class="card-actions">
-                      <button type="button" class="btn-secondary-sm" data-undo-complete="${escapeAttr(item.videoId)}">${escapeHtml(vm.t('dash.undoComplete'))}</button>
-                      <button type="button" class="btn-remove" data-remove="${escapeAttr(item.videoId)}">${escapeHtml(vm.t('common.remove'))}</button>
-                    </div>
-                  </div>
-                </article>`;
-                })
-                .join('')}
-            </div>`;
-
-  return `
-          <section class="${vm.viewPanelClass('completed')} dash-section-center" data-view-panel="completed" aria-label="${escapeHtml(vm.t('nav.completed'))}">
-            <h2 class="row-title dash-section-head">${escapeHtml(vm.t('dash.titleCompleted'))}</h2>
-            <p class="row-sub dash-section-sub">${escapeHtml(vm.t('dash.completedIntro'))}</p>
-            ${body}
-          </section>`;
+  const body = vm.completedRows.length === 0
+    ? `<div class="empty-board">${escapeHtml(vm.t('dash.completedEmpty'))}</div>`
+    : `<div class="video-grid completed-grid">${vm.completedRows.map(({ item }) => libraryCardHtml(vm, item)).join('')}</div>`;
+  return `<section class="${vm.viewPanelClass('completed')} dash-section-center" data-view-panel="completed" aria-label="${escapeHtml(vm.t('nav.completed'))}">
+    <h2 class="row-title dash-section-head">${escapeHtml(vm.t('dash.titleCompleted'))}</h2>
+    <p class="row-sub dash-section-sub">${escapeHtml(vm.t('dash.completedIntro'))}</p>
+    ${body}
+  </section>`;
 }
 
 export function dashboardStatsSectionHtml(vm: DashboardViewModel): string {

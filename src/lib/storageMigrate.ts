@@ -56,6 +56,7 @@ function normalizeLibraryItem(raw: unknown): LibraryItem {
   const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
   return {
     videoId: typeof o.videoId === 'string' ? o.videoId : '',
+    ...(typeof o.practiceToken === 'string' && /^[0-9a-f-]{36}$/i.test(o.practiceToken) ? { practiceToken: o.practiceToken } : {}),
     title: typeof o.title === 'string' ? o.title : 'Unknown title',
     channel: typeof o.channel === 'string' ? o.channel : 'Unknown channel',
     addedAt: typeof o.addedAt === 'number' && Number.isFinite(o.addedAt) ? o.addedAt : Date.now(),

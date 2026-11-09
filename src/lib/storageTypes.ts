@@ -32,6 +32,8 @@ export const DEFAULT_CUSTOM_LEVELS: readonly string[] = ['Beginner', 'Intermedia
 export type UiLocale = 'auto' | 'en' | 'fr' | 'ja' | 'he' | 'es' | 'de';
 
 export interface LibraryItem {
+  /** Identifies this library membership, independently of the original saved date. */
+  practiceToken?: string;
   videoId: string;
   title: string;
   channel: string;

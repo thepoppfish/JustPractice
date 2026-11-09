@@ -458,5 +458,18 @@
   "feedback.quota": "Storage is full. Your edit is still here. Export a backup or free browser storage, then retry.",
   "feedback.reconnect": "The extension is unavailable. Your edit is still here. Copy it before refreshing this page, then try again.",
   "feedback.retry": "Try again",
-  "feedback.exportStarted": "Backup download requested."
+  "feedback.exportStarted": "Backup download requested.",
+  "library.more": "More actions",
+  "library.continue": "Continue",
+  "library.length": "Length",
+  "library.practice": "Practice",
+  "library.playback": "Farthest playback",
+  "library.unknownLength": "Unknown",
+  "library.markComplete": "Mark complete",
+  "library.removed": "Video removed from your library",
+  "library.undo": "Undo",
+  "library.dismiss": "Dismiss",
+  "library.restored": "Video restored",
+  "library.undoFailed": "Could not undo. Try Undo again.",
+  "library.undoUnavailable": "This removal is no longer available to undo."
 }

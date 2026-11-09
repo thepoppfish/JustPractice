@@ -3,7 +3,7 @@
 *{box-sizing:border-box}body{margin:0;background:#101318;color:#ebedf2;font:16px/1.65 system-ui}main{max-width:1080px;margin:auto;padding:32px 24px}a{color:#ffc18e}a:focus-visible,summary:focus-visible{outline:3px solid #ffd08a;outline-offset:4px}h1,h2{line-height:1.25}h2{font-size:22px}article{padding:24px 0;border-bottom:1px solid #46505f;scroll-margin-top:24px}nav{display:flex;flex-wrap:wrap;gap:12px}.status{color:#b1edc0;font-weight:600}.pending{padding:12px;background:#35261b;border-left:3px solid #ffa466}details{color:#b7bdc8}summary{cursor:pointer}li{margin:8px 0}code{overflow-wrap:anywhere}.note{padding:16px;background:#202630;border-radius:8px}
 </style><main><h1>JustPractice · baseline progress</h1>
 <p>All 21 original requirements retained. Updated 2026-11-09.</p>
-<p class="note">5 Merged · 7 Implemented · PR open · 1 Implemented · verification outstanding · 8 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
+<p class="note">5 Merged · 9 Implemented · PR open · 1 Implemented · verification outstanding · 6 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
 <p><a href="../../output/playwright/baseline-2026-11-09/baseline-review.html#backlog">Original review</a> · <a href="backlog.json">Machine-readable tracker</a> · <a href="dependency-review.md">Dependency review</a></p>
 <p>Screenshot and trace links refer to local review artifacts under <code>output/playwright/</code>; they are not part of the extension or the public documentation deployment. Public PRs include the maintained code and CI artifacts.</p>
 <nav aria-label="Baseline items"><a href="#JP-01">JP-01</a><a href="#JP-02">JP-02</a><a href="#JP-03">JP-03</a><a href="#JP-04">JP-04</a><a href="#JP-05">JP-05</a><a href="#JP-06">JP-06</a><a href="#JP-07">JP-07</a><a href="#JP-08">JP-08</a><a href="#JP-09">JP-09</a><a href="#JP-10">JP-10</a><a href="#JP-11">JP-11</a><a href="#JP-12">JP-12</a><a href="#JP-13">JP-13</a><a href="#JP-14">JP-14</a><a href="#JP-15">JP-15</a><a href="#JP-16">JP-16</a><a href="#JP-17">JP-17</a><a href="#JP-18">JP-18</a><a href="#JP-19">JP-19</a><a href="#JP-20">JP-20</a><a href="#JP-21">JP-21</a></nav>
@@ -99,12 +99,12 @@
 </article>
 <article id="JP-10">
 <h2>JP-10 · Give library removal an undo path</h2>
-<p class="status">Open</p>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/6">PR #6</a></p>
 <p>Move removal into a secondary action menu and offer an Undo toast. Keep explicit confirmation for full data replacement/clear rather than adding friction to every small action.</p>
 <p><strong>Acceptance:</strong> An accidental removal can be reversed with its title, difficulty, completion status, and saved timestamp intact.</p>
+<p><strong>Verification:</strong> Metadata-exact removal/undo, cross-view recovery and popup reopening pass; session/local-write failure, retry, stale membership, conflict, expiry and profile replacement are covered. Practice history and XP remain unchanged.</p>
 
-
-
+<ul><li><a href="library-actions.md">Implementation and validation notes</a></li><li><a href="../../output/playwright/library-actions-2026-11-09/verification.html">Screenshots, raw axe checks, traces and retained candidate</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/6">Reviewable PR and cross-platform checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>Clicking Remove deleted a card immediately; the library count changed from six to five. There was no undo affordance. Clear-all and restore already use confirmation dialogs.</p><a href="../../output/playwright/baseline-2026-11-09/10-library-populated.png">Original screenshot</a></details>
 </article>
 <article id="JP-11">
@@ -149,12 +149,12 @@
 </article>
 <article id="JP-15">
 <h2>JP-15 · Make library cards easier to scan and act on</h2>
-<p class="status">Open</p>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/6">PR #6</a></p>
 <p>Place title and channel below the thumbnail, make “Continue/Open” the clear primary action, show duration/progress consistently, and put secondary actions in a menu. Consider editing difficulty from the dashboard.</p>
 <p><strong>Acceptance:</strong> Long Japanese, Hebrew, and English titles remain readable, thumbnails are not obscured, and the main action is obvious at a glance.</p>
+<p><strong>Verification:</strong> Titles/channels now flow below unobscured previews, with primary Open/Continue and native secondary actions. Separate length/practice/playback labels, direct dashboard level editing and long EN/HE/JA titles are verified in six locales at native 100%/200% zoom.</p>
 
-
-
+<ul><li><a href="library-actions.md">Implementation and validation notes</a></li><li><a href="../../output/playwright/library-actions-2026-11-09/verification.html">Screenshots, raw axe checks, traces and retained candidate</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/6">Reviewable PR and cross-platform checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>Titles are drawn over thumbnails that already contain text, while truncated channel names and red Remove buttons occupy the footer. A user can open the video by clicking the media, but the explicit action emphasis is removal.</p><a href="../../output/playwright/baseline-2026-11-09/10-library-populated.png">Original screenshot</a></details>
 </article>
 <article id="JP-16">

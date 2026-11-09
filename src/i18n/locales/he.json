@@ -458,5 +458,18 @@
   "feedback.quota": "האחסון מלא. השינוי שהזנת עדיין מופיע כאן. יש לייצא גיבוי או לפנות מקום באחסון הדפדפן, ואז לנסות שוב.",
   "feedback.reconnect": "התוסף אינו זמין. השינוי שהזנת עדיין מופיע כאן. יש להעתיק אותו לפני רענון הדף, ואז לנסות שוב.",
   "feedback.retry": "ניסיון נוסף",
-  "feedback.exportStarted": "נשלחה בקשה להורדת הגיבוי."
+  "feedback.exportStarted": "נשלחה בקשה להורדת הגיבוי.",
+  "library.more": "פעולות נוספות",
+  "library.continue": "המשך צפייה",
+  "library.length": "אורך",
+  "library.practice": "תרגול",
+  "library.playback": "מיקום הצפייה המתקדם ביותר",
+  "library.unknownLength": "לא ידוע",
+  "library.markComplete": "סימון כהושלם",
+  "library.removed": "הסרטון הוסר מהספרייה",
+  "library.undo": "ביטול הסרה",
+  "library.dismiss": "סגירה",
+  "library.restored": "הסרטון שוחזר",
+  "library.undoFailed": "לא ניתן לבטל את ההסרה. נסו שוב.",
+  "library.undoUnavailable": "לא ניתן עוד לבטל את ההסרה הזו."
 }

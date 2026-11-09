@@ -16,9 +16,9 @@ local baseline report.
 - PR #4 open: reproducible engineering checks (JP-11–14). Checks passed on
   Linux and Windows, including its documentation follow-up.
 - PR #5 open: mutation feedback and recovery (JP-09), plus follow-ups to JP-07/08.
-- Next: library undo and actions (JP-10, JP-15), visual consistency and
-  information hierarchy (JP-16–18), privacy/case study (JP-19–20), and measured
-  performance (JP-21).
+- PR #6 open: library undo and card/action hierarchy (JP-10, JP-15).
+- Next: visual consistency and information hierarchy (JP-16–18), privacy/case
+  study (JP-19–20), and measured performance (JP-21).
 
 Local visual evidence is retained under `output/playwright/` rather than shipped
 inside the extension. The original review is

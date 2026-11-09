@@ -4,6 +4,17 @@ import { rememberUiFocus } from './restoreUiFocus';
 
 afterEach(() => { document.body.innerHTML = ''; });
 
+it('preserves native disclosure state and summary focus through a storage repaint', () => {
+  document.body.innerHTML = '<main><details id="actions" open><summary id="summary">More</summary><button>Remove</button></details></main>';
+  const root = document.querySelector('main')!;
+  root.querySelector<HTMLElement>('summary')!.focus();
+  const restore = rememberUiFocus(root);
+  root.innerHTML = '<details id="actions"><summary id="summary">More</summary><button>Remove</button></details>';
+  restore();
+  expect(root.querySelector('details')!.open).toBe(true);
+  expect(document.activeElement?.id).toBe('summary');
+});
+
 it('restores a replaced search control and caret, without overriding newer focus', () => {
   document.body.innerHTML = '<main><input id="search" type="search" value="practice"><button id="next">Next</button></main>';
   const root = document.querySelector('main')!;

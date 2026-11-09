@@ -458,5 +458,18 @@
   "feedback.quota": "Der Speicher ist voll. Ihre Eingabe bleibt hier erhalten. Exportieren Sie eine Sicherung oder geben Sie Browserspeicher frei und versuchen Sie es erneut.",
   "feedback.reconnect": "Die Erweiterung ist nicht verfügbar. Ihre Eingabe bleibt hier erhalten. Kopieren Sie sie vor dem Neuladen der Seite und versuchen Sie es erneut.",
   "feedback.retry": "Erneut versuchen",
-  "feedback.exportStarted": "Download der Sicherung angefordert."
+  "feedback.exportStarted": "Download der Sicherung angefordert.",
+  "library.more": "Weitere Aktionen",
+  "library.continue": "Fortsetzen",
+  "library.length": "Länge",
+  "library.practice": "Übungszeit",
+  "library.playback": "Weiteste Wiedergabeposition",
+  "library.unknownLength": "Unbekannt",
+  "library.markComplete": "Als abgeschlossen markieren",
+  "library.removed": "Video aus der Mediathek entfernt",
+  "library.undo": "Rückgängig",
+  "library.dismiss": "Schließen",
+  "library.restored": "Video wiederhergestellt",
+  "library.undoFailed": "Rückgängig fehlgeschlagen. Bitte erneut versuchen.",
+  "library.undoUnavailable": "Diese Entfernung kann nicht mehr rückgängig gemacht werden."
 }

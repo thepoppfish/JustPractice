@@ -210,6 +210,7 @@ export function flushWatchPanelPractice(): void {
       videoId,
       deltaSeconds: pending,
       endedAtMs: Date.now(),
+      practiceToken: libraryItemForCurrentVideo?.practiceToken,
     },
   }).then((res) => {
     if (!res?.ok || !('xpGained' in res)) {
@@ -907,7 +908,7 @@ export function onJpPracticeStorageChanged(nv: PersistedData | undefined): void 
   runWatchPanelAfterJpPracticeStorageChange(nv, {
     applyIncomingLibraryFromPersisted: (persisted) => {
       const item = persisted?.library.find((v) => v.videoId === currentVideoId) ?? null;
-      if (Boolean(item) === inLibrary) return;
+      if (Boolean(item) === inLibrary && item?.practiceToken === libraryItemForCurrentVideo?.practiceToken) return;
       // Stop at the storage event, before an asynchronous UI refresh can admit more playback.
       // A removal/clear ends this session. Do not write its remainder back into replaced data.
       if (inLibrary) practiceMeter.reset();

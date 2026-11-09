@@ -298,10 +298,7 @@ h1 {
 .item-title {
   font-weight: 600;
   font-size: 13px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .item-meta {
@@ -310,27 +307,11 @@ h1 {
 }
 
 .item-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 6px;
 }
 
-.item-actions a,
-.item-actions button {
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--accent);
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.item-actions button.danger {
-  color: #f88;
-  border-color: rgba(255, 136, 136, 0.35);
-}
+.item-body .library-metrics { margin-block: 8px; }
 
 .empty {
   padding: 24px;

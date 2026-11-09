@@ -6,11 +6,15 @@ import type {
   RoadmapCompletionSnapshot,
   TodayPathPlan,
 } from './storage';
+import type { LibraryUndoOffer } from './libraryUndo';
 
 export const MSG = {
   GET_STATE: 'GET_STATE',
   ADD_OR_UPDATE_LIBRARY: 'ADD_OR_UPDATE_LIBRARY',
   REMOVE_LIBRARY: 'REMOVE_LIBRARY',
+  GET_LIBRARY_UNDO: 'GET_LIBRARY_UNDO',
+  UNDO_LIBRARY_REMOVAL: 'UNDO_LIBRARY_REMOVAL',
+  DISMISS_LIBRARY_UNDO: 'DISMISS_LIBRARY_UNDO',
   SET_DIFFICULTY: 'SET_DIFFICULTY',
   SET_LIBRARY_COMPLETION: 'SET_LIBRARY_COMPLETION',
   PRACTICE_TICK: 'PRACTICE_TICK',
@@ -113,6 +117,7 @@ export interface PracticeTickMessage {
     deltaSeconds: number;
     /** Client clock ms when tick ended (for date bucket) */
     endedAtMs: number;
+    practiceToken?: string;
   };
 }
 
@@ -153,6 +158,9 @@ export interface PrestigeMessage {
 }
 
 export type ExtensionMessage =
+  | { type: typeof MSG.GET_LIBRARY_UNDO }
+  | { type: typeof MSG.UNDO_LIBRARY_REMOVAL; payload: { token: string } }
+  | { type: typeof MSG.DISMISS_LIBRARY_UNDO; payload: { token: string } }
   | GetStateMessage
   | AddOrUpdateLibraryMessage
   | RemoveLibraryMessage
@@ -210,6 +218,7 @@ export interface LibraryWriteOkResponse {
 }
 
 export type ExtensionResponse =
+  | { ok: true; undo: LibraryUndoOffer | null }
   | GetStateResponse
   | OkResponse
   | PracticeTickOkResponse
@@ -217,4 +226,4 @@ export type ExtensionResponse =
   | PrestigeOkResponse
   | LibraryWriteOkResponse
   | BackfillLibraryDurationsOkResponse
-  | { ok: false; error: string };
+  | { ok: false; error: string; code?: string };

@@ -330,9 +330,11 @@ function refreshLibraryPanels(): void {
   syncSearchQueryFromDom();
   const vm = buildVm(cachedData);
   libraryLevelFilter = vm.libraryLevelFilter;
+  const restoreFocus = rememberUiFocus(app);
   actions.captureDrafts();
   patchLibraryPanelBody(app, vm);
   actions.restore();
+  restoreFocus();
   attachLibraryPanelListeners({
     root: app,
     vm,
@@ -386,21 +388,21 @@ async function refreshAfterMutation(panels: readonly DashView[] = defaultMutatio
   patchDashWelcome(app, vm);
   if (panels.length > 0) patchDashboardPanels(app, vm, panels);
   switchActiveView(app, activeView);
-  await persistPathPlanIfNeeded(vm);
   bindDashboardListeners(vm);
   restoreFocus();
+  await persistPathPlanIfNeeded(vm);
   if (panels.includes('path')) {
     refreshPathTrailLayout(app);
     scheduleRoadmapCelebration(vm);
   }
 }
 
-function afterLibraryDataChange(): void {
+async function afterLibraryDataChange(): Promise<void> {
   if (app.querySelector('.app-shell') && isDashSearchFocused(app)) {
-    void refreshWhileSearchFocused();
+    await refreshWhileSearchFocused();
     return;
   }
-  void refreshAfterMutation(defaultMutationPanels());
+  await refreshAfterMutation(defaultMutationPanels());
 }
 
 function render(): void {
@@ -492,8 +494,10 @@ async function refreshWhileSearchFocused(): Promise<void> {
 
   patchTopbarMetrics(app, vm);
   actions.captureDrafts();
+  const restoreFocus = rememberUiFocus(app);
   patchLibraryAndCompletedPanels(app, vm);
   actions.restore();
+  restoreFocus();
   attachLibraryPanelListeners({
     root: app,
     vm,

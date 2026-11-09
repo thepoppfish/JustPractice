@@ -458,5 +458,18 @@
   "feedback.quota": "El almacenamiento está lleno. Tu cambio sigue aquí. Exporta una copia de seguridad o libera espacio del navegador y vuelve a intentarlo.",
   "feedback.reconnect": "La extensión no está disponible. Tu cambio sigue aquí. Cópialo antes de actualizar esta página y vuelve a intentarlo.",
   "feedback.retry": "Reintentar",
-  "feedback.exportStarted": "Se ha solicitado la descarga de la copia de seguridad."
+  "feedback.exportStarted": "Se ha solicitado la descarga de la copia de seguridad.",
+  "library.more": "Más acciones",
+  "library.continue": "Continuar",
+  "library.length": "Duración",
+  "library.practice": "Práctica",
+  "library.playback": "Posición de reproducción más avanzada",
+  "library.unknownLength": "Desconocida",
+  "library.markComplete": "Marcar como completado",
+  "library.removed": "Vídeo eliminado de la biblioteca",
+  "library.undo": "Deshacer",
+  "library.dismiss": "Cerrar",
+  "library.restored": "Vídeo restaurado",
+  "library.undoFailed": "No se pudo deshacer. Vuelve a intentarlo.",
+  "library.undoUnavailable": "Esta eliminación ya no se puede deshacer."
 }

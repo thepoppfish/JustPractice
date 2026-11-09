@@ -1,11 +1,15 @@
 import type { ExtensionMessage } from './messages';
 
+export class ExtensionResponseError extends Error {
+  constructor(message: string, readonly code?: string) { super(message); }
+}
+
 /** A rejected response is a failed operation, just like a rejected transport. */
 export function requireOkResponse<T>(response: unknown): T {
   if (!response || typeof response !== 'object' || !('ok' in response) || response.ok !== true) {
     const error = response && typeof response === 'object' && 'error' in response
       ? String(response.error) : 'No valid response from the extension';
-    throw new Error(error);
+    throw new ExtensionResponseError(error, response && typeof response === 'object' && 'code' in response && typeof response.code === 'string' ? response.code : undefined);
   }
   return response as T;
 }

@@ -20,6 +20,8 @@ import { attachYearHeatmapInteractive, type YearHeatmapZoom } from '../lib/yearH
 import { DASH_VIEWS } from './dashboardDomUpdate';
 import type { DashView, DashboardViewModel } from './dashboardViewModel';
 import { uiActionFeedback } from '../lib/uiActionFeedback';
+import { libraryUndoUi } from '../lib/libraryUndoUi';
+import type { LibraryUndoOffer } from '../lib/libraryUndo';
 
 export interface AttachDashboardListenersInput {
   root: HTMLElement;
@@ -30,7 +32,7 @@ export interface AttachDashboardListenersInput {
   switchView: (v: DashView) => void;
   refreshAfterMutation: (panels?: readonly DashView[]) => void | Promise<void>;
   refreshLibraryPanels: () => void;
-  afterLibraryDataChange: () => void;
+  afterLibraryDataChange: () => void | Promise<void>;
   onSearchBlur?: () => void;
   setActiveView: (v: DashView) => void;
   setSearchQuery: (q: string) => void;
@@ -50,7 +52,7 @@ export interface AttachLibraryPanelListenersInput {
   send: <T>(msg: ExtensionMessage) => Promise<T>;
   signal?: AbortSignal;
   refreshLibraryPanels: () => void;
-  afterLibraryDataChange: () => void;
+  afterLibraryDataChange: () => void | Promise<void>;
   setLibraryLevelFilter: (f: '' | 'unset' | 'legacy' | LevelTag) => void;
 }
 
@@ -59,6 +61,7 @@ export function attachLibraryPanelListeners(input: AttachLibraryPanelListenersIn
     input;
   const actions = uiActionFeedback(root, vm.t);
   const send = actions.sender(input.send);
+  const undo = libraryUndoUi(root, vm.t, afterLibraryDataChange);
 
   root.querySelectorAll<HTMLButtonElement>('[data-level-filter]').forEach((btn) => {
     btn.addEventListener(
@@ -82,28 +85,42 @@ export function attachLibraryPanelListeners(input: AttachLibraryPanelListenersIn
         ev.preventDefault();
         const id = btn.getAttribute('data-remove');
         if (!id) return;
-        await send({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
-        afterLibraryDataChange();
+        const result = await send<{ ok: true; undo: LibraryUndoOffer | null }>({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
+        actions.silenceSuccess();
+        await afterLibraryDataChange();
+        undo.removed(result.undo);
       }),
       { signal },
     );
   });
 
-  root.querySelectorAll<HTMLButtonElement>('[data-undo-complete]').forEach((btn) => {
+  root.querySelectorAll<HTMLButtonElement>('[data-library-complete]').forEach((btn) => {
     btn.addEventListener(
       'click',
       (ev) => actions.handle(ev, async () => {
         ev.preventDefault();
-        const id = btn.getAttribute('data-undo-complete');
+        const id = btn.getAttribute('data-library-complete');
         if (!id) return;
         await send({
           type: MSG.SET_LIBRARY_COMPLETION,
-          payload: { videoId: id, complete: false },
+          payload: { videoId: id, complete: btn.dataset.complete === 'true' },
         });
-        afterLibraryDataChange();
+        await afterLibraryDataChange();
+        if (document.activeElement === document.body) {
+          const heading = root.querySelector<HTMLElement>('.view--active h2');
+          if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+        }
       }),
       { signal },
     );
+  });
+  root.querySelectorAll<HTMLSelectElement>('[data-library-level]').forEach((select) => {
+    select.addEventListener('change', (ev) => actions.handle(ev, async () => {
+      const videoId = select.dataset.libraryLevel;
+      if (!videoId) return;
+      await send({ type: MSG.SET_DIFFICULTY, payload: { videoId, difficulty: select.value || null } });
+      await afterLibraryDataChange();
+    }), { signal });
   });
 }
 
