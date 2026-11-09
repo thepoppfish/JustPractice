@@ -157,10 +157,18 @@
       {
         "text": "Verification report with screenshots and acceptance checks",
         "href": "../../output/playwright/accessibility-hebrew-2026-11-09/verification.html"
+      },
+      {
+        "text": "PR #5 follow-up: move-label name and initial watch locale",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/5"
       }
     ],
     "pendingChecks": [
       "Spoken NVDA/Narrator review of onboarding and core navigation"
+    ],
+    "relatedPrs": [
+      3,
+      5
     ]
   },
   {
@@ -183,7 +191,15 @@
       {
         "text": "Verification report with screenshots and acceptance checks",
         "href": "../../output/playwright/accessibility-hebrew-2026-11-09/verification.html"
+      },
+      {
+        "text": "PR #5 follow-up: move-label name and initial watch locale",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/5"
       }
+    ],
+    "relatedPrs": [
+      3,
+      5
     ]
   },
   {
@@ -199,9 +215,24 @@
     "source": "src/dashboard/dashboardListeners.ts:246; src/dashboard/dashboardListeners.ts:358; src/popup/main.ts:285",
     "image": "populated-goals.png",
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 5,
+    "verification": "384 tests / 55 files, nine installed-browser scenarios, real service-worker quota rejection, rejected/disconnected messaging, export recovery, duplicate-write protection and draft retention passed locally. Six locale error layouts fit at 100%/200%, with scoped axe and measured contrast evidence. Unsaved drafts are in page memory; refreshing may discard them.",
+    "checks": [
+      {
+        "text": "Mutation feedback implementation and verification scope",
+        "href": "mutation-feedback.md"
+      },
+      {
+        "text": "Screenshots, zoom checks, fault-injection and axe evidence",
+        "href": "../../output/playwright/mutation-feedback-2026-11-09/verification.html"
+      },
+      {
+        "text": "PR #5 latest Linux/Windows checks",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/5/checks"
+      }
+    ],
+    "pendingChecks": []
   },
   {
     "id": "JP-10",
@@ -239,7 +270,7 @@
     "checks": [
       {
         "text": "GitHub Linux/Windows quality workflow",
-        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42622579932"
+        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42623548194"
       },
       {
         "text": "Quality batch verification, six screenshots, zoom and traces",
@@ -267,7 +298,7 @@
     "checks": [
       {
         "text": "GitHub Linux/Windows quality workflow",
-        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42622579932"
+        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42623548194"
       },
       {
         "text": "Quality batch verification, six screenshots, zoom and traces",
@@ -291,11 +322,11 @@
     "size": "M",
     "status": "implemented-awaiting-review",
     "pr": 4,
-    "verification": "GitHub Linux and Windows jobs passed from clean installs: lint before/after build, dependency policy, app/test type checks, production build, 365 tests, distribution verification, actual special-path packaging, two installed-browser smoke flows, and uploaded runtime ZIP/screenshots/traces. Implementation commit c26ddfd; run 42622579932.",
+    "verification": "GitHub Linux and Windows jobs passed from clean installs: lint before/after build, dependency policy, app/test type checks, production build, 365 tests, distribution verification, actual special-path packaging, two installed-browser smoke flows, and uploaded runtime ZIP/screenshots/traces. Implementation commit c26ddfd; run 42622579932. Documentation follow-up 588040c also passed both jobs in run 42623548194.",
     "checks": [
       {
         "text": "GitHub Linux/Windows quality workflow",
-        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42622579932"
+        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42623548194"
       },
       {
         "text": "Quality batch verification, six screenshots, zoom and traces",
@@ -323,7 +354,7 @@
     "checks": [
       {
         "text": "GitHub Linux/Windows quality workflow",
-        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42622579932"
+        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42623548194"
       },
       {
         "text": "Quality batch verification, six screenshots, zoom and traces",

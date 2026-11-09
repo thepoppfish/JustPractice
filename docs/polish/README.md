@@ -14,7 +14,9 @@ local baseline report.
 - PR #3 open: contrast, keyboard semantics and Hebrew layouts (JP-06–08).
   Spoken screen-reader verification for JP-07 remains outstanding.
 - PR #4 open: reproducible engineering checks (JP-11–14), followed by mutation
-  feedback and library actions (JP-09, JP-10, JP-15), visual consistency and
+  checks passed on Linux and Windows, including its documentation follow-up.
+- PR #5 open: mutation feedback and recovery (JP-09), plus follow-ups to JP-07/08.
+- Next: library undo and actions (JP-10, JP-15), visual consistency and
   information hierarchy (JP-16–18), privacy/case study (JP-19–20), and measured
   performance (JP-21).
 
