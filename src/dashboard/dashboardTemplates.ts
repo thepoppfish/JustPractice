@@ -560,7 +560,7 @@ export function dashboardGoalsSectionHtml(vm: DashboardViewModel): string {
                   value="${vm.goals.dailyTargetSec == null ? '' : escapeAttr(String(Math.round(vm.goals.dailyTargetSec / 60)))}" />
               </label>
             </div>
-            <button type="button" class="btn-save-goals" id="save-goals">${escapeHtml(vm.t('dash.goalsSaveTargets'))}</button>
+            <button type="button" class="btn-save-goals" id="save-goals" data-commit-controls="goal-daily-min">${escapeHtml(vm.t('dash.goalsSaveTargets'))}</button>
           </section>`;
 }
 
@@ -603,7 +603,7 @@ function customDailyMessagesSectionHtml(vm: DashboardViewModel): string {
                 <button
                   type="button"
                   class="btn-save-goals custom-daily-messages-add-btn"
-                  id="custom-daily-message-add"
+                  id="custom-daily-message-add" data-commit-controls="custom-daily-message-input"
                   ${atMax ? 'disabled' : ''}
                 >${escapeHtml(vm.t('settings.customDailyMessagesAdd'))}</button>
               </div>
@@ -664,7 +664,7 @@ export function dashboardSettingsSectionHtml(vm: DashboardViewModel): string {
                 <label for="custom-levels-lines">${escapeHtml(vm.t('settings.customLevelsLabel'))}</label>
                 <textarea id="custom-levels-lines" rows="8" spellcheck="false" placeholder="${escapeAttr(vm.t('settings.customLevelsPlaceholder'))}">${escapeHtml(vm.customLevels.join('\n'))}</textarea>
                 <p class="help">${escapeHtml(vm.t('settings.customLevelsHelp'))}</p>
-                <button type="button" class="btn-save-goals" id="save-custom-levels">${escapeHtml(vm.t('settings.saveCustomLevels'))}</button>
+                <button type="button" class="btn-save-goals" id="save-custom-levels" data-commit-controls="custom-levels-lines">${escapeHtml(vm.t('settings.saveCustomLevels'))}</button>
               </div>`
                   : ''
               }

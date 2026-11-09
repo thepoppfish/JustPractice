@@ -451,5 +451,12 @@
   "yearHeatmap.prevYear": "Vorheriges Jahr",
   "yearHeatmap.nextYear": "Nächstes Jahr",
   "panel.moveHint": "Panel mit den Pfeiltasten bewegen. Mit Umschalt sind die Schritte größer.",
-  "yearHeatmap.keyboardHelp": "Mit Pfeiltasten Tage oder Wochen wählen, mit Pos1/Ende zum Anfang oder Ende springen und mit Eingabe einen Monat öffnen."
+  "yearHeatmap.keyboardHelp": "Mit Pfeiltasten Tage oder Wochen wählen, mit Pos1/Ende zum Anfang oder Ende springen und mit Eingabe einen Monat öffnen.",
+  "feedback.working": "Wird verarbeitet…",
+  "feedback.saved": "Änderungen gespeichert.",
+  "feedback.failed": "Die Aktion konnte nicht abgeschlossen werden. Ihre Eingaben bleiben auf dieser Seite erhalten. Versuchen Sie es erneut.",
+  "feedback.quota": "Der Speicher ist voll. Ihre Eingabe bleibt hier erhalten. Exportieren Sie eine Sicherung oder geben Sie Browserspeicher frei und versuchen Sie es erneut.",
+  "feedback.reconnect": "Die Erweiterung ist nicht verfügbar. Ihre Eingabe bleibt hier erhalten. Kopieren Sie sie vor dem Neuladen der Seite und versuchen Sie es erneut.",
+  "feedback.retry": "Erneut versuchen",
+  "feedback.exportStarted": "Download der Sicherung angefordert."
 }

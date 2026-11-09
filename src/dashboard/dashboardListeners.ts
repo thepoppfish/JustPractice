@@ -19,6 +19,7 @@ import {
 import { attachYearHeatmapInteractive, type YearHeatmapZoom } from '../lib/yearHeatmapInteractive';
 import { DASH_VIEWS } from './dashboardDomUpdate';
 import type { DashView, DashboardViewModel } from './dashboardViewModel';
+import { uiActionFeedback } from '../lib/uiActionFeedback';
 
 export interface AttachDashboardListenersInput {
   root: HTMLElement;
@@ -38,7 +39,7 @@ export interface AttachDashboardListenersInput {
   getYearHeatmapZoom: () => YearHeatmapZoom;
   setYearHeatmapZoom: (z: YearHeatmapZoom) => void;
   requestPathRebuild: () => void;
-  regenerateTodayPath: () => void;
+  regenerateTodayPath: () => void | Promise<void>;
   pickRoadmapBonus: (tier: string, videoId: string) => void | Promise<void>;
   scheduleDurationBackfill: () => void;
 }
@@ -54,8 +55,10 @@ export interface AttachLibraryPanelListenersInput {
 }
 
 export function attachLibraryPanelListeners(input: AttachLibraryPanelListenersInput): void {
-  const { root, send, afterLibraryDataChange, refreshLibraryPanels, setLibraryLevelFilter, signal } =
+  const { root, vm, afterLibraryDataChange, refreshLibraryPanels, setLibraryLevelFilter, signal } =
     input;
+  const actions = uiActionFeedback(root, vm.t);
+  const send = actions.sender(input.send);
 
   root.querySelectorAll<HTMLButtonElement>('[data-level-filter]').forEach((btn) => {
     btn.addEventListener(
@@ -75,13 +78,13 @@ export function attachLibraryPanelListeners(input: AttachLibraryPanelListenersIn
   root.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((btn) => {
     btn.addEventListener(
       'click',
-      async (ev) => {
+      (ev) => actions.handle(ev, async () => {
         ev.preventDefault();
         const id = btn.getAttribute('data-remove');
         if (!id) return;
         await send({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
         afterLibraryDataChange();
-      },
+      }),
       { signal },
     );
   });
@@ -89,7 +92,7 @@ export function attachLibraryPanelListeners(input: AttachLibraryPanelListenersIn
   root.querySelectorAll<HTMLButtonElement>('[data-undo-complete]').forEach((btn) => {
     btn.addEventListener(
       'click',
-      async (ev) => {
+      (ev) => actions.handle(ev, async () => {
         ev.preventDefault();
         const id = btn.getAttribute('data-undo-complete');
         if (!id) return;
@@ -98,7 +101,7 @@ export function attachLibraryPanelListeners(input: AttachLibraryPanelListenersIn
           payload: { videoId: id, complete: false },
         });
         afterLibraryDataChange();
-      },
+      }),
       { signal },
     );
   });
@@ -108,7 +111,6 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
   const {
     root,
     vm,
-    send,
     signal,
     suppressStorageRender,
     switchView,
@@ -127,14 +129,16 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     pickRoadmapBonus,
     scheduleDurationBackfill,
   } = input;
+  const actions = uiActionFeedback(root, vm.t);
+  const send = actions.sender(input.send);
 
   const listen = <K extends keyof HTMLElementEventMap>(
     el: Element | null | undefined,
     type: K,
-    handler: (this: HTMLElement, ev: HTMLElementEventMap[K]) => void,
+    handler: (this: HTMLElement, ev: HTMLElementEventMap[K]) => void | Promise<void>,
   ) => {
     if (!el) return;
-    el.addEventListener(type, handler as EventListener, { signal });
+    el.addEventListener(type, (event) => actions.handle(event, () => handler.call(el as HTMLElement, event as HTMLElementEventMap[K])), { signal });
   };
 
   root.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
@@ -151,11 +155,11 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
   });
 
   root.querySelectorAll<HTMLButtonElement>('[data-path-action]').forEach((btn) => {
-    listen(btn, 'click', () => {
+    listen(btn, 'click', async () => {
       const action = btn.getAttribute('data-path-action');
       if (action === 'regenerate') {
         if (!window.confirm(vm.t('path.regenerateConfirm'))) return;
-        regenerateTodayPath();
+        await regenerateTodayPath();
         return;
       }
       if (action === 'new-path') {
@@ -166,7 +170,7 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
   });
 
   root.querySelectorAll<HTMLElement>('[data-path-bonus-pick]').forEach((card) => {
-    listen(card, 'click', (e) => {
+    listen(card, 'click', async (e) => {
       if (card.getAttribute('aria-disabled') === 'true') {
         e.preventDefault();
         return;
@@ -174,7 +178,7 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       const tier = card.getAttribute('data-path-bonus-pick');
       const videoId = card.getAttribute('data-path-bonus-video');
       if (!tier || !videoId) return;
-      void pickRoadmapBonus(tier, videoId);
+      await pickRoadmapBonus(tier, videoId);
     });
   });
 
@@ -295,13 +299,13 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     });
     void refreshAfterMutation(['settings']);
   };
-  listen(root.querySelector('#custom-daily-message-add'), 'click', () => {
-    void addCustomMessage();
+  listen(root.querySelector('#custom-daily-message-add'), 'click', async () => {
+    await addCustomMessage();
   });
   listen(customMessageInput, 'keydown', (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    void addCustomMessage();
+    return addCustomMessage();
   });
   root.querySelectorAll<HTMLButtonElement>('[data-custom-message-index]').forEach((btn) => {
     listen(btn, 'click', async () => {
@@ -357,18 +361,20 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
   });
 
   listen(root.querySelector('#export-extension-data'), 'click', async () => {
+    const all = await chrome.storage.local.get(null);
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `justpractice-export-${stamp}.json`;
+    document.body.append(a);
     try {
-      const all = await chrome.storage.local.get(null);
-      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-      const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `justpractice-export-${stamp}.json`;
       a.click();
+      actions.acknowledge('feedback.exportStarted');
+    } finally {
+      a.remove();
       URL.revokeObjectURL(url);
-    } catch {
-      /* ignore */
     }
   });
 
@@ -413,6 +419,7 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       window.alert(res.error ?? vm.t('dash.restoreFailed'));
       return;
     }
+    actions.reset();
     void refreshAfterMutation(DASH_VIEWS);
   });
 
@@ -424,6 +431,7 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     const ok = confirm(vm.t('dash.confirmClearBody', { app: APP_NAME }));
     if (!ok) return;
     await send({ type: MSG.CLEAR_ALL_EXTENSION_DATA });
+    actions.reset();
     void refreshAfterMutation(DASH_VIEWS);
   });
 

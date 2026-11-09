@@ -451,5 +451,12 @@
   "yearHeatmap.prevYear": "Previous year",
   "yearHeatmap.nextYear": "Next year",
   "panel.moveHint": "Move panel with arrow keys. Hold Shift for larger steps.",
-  "yearHeatmap.keyboardHelp": "Use arrow keys to move by day or week, Home/End to jump, and Enter to open a month."
+  "yearHeatmap.keyboardHelp": "Use arrow keys to move by day or week, Home/End to jump, and Enter to open a month.",
+  "feedback.working": "Working…",
+  "feedback.saved": "Changes saved.",
+  "feedback.failed": "Couldn’t complete the action. Your current values are still on this page. Try again.",
+  "feedback.quota": "Storage is full. Your edit is still here. Export a backup or free browser storage, then retry.",
+  "feedback.reconnect": "The extension is unavailable. Your edit is still here. Copy it before refreshing this page, then try again.",
+  "feedback.retry": "Try again",
+  "feedback.exportStarted": "Backup download requested."
 }

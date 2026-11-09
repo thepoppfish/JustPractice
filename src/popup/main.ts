@@ -23,13 +23,16 @@ import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { applyUiLocale, createTranslator, resolveLocale } from '../i18n';
 import { attachPopupTabs } from './popupTabs';
 import { rememberUiFocus } from '../lib/restoreUiFocus';
+import { sendChecked } from '../lib/extensionMessaging';
+import { uiActionFeedback } from '../lib/uiActionFeedback';
 
 type FilterLevel = '' | 'unset' | 'legacy' | LevelTag;
 
 const app = document.getElementById('app')!;
+const actions = uiActionFeedback(app, createTranslator(resolveLocale('auto')));
 
 async function send<T>(msg: ExtensionMessage): Promise<T> {
-  return chrome.runtime.sendMessage(msg) as Promise<T>;
+  return sendChecked<T>(msg);
 }
 
 async function loadData(): Promise<PersistedData> {
@@ -105,6 +108,7 @@ async function renderAsync(): Promise<void> {
   try {
     data = await loadData();
   } catch {
+    if (app.querySelector('.wrap')) return;
     applyUiLocale(resolveLocale(undefined));
     app.innerHTML = `<main class="wrap"><p class="empty">${escapeHtml(createTranslator(resolveLocale(undefined))('popup.loadError'))}</p></main>`;
     return;
@@ -117,6 +121,7 @@ async function renderAsync(): Promise<void> {
   const locale = resolveLocale(st.uiLocale);
   applyUiLocale(locale);
   const t = createTranslator(locale);
+  actions.setTranslator(t);
 
   const validFilterTags = new Set(tagsForFramework(fw, customLevels));
   if (
@@ -180,6 +185,7 @@ async function renderAsync(): Promise<void> {
   ].join('');
 
   const restoreFocus = rememberUiFocus(app);
+  actions.captureDrafts();
   app.innerHTML = `
     <main class="wrap">
       <div class="popup-head">
@@ -279,40 +285,41 @@ async function renderAsync(): Promise<void> {
   });
 
   app.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', (event) => actions.handle(event, async () => {
       const id = btn.getAttribute('data-remove');
       if (!id) return;
-      await send({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
+      await actions.sender(send)({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
       render();
-    });
+    }));
   });
 
   const pauseEl = app.querySelector<HTMLInputElement>('#pause-unfocused');
-  pauseEl?.addEventListener('change', async () => {
-    await send({
+  pauseEl?.addEventListener('change', (event) => actions.handle(event, async () => {
+    await actions.sender(send)({
       type: MSG.SET_SETTINGS,
       payload: { pauseWhenUnfocused: pauseEl.checked },
     });
     render();
-  });
+  }));
 
-  app.querySelector('#spawn-watch-panel')?.addEventListener('click', async () => {
+  app.querySelector('#spawn-watch-panel')?.addEventListener('click', (event) => actions.handle(event, async () => {
     const res = await requestWatchPanelSpawn();
     if (res.status === 'no_youtube_tabs') {
       window.alert(t('settings.showWatchPanelNoTab'));
     } else if (res.status === 'needs_refresh') {
       window.alert(t('settings.showWatchPanelNeedsRefresh'));
     }
-  });
+  }));
 
   const learningFocusEl = app.querySelector<HTMLInputElement>('#learning-focus-hide-recs');
-  learningFocusEl?.addEventListener('change', async () => {
-    await send({
+  learningFocusEl?.addEventListener('change', (event) => actions.handle(event, async () => {
+    await actions.sender(send)({
       type: MSG.SET_SETTINGS,
       payload: { learningFocusHideRecommendations: learningFocusEl.checked },
     });
     render();
-  });
+  }));
+  actions.restore();
   restoreFocus();
 }
 

@@ -4,6 +4,8 @@ import { appIconUrl } from '../lib/branding';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { goalsFromDailyMinutes, parseDailyGoalMinutesInput } from '../lib/practiceGoals';
 import type { LevelFramework, UiLocale } from '../lib/storage';
+import { sendChecked } from '../lib/extensionMessaging';
+import { uiActionFeedback } from '../lib/uiActionFeedback';
 import {
   WELCOME_GOAL_PRESET_MINUTES,
   WELCOME_TUTORIAL_VIDEO_ID,
@@ -40,6 +42,7 @@ interface WizardState {
 const app = document.getElementById('app')!;
 
 let t = createTranslator(resolveLocale('auto'));
+const actions = uiActionFeedback(app, (key) => t(key));
 let helloController: HelloCarouselController | null = null;
 let carouselIndex = 0;
 /** True after the user taps a language chip — stops the hello cycle. */
@@ -55,7 +58,7 @@ const state: WizardState = {
 };
 
 async function sendMsg<T>(msg: ExtensionMessage): Promise<T> {
-  return chrome.runtime.sendMessage(msg) as Promise<T>;
+  return sendChecked<T>(msg);
 }
 
 function prefersReducedMotion(): boolean {
@@ -265,6 +268,7 @@ function navHtml(): string {
 }
 
 function render(): void {
+  actions.captureDrafts();
   document.title = t('welcome.pageTitle');
   applyUiLocale(state.uiLocale ?? resolveLocale('auto'));
 
@@ -283,6 +287,7 @@ function render(): void {
     </div>`;
 
   wireStepEvents();
+  actions.restore();
   if (state.step === 0 && !helloAnimationLocked) {
     mountHelloAnimation();
   } else {
@@ -346,7 +351,7 @@ async function persistOnboarding(): Promise<void> {
   if (state.saved) return;
   const uiLocale: UiLocale = state.uiLocale ?? resolveLocale('auto');
   const goals = goalsFromDailyMinutes(state.goalMinutes);
-  await sendMsg({
+  await actions.sender(sendMsg)({
     type: MSG.SET_SETTINGS,
     payload: {
       uiLocale,
@@ -411,20 +416,20 @@ function wireStepEvents(): void {
     syncGoalChips();
   });
 
-  app.querySelector('#welcome-back')?.addEventListener('click', () => {
+  app.querySelector('#welcome-back')?.addEventListener('click', (event) => actions.handle(event, async () => {
     if (state.step === 2) readGoalFromDom();
-    void goToStep(state.step - 1);
-  });
+    await goToStep(state.step - 1);
+  }));
 
-  app.querySelector('#welcome-continue')?.addEventListener('click', () => {
+  app.querySelector('#welcome-continue')?.addEventListener('click', (event) => actions.handle(event, async () => {
     if (state.step === 0 && !state.uiLocale) {
       const fromCarousel = SUPPORTED_RESOLVED_LOCALES[carouselIndex];
       state.uiLocale = fromCarousel ?? resolveLocale('auto');
       t = createTranslator(state.uiLocale);
     }
     if (state.step === 2) readGoalFromDom();
-    void goToStep(state.step + 1);
-  });
+    await goToStep(state.step + 1);
+  }));
 
   app.querySelector('#welcome-watch-tutorial')?.addEventListener('click', () => {
     openWelcomeTutorialVideo();

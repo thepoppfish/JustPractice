@@ -16,6 +16,7 @@ import { setWatchPanelStatusFlash, showWatchPanelLibraryBanner } from './youtube
 import { showWatchPanelXpToast } from './youtubePanelUi';
 import { populateLevelSelect as populateLevelSelectUi } from './youtubePanelUi';
 import { playDailyGoalRingCompleteCelebration } from './watchPanelGoalRingCelebration';
+import { uiActionFeedback } from '../lib/uiActionFeedback';
 
 export interface WatchPanelGetStateMutators {
   setSettingsCache: (s: AppSettings) => void;
@@ -46,6 +47,7 @@ export interface WatchPanelGetStateDebug {
 /** GET_STATE → panel settings, calendar, library row, difficulty select. */
 export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
   videoId: string;
+  isCurrent: () => boolean;
   shadowRoot: ShadowRoot | null;
   ui: WatchPanelUiRefs;
   mut: WatchPanelGetStateMutators;
@@ -53,18 +55,21 @@ export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
   getPanelT: () => Translator;
   debug: WatchPanelGetStateDebug;
 }): Promise<void> {
+  const actions = uiActionFeedback(p.ui.root, p.getPanelT());
+  actions.captureDrafts();
   try {
     const res = (await sendMsg<GetStateResponse>({
       type: MSG.GET_STATE,
     })) as GetStateResponse;
+    if (!p.isCurrent()) return;
     if (!res?.ok || !('data' in res)) {
-      p.mut.setLibraryItemForCurrentVideo(null);
-      p.mut.setInLibrary(false);
-      p.fx.syncWatchPanelLabels();
-      p.fx.syncWatchPanelVideoLibraryChrome();
-      return;
+      throw new Error(p.getPanelT()('panel.syncError'));
     }
     const settings = ensureSettingsShape({ ...defaultSettings(), ...res.data.settings });
+    const loc = resolveLocale(settings.uiLocale);
+    const panelT = createTranslator(loc);
+    p.mut.setPanelLocale(loc);
+    p.mut.setPanelT(panelT);
     p.mut.setSettingsCache(settings);
     p.fx.applyPanelHostPosition();
     p.fx.applyWatchPanelCollapsed();
@@ -76,10 +81,6 @@ export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
     const item = res.data.library.find((x) => x.videoId === p.videoId);
     p.mut.setInLibrary(Boolean(item));
     p.mut.setLibraryItemForCurrentVideo(item ?? null);
-    const loc = resolveLocale(settings.uiLocale);
-    const panelT = createTranslator(loc);
-    p.mut.setPanelLocale(loc);
-    p.mut.setPanelT(panelT);
     p.fx.syncWatchPanelLabels();
 
     populateLevelSelectUi(
@@ -104,11 +105,15 @@ export async function refreshWatchPanelLibraryUiFromRemoteState(p: {
       p.debug.strip(`refreshState inLibrary=${String(Boolean(item))} vid=${p.videoId.slice(0, 8)}…`);
     }
   } catch {
+    if (!p.isCurrent()) return;
     p.mut.setLibraryItemForCurrentVideo(null);
     p.mut.setInLibrary(false);
-    p.ui.statusEl.textContent = p.getPanelT()('panel.syncError');
     p.fx.syncWatchPanelLabels();
     p.fx.syncWatchPanelVideoLibraryChrome();
+    p.ui.statusEl.textContent = p.getPanelT()('panel.syncError');
+  } finally {
+    actions.setTranslator(p.getPanelT());
+    actions.restore();
   }
 }
 
@@ -204,43 +209,11 @@ export async function saveWatchPanelVideoToLibrary(p: {
     return;
   }
 
-  const durationSec = readVideoDurationSec(getVideoElement());
-  const res = (await sendMsg<ExtensionResponse>({
-    type: MSG.ADD_OR_UPDATE_LIBRARY,
-    payload: {
-      videoId,
-      title: p.readTitle(),
-      channel: p.readChannel(),
-      difficulty,
-      ...(durationSec !== null ? { durationSec } : {}),
-    },
-  })) as ExtensionResponse;
-  p.flash(res, 'panel.flashSaved');
-  await p.afterPersist(videoId);
-}
-
-export async function applyWatchPanelDifficultyChange(p: {
-  value: string;
-  getVideoId: () => string | null;
-  getUi: () => WatchPanelUiRefs | null;
-  getInLibrary: () => boolean;
-  readTitle: () => string;
-  readChannel: () => string;
-  flash: (res: ExtensionResponse, key: 'panel.flashSaved' | 'panel.flashSavedLevel') => void;
-  afterPersist: (videoId: string) => Promise<void>;
-}): Promise<void> {
-  const videoId = p.getVideoId();
-  const ui = p.getUi();
-  if (!videoId || !ui) return;
-  const difficulty = p.value === '' ? null : (p.value as LevelTag);
-  if (p.getInLibrary()) {
-    await sendMsg({
-      type: MSG.SET_DIFFICULTY,
-      payload: { videoId, difficulty },
-    });
-  } else {
+  const actions = uiActionFeedback(ui.root, p.panelT);
+  const send = actions.sender(sendMsg);
+  await actions.run(ui.addBtn, async () => {
     const durationSec = readVideoDurationSec(getVideoElement());
-    const res = (await sendMsg<ExtensionResponse>({
+    const res = (await send<ExtensionResponse>({
       type: MSG.ADD_OR_UPDATE_LIBRARY,
       payload: {
         videoId,
@@ -250,9 +223,51 @@ export async function applyWatchPanelDifficultyChange(p: {
         ...(durationSec !== null ? { durationSec } : {}),
       },
     })) as ExtensionResponse;
-    p.flash(res, 'panel.flashSavedLevel');
-  }
-  await p.afterPersist(videoId);
+    if (p.getVideoId() !== videoId) return;
+    p.flash(res, 'panel.flashSaved');
+    await p.afterPersist(videoId);
+  }, () => { void saveWatchPanelVideoToLibrary(p); });
+}
+
+export async function applyWatchPanelDifficultyChange(p: {
+  value: string;
+  getVideoId: () => string | null;
+  getUi: () => WatchPanelUiRefs | null;
+  getInLibrary: () => boolean;
+  readTitle: () => string;
+  readChannel: () => string;
+  panelT: Translator;
+  flash: (res: ExtensionResponse, key: 'panel.flashSaved' | 'panel.flashSavedLevel') => void;
+  afterPersist: (videoId: string) => Promise<void>;
+}): Promise<void> {
+  const videoId = p.getVideoId();
+  const ui = p.getUi();
+  if (!videoId || !ui) return;
+  const actions = uiActionFeedback(ui.root, p.panelT);
+  const send = actions.sender(sendMsg);
+  await actions.run(ui.difficultySelect, async () => {
+    const difficulty = p.value === '' ? null : (p.value as LevelTag);
+    if (p.getInLibrary()) {
+      await send({
+        type: MSG.SET_DIFFICULTY,
+        payload: { videoId, difficulty },
+      });
+    } else {
+      const durationSec = readVideoDurationSec(getVideoElement());
+      const res = (await send<ExtensionResponse>({
+        type: MSG.ADD_OR_UPDATE_LIBRARY,
+        payload: {
+          videoId,
+          title: p.readTitle(),
+          channel: p.readChannel(),
+          difficulty,
+          ...(durationSec !== null ? { durationSec } : {}),
+        },
+      })) as ExtensionResponse;
+      if (p.getVideoId() === videoId) p.flash(res, 'panel.flashSavedLevel');
+    }
+    if (p.getVideoId() === videoId) await p.afterPersist(videoId);
+  }, () => { void applyWatchPanelDifficultyChange({ ...p, value: ui.difficultySelect.value }); });
 }
 
 export async function setWatchPanelLibraryCompletion(p: {
@@ -265,34 +280,40 @@ export async function setWatchPanelLibraryCompletion(p: {
   shadowRoot: ShadowRoot | null;
   applyXpFromResponse: (res: ExtensionResponse) => void;
   afterPersist: (videoId: string) => Promise<void>;
-}): Promise<void> {
+}): Promise<boolean> {
   const videoId = p.getVideoId();
   const ui = p.getUi();
   if (!videoId || !ui) {
     setWatchPanelStatusFlash(ui?.statusEl ?? null, p.panelT('panel.noVideo'), 'err');
-    return;
+    return false;
   }
-  const res = (await sendMsg<ExtensionResponse>({
-    type: MSG.SET_LIBRARY_COMPLETION,
-    payload: {
-      videoId,
-      complete: p.complete,
-      title: p.readTitle(),
-      channel: p.readChannel(),
-    },
-  })) as ExtensionResponse;
-  if (!res.ok) {
-    setWatchPanelStatusFlash(ui.statusEl, res.error, 'err');
-    return;
-  }
-  if (p.complete) {
-    setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedComplete'));
-    playDailyGoalRingCompleteCelebration(p.shadowRoot);
-  } else {
-    setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedIncomplete'));
-  }
-  if (res.ok && 'xpGained' in res) {
-    p.applyXpFromResponse(res);
-  }
-  await p.afterPersist(videoId);
+  const actions = uiActionFeedback(ui.root, p.panelT);
+  const send = actions.sender(sendMsg);
+  const source = ui.root.querySelector<HTMLElement>('[part="complete-btn"]') ?? ui.addBtn;
+  return actions.run(source, async () => {
+    const res = (await send<ExtensionResponse>({
+      type: MSG.SET_LIBRARY_COMPLETION,
+      payload: {
+        videoId,
+        complete: p.complete,
+        title: p.readTitle(),
+        channel: p.readChannel(),
+      },
+    })) as ExtensionResponse;
+    if (p.getVideoId() !== videoId) return;
+    if (!res.ok) {
+      setWatchPanelStatusFlash(ui.statusEl, res.error, 'err');
+      return;
+    }
+    if (p.complete) {
+      setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedComplete'));
+      playDailyGoalRingCompleteCelebration(p.shadowRoot);
+    } else {
+      setWatchPanelStatusFlash(ui.statusEl, p.panelT('panel.flashMarkedIncomplete'));
+    }
+    if (res.ok && 'xpGained' in res) {
+      p.applyXpFromResponse(res);
+    }
+    await p.afterPersist(videoId);
+  }, () => { void setWatchPanelLibraryCompletion(p); });
 }

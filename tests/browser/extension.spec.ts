@@ -1,27 +1,4 @@
-import { test as base, expect, type BrowserContext } from '@playwright/test';
-import path from 'node:path';
-
-const test = base.extend<{ context: BrowserContext; extensionId: string }>({
-  context: async ({ playwright }, use) => {
-    const extension = path.resolve('dist');
-    const context = await playwright.chromium.launchPersistentContext('', {
-      channel: 'chromium',
-      headless: process.env.PW_HEADED !== '1',
-      viewport: { width: 1280, height: 800 },
-      reducedMotion: 'reduce',
-      args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
-    });
-    try {
-      await use(context);
-    } finally {
-      await context.close();
-    }
-  },
-  extensionId: async ({ context }, use) => {
-    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
-    await use(new URL(worker.url()).host);
-  },
-});
+import { test, expect } from './fixtures';
 
 for (const locale of ['en', 'he'] as const) {
   test(`installed extension: setup, library, settings and popup (${locale})`, async ({ context, extensionId }, testInfo) => {

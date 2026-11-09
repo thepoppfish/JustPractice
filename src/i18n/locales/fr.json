@@ -451,5 +451,12 @@
   "yearHeatmap.prevYear": "Année précédente",
   "yearHeatmap.nextYear": "Année suivante",
   "panel.moveHint": "Déplacez le panneau avec les flèches. Maintenez Maj pour de plus grands déplacements.",
-  "yearHeatmap.keyboardHelp": "Utilisez les flèches pour changer de jour ou de semaine, Début/Fin pour aller aux extrémités et Entrée pour ouvrir un mois."
+  "yearHeatmap.keyboardHelp": "Utilisez les flèches pour changer de jour ou de semaine, Début/Fin pour aller aux extrémités et Entrée pour ouvrir un mois.",
+  "feedback.working": "Opération en cours…",
+  "feedback.saved": "Modifications enregistrées.",
+  "feedback.failed": "Impossible de terminer cette action. Vos valeurs sont toujours affichées sur cette page. Réessayez.",
+  "feedback.quota": "Le stockage est plein. Votre saisie est conservée sur cette page. Exportez une sauvegarde ou libérez de l’espace dans le navigateur, puis réessayez.",
+  "feedback.reconnect": "L’extension est indisponible. Votre saisie est conservée sur cette page. Copiez-la avant d’actualiser la page, puis réessayez.",
+  "feedback.retry": "Réessayer",
+  "feedback.exportStarted": "Téléchargement de la sauvegarde demandé."
 }

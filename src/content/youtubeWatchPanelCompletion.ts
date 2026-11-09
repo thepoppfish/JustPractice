@@ -144,8 +144,7 @@ export function createWatchPanelCompletionController(
   }
 
   async function toggleWatchPanelCompletion(complete: boolean): Promise<void> {
-    hideEndedPrompt();
-    await setWatchPanelLibraryCompletion({
+    const saved = await setWatchPanelLibraryCompletion({
       complete,
       getVideoId: deps.getVideoIdFromUrl,
       readTitle: deps.readTitle,
@@ -156,6 +155,7 @@ export function createWatchPanelCompletionController(
       applyXpFromResponse: deps.applyXpFromResponse,
       afterPersist: deps.afterCompletionPersist,
     });
+    if (saved) hideEndedPrompt();
   }
 
   function detachCompletionListenerOnNoVideo(): void {

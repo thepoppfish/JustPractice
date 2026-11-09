@@ -10,6 +10,8 @@ import { signatureOf } from '../lib/dataSignature';
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import { escapeHtml } from '../lib/htmlEscape';
 import { rememberUiFocus } from '../lib/restoreUiFocus';
+import { sendChecked } from '../lib/extensionMessaging';
+import { uiActionFeedback } from '../lib/uiActionFeedback';
 import { applyUiLocale, createTranslator, resolveLocale } from '../i18n';
 import { buildDashboardViewModel, type DashView } from './dashboardViewModel';
 import { dashboardShellHtml } from './dashboardTemplates';
@@ -45,6 +47,7 @@ import {
 } from './roadmapCompletionCelebration';
 
 const app = document.getElementById('app')!;
+const actions = uiActionFeedback(app, createTranslator(resolveLocale('auto')));
 
 let searchQuery = '';
 let libraryLevelFilter: '' | 'unset' | 'legacy' | LevelTag = '';
@@ -63,7 +66,7 @@ let dashboardListenerAbort: AbortController | null = null;
 let durationBackfillInFlight = false;
 
 async function send<T>(msg: ExtensionMessage): Promise<T> {
-  return chrome.runtime.sendMessage(msg) as Promise<T>;
+  return sendChecked<T>(msg);
 }
 
 async function loadData(): Promise<PersistedData> {
@@ -108,7 +111,7 @@ async function pickRoadmapBonus(tierRaw: string, videoId: string): Promise<void>
   const pick = buildRoadmapBonusPick(cachedData, todayKey, tier, videoId);
   if (!pick) return;
   suppressStorageRender(400);
-  await send({ type: MSG.SET_ROADMAP_BONUS_PICK, payload: { pick } });
+  await actions.sender(send)({ type: MSG.SET_ROADMAP_BONUS_PICK, payload: { pick } });
   cachedData = { ...cachedData, roadmapBonusPick: pick };
   await refreshAfterMutation(['path']);
 }
@@ -151,9 +154,9 @@ async function regenerateTodayPath(): Promise<void> {
   }
   pathRegenerateFromVideoIds = data.todayPathPlan?.steps.map((s) => s.videoId) ?? [];
   pathForceRebuild = true;
-  await send({ type: MSG.SET_TODAY_PATH_PLAN, payload: { plan: null } });
-  await send({ type: MSG.SET_ROADMAP_COMPLETION_SNAPSHOT, payload: { snapshot: null } });
-  await send({ type: MSG.SET_ROADMAP_BONUS_PICK, payload: { pick: null } });
+  await actions.sender(send)({ type: MSG.SET_TODAY_PATH_PLAN, payload: { plan: null } });
+  await actions.sender(send)({ type: MSG.SET_ROADMAP_COMPLETION_SNAPSHOT, payload: { snapshot: null } });
+  await actions.sender(send)({ type: MSG.SET_ROADMAP_BONUS_PICK, payload: { pick: null } });
   if (cachedData) {
     cachedData = {
       ...cachedData,
@@ -167,6 +170,17 @@ async function regenerateTodayPath(): Promise<void> {
 }
 
 async function persistPathPlanIfNeeded(vm: ReturnType<typeof buildVm>): Promise<void> {
+  try {
+    await persistPathPlan(vm);
+  } catch (error) {
+    actions.report(error, async () => {
+      await persistPathPlan(buildVm(await loadData()));
+      await refreshAfterMutation(['path']);
+    });
+  }
+}
+
+async function persistPathPlan(vm: ReturnType<typeof buildVm>): Promise<void> {
   const plan = vm.pathUi.planToPersist;
   if (plan) {
     await send({ type: MSG.SET_TODAY_PATH_PLAN, payload: { plan } });
@@ -225,10 +239,10 @@ async function requestLibraryDurationBackfill(): Promise<void> {
 
 function scheduleLibraryDurationBackfill(data: PersistedData): void {
   if (countLibraryMissingDuration(data) === 0) return;
-  void requestLibraryDurationBackfill();
+  void requestLibraryDurationBackfill().catch((error) => actions.report(error, requestLibraryDurationBackfill));
 }
 
-function requestLibraryMetaEnrich(data: PersistedData): void {
+async function requestLibraryMetaEnrich(data: PersistedData): Promise<void> {
   const needsMeta = data.library.filter(
     (i) =>
       i.title === 'Unknown title' ||
@@ -236,7 +250,7 @@ function requestLibraryMetaEnrich(data: PersistedData): void {
       i.channel === 'Unknown channel',
   );
   for (const item of needsMeta.slice(0, 15)) {
-    void send({
+    await send({
       type: MSG.ENRICH_LIBRARY_META,
       payload: { videoId: item.videoId },
     });
@@ -250,6 +264,8 @@ function defaultMutationPanels(): DashView[] {
 }
 
 function bindDashboardListeners(vm: ReturnType<typeof buildVm>): void {
+  actions.setTranslator(vm.t);
+  actions.restore();
   dashboardListenerAbort?.abort();
   dashboardListenerAbort = new AbortController();
   attachDashboardListeners({
@@ -286,12 +302,8 @@ function bindDashboardListeners(vm: ReturnType<typeof buildVm>): void {
     requestPathRebuild: () => {
       pathForceRebuild = true;
     },
-    regenerateTodayPath: () => {
-      void regenerateTodayPath();
-    },
-    pickRoadmapBonus: (tier, videoId) => {
-      void pickRoadmapBonus(tier, videoId);
-    },
+    regenerateTodayPath,
+    pickRoadmapBonus,
     scheduleDurationBackfill: () => {
       if (cachedData) scheduleLibraryDurationBackfill(cachedData);
     },
@@ -318,7 +330,9 @@ function refreshLibraryPanels(): void {
   syncSearchQueryFromDom();
   const vm = buildVm(cachedData);
   libraryLevelFilter = vm.libraryLevelFilter;
+  actions.captureDrafts();
   patchLibraryPanelBody(app, vm);
+  actions.restore();
   attachLibraryPanelListeners({
     root: app,
     vm,
@@ -356,6 +370,7 @@ async function refreshAfterMutation(panels: readonly DashView[] = defaultMutatio
   applyUiLocale(vm.resolvedLocale);
 
   const needsChrome = panels.some((p) => p === 'settings');
+  actions.captureDrafts();
   const restoreFocus = rememberUiFocus(app);
   const needsTopbar =
     panels.includes('library') ||
@@ -399,6 +414,7 @@ async function renderAsync(): Promise<void> {
     data = await loadData();
   } catch {
     if (gen !== renderGeneration) return;
+    if (app.querySelector('.app-shell')) return;
     app.innerHTML = `<div class="shell-error"><p>${escapeHtml(createTranslator(resolveLocale(undefined))('dash.loadError'))}</p></div>`;
     return;
   }
@@ -412,10 +428,11 @@ async function renderAsync(): Promise<void> {
 
   applyUiLocale(vm.resolvedLocale);
 
-  requestLibraryMetaEnrich(data);
+  void requestLibraryMetaEnrich(data).catch((error) => actions.report(error, () => requestLibraryMetaEnrich(cachedData ?? data)));
   scheduleLibraryDurationBackfill(data);
 
   const hasShell = Boolean(app.querySelector('.app-shell'));
+  actions.captureDrafts();
   if (!hasShell) {
     app.innerHTML = dashboardShellHtml(vm, searchQuery);
     await persistPathPlanIfNeeded(vm);
@@ -439,19 +456,22 @@ async function renderAsync(): Promise<void> {
 }
 
 let storageRenderTimer: ReturnType<typeof setTimeout> | null = null;
-function scheduleRenderFromStorage(): void {
-  if (Date.now() < storageRenderSuppressUntil) return;
+function scheduleRenderFromStorage(nextSignature?: string): void {
   if (storageRenderTimer != null) clearTimeout(storageRenderTimer);
   storageRenderTimer = setTimeout(() => {
     storageRenderTimer = null;
-    if (Date.now() < storageRenderSuppressUntil) return;
+    if (Date.now() < storageRenderSuppressUntil) {
+      scheduleRenderFromStorage(nextSignature);
+      return;
+    }
+    if (nextSignature !== undefined && nextSignature === lastRenderedSignature) return;
     if (app.querySelector('.app-shell') && isDashSearchFocused(app)) {
       pendingFullRenderAfterSearch = true;
       void refreshWhileSearchFocused();
       return;
     }
     void refreshAfterMutation(defaultMutationPanels());
-  }, 150);
+  }, Math.max(150, storageRenderSuppressUntil - Date.now() + 25));
 }
 
 async function refreshWhileSearchFocused(): Promise<void> {
@@ -471,7 +491,9 @@ async function refreshWhileSearchFocused(): Promise<void> {
   libraryLevelFilter = vm.libraryLevelFilter;
 
   patchTopbarMetrics(app, vm);
+  actions.captureDrafts();
   patchLibraryAndCompletedPanels(app, vm);
+  actions.restore();
   attachLibraryPanelListeners({
     root: app,
     vm,
@@ -487,7 +509,7 @@ async function refreshWhileSearchFocused(): Promise<void> {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes[STORAGE_KEY]) return;
-  scheduleRenderFromStorage();
+  scheduleRenderFromStorage(signatureOf(changes[STORAGE_KEY].newValue));
 });
 
 /** Poll safety net: only re-render when stored data actually changed, so the
@@ -500,7 +522,7 @@ async function pollFromStorage(): Promise<void> {
     return;
   }
   if (signatureOf(data) === lastRenderedSignature) return;
-  scheduleRenderFromStorage();
+  scheduleRenderFromStorage(signatureOf(data));
 }
 
 const stopStorageSyncPoll = startStorageSyncPoll(() => {

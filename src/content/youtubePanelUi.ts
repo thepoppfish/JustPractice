@@ -102,7 +102,7 @@ export function syncWatchPanelLabels(p: {
   const dh = p.shadowRoot.querySelector('[part="drag-hint"]');
   if (dh) dh.textContent = p.panelT('panel.dragToMove');
   const move = p.shadowRoot.querySelector('[part="drag-handle"]');
-  move?.setAttribute('aria-label', p.panelT('panel.moveHint'));
+  move?.setAttribute('aria-label', `${p.panelT('panel.dragToMove')}. ${p.panelT('panel.moveHint')}`);
   move?.setAttribute('title', p.panelT('panel.moveHint'));
   const lvl = p.shadowRoot.querySelector('[part="level-label"]');
   if (lvl) lvl.textContent = p.panelT('common.level');
