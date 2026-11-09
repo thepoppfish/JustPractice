@@ -18,7 +18,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
     "test:smoke": "playwright test",
     "audit:dependencies": "node scripts/check-dependency-audit.mjs",
-    "verify:packaging-paths": "node scripts/verify-packaging-paths.mjs"
+    "verify:packaging-paths": "node scripts/verify-packaging-paths.mjs",
+    "review:polish": "node scripts/render-polish-review.mjs"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^3.0.0",

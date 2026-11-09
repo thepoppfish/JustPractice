@@ -14,7 +14,13 @@
     "size": "S",
     "status": "merged",
     "pr": 1,
-    "verification": null
+    "verification": null,
+    "checks": [
+      {
+        "text": "Verification report with screenshots and acceptance checks",
+        "href": "../../output/playwright/p1-fixes-2026-11-09/verification.html"
+      }
+    ]
   },
   {
     "id": "JP-02",
@@ -31,7 +37,13 @@
     "size": "M",
     "status": "merged",
     "pr": 1,
-    "verification": null
+    "verification": null,
+    "checks": [
+      {
+        "text": "Verification report with screenshots and acceptance checks",
+        "href": "../../output/playwright/p1-fixes-2026-11-09/verification.html"
+      }
+    ]
   },
   {
     "id": "JP-03",
@@ -48,7 +60,13 @@
     "size": "M",
     "status": "merged",
     "pr": 1,
-    "verification": null
+    "verification": null,
+    "checks": [
+      {
+        "text": "Verification report with screenshots and acceptance checks",
+        "href": "../../output/playwright/p1-fixes-2026-11-09/verification.html"
+      }
+    ]
   },
   {
     "id": "JP-04",
@@ -65,7 +83,13 @@
     "size": "M",
     "status": "merged",
     "pr": 2,
-    "verification": null
+    "verification": null,
+    "checks": [
+      {
+        "text": "Verification report with screenshots and acceptance checks",
+        "href": "../../output/playwright/counting-guidance-2026-11-09/verification.html"
+      }
+    ]
   },
   {
     "id": "JP-05",
@@ -82,7 +106,13 @@
     "size": "M",
     "status": "merged",
     "pr": 2,
-    "verification": null
+    "verification": null,
+    "checks": [
+      {
+        "text": "Verification report with screenshots and acceptance checks",
+        "href": "../../output/playwright/counting-guidance-2026-11-09/verification.html"
+      }
+    ]
   },
   {
     "id": "JP-06",
@@ -99,7 +129,13 @@
     "size": "M",
     "status": "implemented-awaiting-review",
     "pr": 3,
-    "verification": null
+    "verification": null,
+    "checks": [
+      {
+        "text": "Verification report with screenshots and acceptance checks",
+        "href": "../../output/playwright/accessibility-hebrew-2026-11-09/verification.html"
+      }
+    ]
   },
   {
     "id": "JP-07",
@@ -114,9 +150,18 @@
     "source": "src/welcome/main.ts:121; src/welcome/main.ts:251; src/welcome/main.ts:277; src/popup/main.ts:187",
     "image": "01-onboarding-language.png",
     "size": "M",
-    "status": "implemented-awaiting-review",
+    "status": "verification-pending",
     "pr": 3,
-    "verification": "Keyboard and automated checks passed; spoken screen-reader verification outstanding."
+    "verification": "Keyboard and automated checks passed; spoken screen-reader verification outstanding.",
+    "checks": [
+      {
+        "text": "Verification report with screenshots and acceptance checks",
+        "href": "../../output/playwright/accessibility-hebrew-2026-11-09/verification.html"
+      }
+    ],
+    "pendingChecks": [
+      "Spoken NVDA/Narrator review of onboarding and core navigation"
+    ]
   },
   {
     "id": "JP-08",
@@ -133,7 +178,13 @@
     "size": "M",
     "status": "implemented-awaiting-review",
     "pr": 3,
-    "verification": null
+    "verification": null,
+    "checks": [
+      {
+        "text": "Verification report with screenshots and acceptance checks",
+        "href": "../../output/playwright/accessibility-hebrew-2026-11-09/verification.html"
+      }
+    ]
   },
   {
     "id": "JP-09",
@@ -182,9 +233,20 @@
     "source": "eslint.config.js:6; eslint.json",
     "image": null,
     "size": "S",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 4,
+    "verification": "Local lint passes with zero errors/warnings before and after building; generated builds, release copies, browser reports and review artifacts are excluded.",
+    "checks": [
+      {
+        "text": "GitHub Linux/Windows quality workflow",
+        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42622579932"
+      },
+      {
+        "text": "Quality batch verification, six screenshots, zoom and traces",
+        "href": "../../output/playwright/quality-checks-2026-11-09/verification.html"
+      }
+    ],
+    "pendingChecks": []
   },
   {
     "id": "JP-12",
@@ -199,9 +261,20 @@
     "source": "package-lock.json; npm-audit.json; npm-audit-production.json",
     "image": null,
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 4,
+    "verification": "Critical/high advisories resolved. Raw audit retains seven moderate entries for one development-only Minimatch advisory, narrowly triaged with a 2027-02-09 expiry. Production audit reports zero findings.",
+    "checks": [
+      {
+        "text": "GitHub Linux/Windows quality workflow",
+        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42622579932"
+      },
+      {
+        "text": "Quality batch verification, six screenshots, zoom and traces",
+        "href": "../../output/playwright/quality-checks-2026-11-09/verification.html"
+      }
+    ],
+    "pendingChecks": []
   },
   {
     "id": "JP-13",
@@ -216,9 +289,20 @@
     "source": "package.json; tsconfig.json; vitest.config.ts; .github/ absent",
     "image": null,
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 4,
+    "verification": "GitHub Linux and Windows jobs passed from clean installs: lint before/after build, dependency policy, app/test type checks, production build, 365 tests, distribution verification, actual special-path packaging, two installed-browser smoke flows, and uploaded runtime ZIP/screenshots/traces. Implementation commit c26ddfd; run 42622579932.",
+    "checks": [
+      {
+        "text": "GitHub Linux/Windows quality workflow",
+        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42622579932"
+      },
+      {
+        "text": "Quality batch verification, six screenshots, zoom and traces",
+        "href": "../../output/playwright/quality-checks-2026-11-09/verification.html"
+      }
+    ],
+    "pendingChecks": []
   },
   {
     "id": "JP-14",
@@ -233,9 +317,20 @@
     "source": "scripts/package-extension.mjs:92",
     "image": null,
     "size": "S",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 4,
+    "verification": "Actual Windows packaging from spaces, apostrophe, Hebrew and bracketed paths passes: all 24 runtime files and manifest.json at root.",
+    "checks": [
+      {
+        "text": "GitHub Linux/Windows quality workflow",
+        "href": "https://github.com/thepoppfish/JustPractice/actions/runs/42622579932"
+      },
+      {
+        "text": "Quality batch verification, six screenshots, zoom and traces",
+        "href": "../../output/playwright/quality-checks-2026-11-09/verification.html"
+      }
+    ],
+    "pendingChecks": []
   },
   {
     "id": "JP-15",

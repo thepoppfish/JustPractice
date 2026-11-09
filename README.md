@@ -13,8 +13,10 @@ Track **YouTube** practice watch time, keep a **local library** of saved videos,
 
 ## Development
 
+Use the Node version pinned in [`.node-version`](.node-version) (24.15.0).
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -58,9 +60,22 @@ Use **Dashboard → Settings → Your data → Export JSON** before replacing a 
 
 ```bash
 npm ci
+npm run lint
+npm run audit:dependencies
+npm run typecheck
 npm run build
+npm run lint
 npm test
 npm run package
+npm run verify:packaging-paths
+npx playwright install chromium
+npm run test:smoke
 ```
+
+Pull-request checks run on Linux and Windows and retain a runtime ZIP, browser
+screenshots and traces as artifacts. Browser checks use disposable profiles;
+see [the smoke-test scope](tests/browser/README.md). The development dependency
+audit has one [documented, expiring exception](docs/polish/dependency-review.md);
+the raw audit is not represented as clean.
 
 The ZIP in `release/` contains only extension runtime files, with `manifest.json` at its root. The release workflow runs these checks and attaches both a versioned ZIP and `justpractice.zip` for the stable download link. Publish by pushing a version tag matching `manifest.config.ts`, or running the **Release extension** workflow on the intended commit. Never use a source archive as the unpacked extension.
