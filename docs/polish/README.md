@@ -37,8 +37,8 @@ their measurements. The current tracker records the subsequent maintainer decisi
 
 All 21 items are merged into `master`. PRs #3–#9 were merged in dependency order
 on 10 November 2026 after maintainer approval. No required verification gate
-remains, with the explicit reader-check waiver preserved. Version 1.0.3 remains
-an unpublished source candidate.
+remains, with the explicit reader-check waiver preserved. Version 1.0.3 is
+[publicly released](https://github.com/thepoppfish/JustPractice/releases/tag/1.0.3).
 
 Local visual evidence is retained under `output/playwright/` rather than shipped
 inside the extension. The original review is
@@ -47,4 +47,4 @@ reports live in `p1-fixes-2026-11-09`, `counting-guidance-2026-11-09`, and
 `accessibility-hebrew-2026-11-09` beside it. Do not include real user exports or
 personal browser profiles in evidence.
 
-Publishing a runtime release remains a separate maintainer decision.
+The maintainer authorized public runtime publication on 10 November 2026.

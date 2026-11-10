@@ -153,7 +153,8 @@ captures stay local. Version 1.0.3 remains enabled and 1.0.1 remains disabled.
 JP-21 is merged through PR #9. The original 21 action/acceptance
 values remain unchanged. JP-07's manual reader check remains explicitly skipped
 by the maintainer, not passed. PRs #3–#9 were merged in dependency order after
-maintainer approval; runtime publication remains a separate decision.
+maintainer approval. The maintainer subsequently authorized and published
+[runtime 1.0.3](https://github.com/thepoppfish/JustPractice/releases/tag/1.0.3).
 Controlled performance measurements and the cross-platform regression
 suite are recorded in [the performance notes](performance.md).
 

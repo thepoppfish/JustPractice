@@ -1,13 +1,13 @@
 # Baseline acceptance audit
 
 Implementation and verification are complete for the source candidate, subject
-to the maintainer's explicit JP-07 reader-check waiver. This ledger distinguishes
-that result from publication.
+to the maintainer's explicit JP-07 reader-check waiver. The checked work is
+included in the public [1.0.3 release](https://github.com/thepoppfish/JustPractice/releases/tag/1.0.3).
 All 21 original `action` and `accept` values were compared with the initial
 local baseline JSON on 9 November 2026 and are unchanged. PRs #1–#9 are merged
 into `master`; the remaining stack (#3–#9) was merged in dependency order on
-10 November 2026 after maintainer approval. The source candidate is not
-represented as a published runtime release.
+10 November 2026 after maintainer approval. Runtime 1.0.3 was subsequently
+published after separate maintainer authorization.
 
 The evidence directories below are under local `output/playwright/`. Each has a
 `verification.html` report, raw checks and screenshots; these local artifacts
@@ -44,7 +44,7 @@ a stall; neither that run nor the passing repeat establishes the service cause
 or a universal extension-overhead result.
 JP-07's manual reader check was explicitly skipped by the maintainer; its
 original acceptance text is preserved with that exception recorded in the tracker.
-Runtime publication remains a separate maintainer decision. Existing real user data is
+The public 1.0.3 runtime includes the verified work. Existing real user data is
 not modified by fixture testing; disposable profiles and synthetic fixtures exercise
 preservation, recovery and failure paths. The later normal-Chrome live run used
 a separate candidate library; the maintainer left the old extension installed
