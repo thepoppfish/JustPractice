@@ -3,7 +3,7 @@
 **Passed: the final installed-candidate repeat completed ten minutes of actual
 media playback at 94.0% of wall time, with correct tracking, a stable paused
 total and exact reload persistence.** This closes JP-21's live-verification gate;
-PR #9 remains open for review. Earlier incomplete runs and the disabled control
+PR #9 is merged into `master`. Earlier incomplete runs and the disabled control
 are retained below with their limitations. Their stalls were not exclusive to
 JustPractice, and no underlying service cause or universal speedup is claimed.
 
@@ -150,10 +150,11 @@ Details/reloaded screenshots and `verification.html` are retained in
 `output/playwright/normal-chrome-final-2026-11-10/`. The raw normal-profile
 captures stay local. Version 1.0.3 remains enabled and 1.0.1 remains disabled.
 
-JP-21 is now implemented-awaiting-review. The original 21 action/acceptance
+JP-21 is merged through PR #9. The original 21 action/acceptance
 values remain unchanged. JP-07's manual reader check remains explicitly skipped
-by the maintainer, not passed. Merging and publication remain separate approval
-steps. Controlled performance measurements and the cross-platform regression
+by the maintainer, not passed. PRs #3–#9 were merged in dependency order after
+maintainer approval; runtime publication remains a separate decision.
+Controlled performance measurements and the cross-platform regression
 suite are recorded in [the performance notes](performance.md).
 
 The source/documentation head `84af551` passed both full Linux and Windows jobs

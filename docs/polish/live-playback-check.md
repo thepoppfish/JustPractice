@@ -4,7 +4,7 @@ Status: **passed on 10 November 2026**. The [final installed-candidate repeat](l
 advanced 609.099 seconds of media over 647.903 seconds (94.0%, above the unchanged
 85% threshold). Practice increased by 603 seconds, stopped after a final pending
 tick and returned at exactly the same total after reload. The Details control
-worked. JP-21 is implemented-awaiting-review. Controlled playback, library
+worked. JP-21 is merged through PR #9. Controlled playback, library
 benchmarks and packaging remain separate evidence in [the performance notes](performance.md).
 The procedure below is retained for reproduction, not as an outstanding check.
 

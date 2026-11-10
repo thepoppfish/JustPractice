@@ -4,8 +4,8 @@ Controlled verification has passed. The source has passed local and
 Linux/Windows checks. The [final normal-Chrome repeat](live-playback-result-2026-11-10.md#final-installed-candidate-repeat--passed)
 also passed sustained playback, tracking, pause and exact reload persistence:
 609.099 media seconds over 647.903 wall seconds (94.0%), with 603 practice
-seconds added. JP-21 is implemented-awaiting-review. No release, merge or
-publication is part of this work.
+seconds added. JP-21 is merged through PR #9. Version 1.0.3 remains an
+unpublished source candidate.
 
 ## Measured changes
 
@@ -135,8 +135,8 @@ The local immutable candidate is `justpractice-1.0.3-pr9.zip`, SHA-256
 Its watch bundle matches the inspected Linux CI runtime byte for byte. This is
 an unpublished candidate; it does not replace the public 1.0.1 release.
 
-[PR #9](https://github.com/thepoppfish/JustPractice/pull/9) is stacked on #8.
-JP-21 is implemented-awaiting-review; controlled and final live checks have
+[PR #9](https://github.com/thepoppfish/JustPractice/pull/9) was merged into `master`
+after #3–#8, preserving dependency order. JP-21 is merged; controlled and final live checks have
 passed. Source/documentation head `26b7ffb` passed both full jobs in
 [run 42782676015](https://github.com/thepoppfish/JustPractice/actions/runs/42782676015).
 JP-07's

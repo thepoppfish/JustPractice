@@ -9,7 +9,7 @@ Hebrew with a right-to-left layout.
 ![JustPractice statistics: today's practice, goal progress and calendar](docs/assets/candidate-statistics.png)
 
 *Source candidate 1.0.3, synthetic practice data, November 2026. Screenshots
-include the open polish PR stack; the public release can be older.*
+include the merged polish work; the public release can be older.*
 
 **TypeScript · Manifest V3 · Vite/esbuild · Vitest · Playwright · local storage**
 
@@ -129,8 +129,8 @@ distributed through the Chrome Web Store. YouTube layout changes, unavailable
 metadata, live streams, ads and browser shutdown timing need ongoing real-world
 testing. Uninstalling loses the browser's local extension data.
 
-The [21-item polish tracker](docs/polish/README.md) distinguishes merged fixes,
-open PRs and verification evidence. The [final normal-Chrome playback repeat](docs/polish/live-playback-result-2026-11-10.md#final-installed-candidate-repeat--passed)
+The [21-item polish tracker](docs/polish/README.md) records all 21 merged items
+and verification evidence. The [final normal-Chrome playback repeat](docs/polish/live-playback-result-2026-11-10.md#final-installed-candidate-repeat--passed)
 passed sustained playback, ten-minute tracking, pause and exact reload
 persistence. The maintainer skipped the manual screen-reader check. Automated
 Chromium service failures are recorded separately from controlled measurements. Historical
