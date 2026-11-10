@@ -1,9 +1,10 @@
 # Watch payload and measured performance (JP-21)
 
 Controlled verification has passed. The source has passed local and
-Linux/Windows checks. A [normal-Chrome live run](live-playback-result-2026-11-10.md)
-now verifies ten minutes of actual practice tracking and reload persistence;
-sustained live-performance acceptance remains pending. No release, merge or
+Linux/Windows checks. The [final normal-Chrome repeat](live-playback-result-2026-11-10.md#final-installed-candidate-repeat--passed)
+also passed sustained playback, tracking, pause and exact reload persistence:
+609.099 media seconds over 647.903 wall seconds (94.0%), with 603 practice
+seconds added. JP-21 is implemented-awaiting-review. No release, merge or
 publication is part of this work.
 
 ## Measured changes
@@ -65,7 +66,7 @@ identify the actual measured payload. They are retained separately from the
 final corrected build. The original before-bundle hash also matches the retained
 PR #8 ZIP directly.
 
-## Actual YouTube service limitation
+## Actual YouTube results and environment limits
 
 The public project tutorial played initially, then YouTube emptied the media
 source around 43 seconds and displayed “Something went wrong. Refresh or try
@@ -92,8 +93,8 @@ during brief reload autoplay. The earlier 43-second failure did not recur.
 However, media advancement was only 83.4% of the 745.835-second window, below
 the existing 85% threshold. A fixed-360p follow-up did not start successfully.
 This supports live counting/persistence, not a sustained-performance pass or a
-claim about the cause of the slow playback. Follow [the remaining live-playback
-check](live-playback-check.md); its throughput/control qualification remains open.
+claim about the cause of the slow playback. It is retained as an incomplete
+initial run, separate from the passing repeat below.
 
 The subsequent extension-disabled control advanced 533.129 media seconds over
 603.710 wall seconds (88.3%). It also had a substantial stall, advancing only
@@ -103,6 +104,19 @@ quality policies and potential cache/network conditions differ, so the average
 throughput difference is not a causal extension-overhead measurement. The
 control does not replace a passing installed-candidate live run. See the
 [recorded comparison](live-playback-result-2026-11-10.md#extension-disabled-control).
+
+With 1.0.3 re-enabled, the final repeat used confirmed fixed 1080p60, muted 1×
+playback and the same public video. It advanced **609.099 seconds over 647.903
+seconds (94.0%)**, above the unchanged 85% threshold. Practice increased from
+627 to **1,230 seconds**, a 603-second increase, 6.099 seconds below media
+advancement and within the existing tracking tolerance. One pending tick settled
+after pause; the settled total was unchanged across 36.802 observed seconds and
+returned **exactly** after reload. The Details shortcut focused Level correctly.
+The expanded panel had covered Settings during setup; collapsing it cleared
+that overlap. Earlier missed clicks therefore do not establish an unresponsive
+player. The full [result and scope](live-playback-result-2026-11-10.md#final-installed-candidate-repeat--passed)
+retain samples and screenshots without claiming a causal speedup, zero overhead
+or new live CPU/heap measurements. This closes the live-verification gate.
 
 ## Checks and retained candidate
 
@@ -122,8 +136,10 @@ Its watch bundle matches the inspected Linux CI runtime byte for byte. This is
 an unpublished candidate; it does not replace the public 1.0.1 release.
 
 [PR #9](https://github.com/thepoppfish/JustPractice/pull/9) is stacked on #8.
-JP-21 remains verification-pending for sustained real-service responsiveness;
-the live tracking and reload checks have passed. JP-07's
+JP-21 is implemented-awaiting-review; controlled and final live checks have
+passed. Source/documentation head `26b7ffb` passed both full jobs in
+[run 42782676015](https://github.com/thepoppfish/JustPractice/actions/runs/42782676015).
+JP-07's
 manual reader check was explicitly skipped by the maintainer on 10 November
 2026 and is no longer a gate; no reader pass is claimed.
 

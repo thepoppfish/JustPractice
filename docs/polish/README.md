@@ -25,14 +25,20 @@ local baseline report.
 - PR #8 open: privacy/data flow, permission review and project case study (JP-19–20).
 - PR #9: measured performance and payload reduction (JP-21), plus a practice
   display correction and working Details shortcut. Controlled measurements and
-  automated checks pass. A [normal-Chrome run](live-playback-result-2026-11-10.md)
-  passed ten-minute media tracking, pause and reload checks, but fell below the
-  existing sustained-playback throughput threshold. JP-21's remaining gate is
-  [live responsiveness](live-playback-check.md). JP-07's [reader check](spoken-reader-check.md)
+  automated checks pass. The [final normal-Chrome repeat](live-playback-result-2026-11-10.md#final-installed-candidate-repeat--passed)
+  passed sustained playback (94.0%, above 85%), ten-minute media tracking, pause,
+  exact reload persistence and the Details shortcut. JP-21 is now implemented-
+  awaiting-review. Earlier incomplete runs and the disabled control remain
+  recorded with their limits. JP-07's [reader check](spoken-reader-check.md)
   is recorded as skipped, not passed.
 
 Earlier PR reports describe the reader check as outstanding at the time of
 their measurements. The current tracker records the subsequent maintainer decision.
+
+All 21 items are now merged or implemented-awaiting-review: five merged and
+sixteen in open PRs. No required verification gate remains, with the explicit
+reader-check waiver preserved. PR review, merges and publishing still require
+the maintainer's approval.
 
 Local visual evidence is retained under `output/playwright/` rather than shipped
 inside the extension. The original review is

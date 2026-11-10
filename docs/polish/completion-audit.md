@@ -1,6 +1,8 @@
 # Baseline acceptance audit
 
-This is an acceptance ledger, not a declaration that the goal is complete.
+Implementation and verification are complete for the source candidate, subject
+to the maintainer's explicit JP-07 reader-check waiver. This ledger distinguishes
+that result from review, merging and publication.
 All 21 original `action` and `accept` values were compared with the initial
 local baseline JSON on 9 November 2026 and are unchanged. PRs #1–2 are merged;
 PRs #3–8 remain open in dependency order, and #9 is open on #8. Open changes
@@ -33,13 +35,12 @@ tests and PR CI artifacts provide the repository-side review path.
 | JP-18 shared tokens | Same report: four-surface comparison, actual shadow CSS, computed primary styles, status colors, measured contrast and six-locale native zoom | Implemented in #7. #9 retries observation of current controls during repaint without changing expected styles. |
 | JP-19 privacy/permissions | `privacy-case-study-2026-11-09`: source request/permission audit, responsive privacy/site pages, actual same-folder unpacked Reload retaining data and extension ID | Implemented in #8; alarms permission removed, remaining permissions/services documented. |
 | JP-20 CV case study | README synthetic product screenshots/provenance, verified install path, [architecture](../ARCHITECTURE.md), transaction decision/regressions, contributor commands and historical-doc labels | Implemented in #8. Source-candidate features and screenshots are explicitly distinguished from the older public download. |
-| JP-21 measured costs | `performance-2026-11-09`: before/after profiles, budgets, locale captures, ten-minute controlled playback and packaging; `normal-chrome-2026-11-10`: actual ten-minute media, counter, pause and reload samples | **Verification outstanding in #9.** Normal Chrome reached 622 seconds of media with 619 seconds counted; pause/reload checks passed. Media advancement was 83.4% of wall time, below the existing 85% threshold; a lower-resolution follow-up did not start. [Recorded result and limits](live-playback-result-2026-11-10.md). Sustained live responsiveness remains pending. |
+| JP-21 measured costs | `performance-2026-11-09`: profiles, budgets, locales, controlled playback and packaging; `normal-chrome-final-2026-11-10`: passing installed-candidate live repeat, pause/reload and Details evidence | Implemented in #9. Final fixed-1080p60 repeat advanced 609.099 media seconds over 647.903 seconds (94.0%, above 85%); practice increased 603 seconds. Settled total stayed stable while paused and returned exactly after reload. Details focused Level. Earlier incomplete runs and an extension-disabled stall remain separately recorded. [Result and limits](live-playback-result-2026-11-10.md). |
 
-The remaining verification gate is JP-21's sustained live-service responsiveness;
-the normal-Chrome tracking, pause and reload checks now have passing evidence.
-A subsequent disabled-extension control also reproduced a substantial stall;
-its 88.3% overall advancement met the numeric threshold, but does not verify
-the installed candidate or establish the slowdown's cause.
+No required verification gate remains for the source candidate: JP-21's final
+normal-Chrome repeat passed. The earlier disabled-extension control reproduced
+a stall; neither that run nor the passing repeat establishes the service cause
+or a universal extension-overhead result.
 JP-07's manual reader check was explicitly skipped by the maintainer; its
 original acceptance text is preserved with that exception recorded in the tracker.
 No merge or publication is performed by this audit. Existing real user data is

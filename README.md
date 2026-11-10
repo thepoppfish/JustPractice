@@ -50,6 +50,8 @@ server. No backend, account or API key is needed.
 4. Change language or level framework in **Settings → Language and levels**.
    Other-framework tags remain available as Legacy rather than being erased.
 
+Collapse or drag the floating panel if it covers YouTube's player controls.
+
 ![Saved-video library with distinct Continue and secondary actions](docs/assets/candidate-library.png)
 
 *Synthetic saved videos and thumbnail placeholders; no personal browser data.*
@@ -128,9 +130,9 @@ metadata, live streams, ads and browser shutdown timing need ongoing real-world
 testing. Uninstalling loses the browser's local extension data.
 
 The [21-item polish tracker](docs/polish/README.md) distinguishes merged fixes,
-open PRs and outstanding acceptance checks. A [normal-Chrome playback run](docs/polish/live-playback-result-2026-11-10.md)
-verified ten-minute tracking and reload persistence; sustained live responsiveness
-remains pending. The maintainer skipped the manual screen-reader check. Automated
+open PRs and verification evidence. The [final normal-Chrome playback repeat](docs/polish/live-playback-result-2026-11-10.md#final-installed-candidate-repeat--passed)
+passed sustained playback, ten-minute tracking, pause and exact reload
+persistence. The maintainer skipped the manual screen-reader check. Automated
 Chromium service failures are recorded separately from controlled measurements. Historical
 planning/audit snapshots are indexed separately in [the docs guide](docs/README.md).
 

@@ -602,12 +602,9 @@
     "source": "scripts/build-youtube-bundle.mjs:17; src/dashboard/dashboardTemplates.ts; src/content/youtubeWatchPanelRuntime.ts:154",
     "image": null,
     "size": "M",
-    "status": "verification-pending",
+    "status": "implemented-awaiting-review",
     "pr": 9,
-    "verification": "411 unit tests / 58 files and 18 installed-browser cases pass locally and on Linux/Windows. Final 25/100/500-item startup/search fits chosen budgets. The retained 346,144-byte watch bundle is 50.8% smaller; the 24-file ZIP is 17.4% smaller. Corrected controlled playback saved and displayed 598 seconds over 600 seconds. Normal Chrome on 10 November reached 622 seconds of media with 619 seconds counted; pause and reload persistence passed. Media advanced for 83.4% of wall time, below the existing 85% sustained-playback threshold. A fixed-360p follow-up did not start; live responsiveness remains unverified. A subsequent extension-disabled control advanced 533 seconds over 604 seconds (88.3%), including a 58-second interval with only 2.4 seconds of media progress. The stall therefore also occurs without JustPractice; different quality policies and single sequential trials prevent causal overhead attribution.",
-    "pendingChecks": [
-      "Normal-Chrome sustained playback meeting the existing 85% media-advancement threshold with usable controls; ten-minute counting, pause and reload persistence have passed"
-    ],
+    "verification": "411 unit tests / 58 files and 18 installed-browser cases pass locally and on Linux/Windows. Final 25/100/500-item startup/search fits chosen budgets. The 346,144-byte watch bundle is 50.8% smaller; the 24-file ZIP is 17.4% smaller. Corrected controlled playback saved and displayed 598 seconds over 600 seconds. Final fixed-1080p60 normal-Chrome repeat passed: 609.099 seconds media over 647.903 seconds (94.0%, above the unchanged 85% threshold), with 603 practice seconds added. One final tick settled; the paused total then stayed stable and returned exactly on reload. Details focused Level. Earlier incomplete runs, a stall without JustPractice, panel-overlap setup notes and limits remain separately recorded; no universal speedup or zero-overhead claim is made.",
     "checks": [
       {
         "text": "Implementation, measurements, budgets, source hashes and validation",
@@ -618,11 +615,15 @@
         "href": "../../output/playwright/performance-2026-11-09/verification.html"
       },
       {
-        "text": "Normal-Chrome tracking, pause/reload result and live-performance limits (10 November)",
+        "text": "Passing normal-Chrome repeat, earlier attempts and comparison limits",
         "href": "live-playback-result-2026-11-10.md"
       },
       {
-        "text": "Remaining sustained-live-responsiveness procedure",
+        "text": "Final live samples, acceptance assertions and five screenshots (local)",
+        "href": "../../output/playwright/normal-chrome-final-2026-11-10/verification.html"
+      },
+      {
+        "text": "Completed live acceptance and reproduction procedure",
         "href": "live-playback-check.md"
       },
       {
