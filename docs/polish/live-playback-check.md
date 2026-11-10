@@ -28,10 +28,10 @@ installed-candidate check. The later installed-candidate repeat passed. See
 the recorded result for comparison limits.
 
 Use a disposable normal Chrome profile, keeping personal data out of evidence.
-Use the source candidate from PR #9 and its preceding stack; the public 1.0.1
-download is older. Build the branch with `npm ci` and `npm run build`, then load
-`dist/` unpacked through `chrome://extensions`, or use the retained local PR #9
-candidate after its verification report is finalized. Finish onboarding.
+Use the [public 1.0.3 runtime](https://github.com/thepoppfish/JustPractice/releases/tag/1.0.3)
+or build the matching `1.0.3` source tag with `npm ci` and `npm run build`, then
+load `dist/` unpacked through `chrome://extensions`. The retained local PR #9
+candidate identifies the original verification payload. Finish onboarding.
 Collapse or move the floating panel if it covers YouTube's Settings or player
 controls; reopen it after choosing the resolution. Confirm the visible quality
 label before measurement and keep it fixed if comparing with a control run.

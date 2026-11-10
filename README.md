@@ -8,8 +8,8 @@ Hebrew with a right-to-left layout.
 
 ![JustPractice statistics: today's practice, goal progress and calendar](docs/assets/candidate-statistics.png)
 
-*Source candidate 1.0.3, synthetic practice data, November 2026. Screenshots
-include the merged polish work; the public release can be older.*
+*JustPractice 1.0.3, synthetic practice data, November 2026. Screenshots show
+the polish work included in the public 1.0.3 release.*
 
 **TypeScript · Manifest V3 · Vite/esbuild · Vitest · Playwright · local storage**
 
@@ -20,12 +20,14 @@ include the merged polish work; the public release can be older.*
 
 ## Try it
 
+Current release: [JustPractice 1.0.3](https://github.com/thepoppfish/JustPractice/releases/tag/1.0.3).
+
 Download the ready-to-load ZIP above, extract it, open `chrome://extensions`,
 enable Developer mode and choose **Load unpacked** on the extracted folder.
 `manifest.json` must be at its root. GitHub's automatic source archives need a
 build first. [Release notes and versions](https://github.com/thepoppfish/JustPractice/releases/latest).
 
-For the source candidate, use Node **24.15.0** from [`.node-version`](.node-version):
+To build from source, use Node **24.15.0** from [`.node-version`](.node-version):
 
 ```sh
 npm ci
@@ -81,7 +83,7 @@ See [the architecture and source map](docs/ARCHITECTURE.md).
 
 ![Hebrew statistics with right-to-left navigation and isolated durations](docs/assets/candidate-hebrew-statistics.png)
 
-*Source candidate 1.0.3, synthetic data, November 2026.*
+*JustPractice 1.0.3, synthetic data, November 2026.*
 
 </details>
 
@@ -95,7 +97,7 @@ npx playwright install chromium
 npm run test:smoke
 ```
 
-The source candidate passed **411 unit tests in 58 files** and **18 installed
+The 1.0.3 source passed **411 unit tests in 58 files** and **18 installed
 Chromium scenarios** on 9 November 2026. These are a dated snapshot, not a
 guarantee for later edits. [Current CI](https://github.com/thepoppfish/JustPractice/actions)
 and [full release checks](CONTRIBUTING.md#required-checks) are authoritative.
