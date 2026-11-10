@@ -22,8 +22,20 @@ const buildOptions = {
   target: 'chrome120',
   sourcemap: true,
   logLevel: 'info',
-  // Content styles are embedded in the shadow root, including shared CSS imported with ?inline.
-  loader: { '.css': 'text' },
+  // Resolve shared @imports before embedding CSS. A text loader leaves relative
+  // imports unresolved on youtube.com, unlike Vite's extension-page CSS pipeline.
+  plugins: [{
+    name: 'inline-shadow-css',
+    setup(build) {
+      build.onLoad({ filter: /\.css$/ }, async ({ path: cssPath }) => {
+        const result = await esbuild.build({
+          entryPoints: [cssPath], bundle: true, write: false,
+          target: 'chrome120', logLevel: 'silent',
+        });
+        return { contents: `export default ${JSON.stringify(result.outputFiles[0].text)};`, loader: 'js' };
+      });
+    },
+  }],
   define: {
     'process.env.NODE_ENV': '"production"',
   },

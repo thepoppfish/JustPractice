@@ -3,7 +3,7 @@
 *{box-sizing:border-box}body{margin:0;background:#101318;color:#ebedf2;font:16px/1.65 system-ui}main{max-width:1080px;margin:auto;padding:32px 24px}a{color:#ffc18e}a:focus-visible,summary:focus-visible{outline:3px solid #ffd08a;outline-offset:4px}h1,h2{line-height:1.25}h2{font-size:22px}article{padding:24px 0;border-bottom:1px solid #46505f;scroll-margin-top:24px}nav{display:flex;flex-wrap:wrap;gap:12px}.status{color:#b1edc0;font-weight:600}.pending{padding:12px;background:#35261b;border-left:3px solid #ffa466}details{color:#b7bdc8}summary{cursor:pointer}li{margin:8px 0}code{overflow-wrap:anywhere}.note{padding:16px;background:#202630;border-radius:8px}
 </style><main><h1>JustPractice · baseline progress</h1>
 <p>All 21 original requirements retained. Updated 2026-11-09.</p>
-<p class="note">5 Merged · 9 Implemented · PR open · 1 Implemented · verification outstanding · 6 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
+<p class="note">5 Merged · 12 Implemented · PR open · 1 Implemented · verification outstanding · 3 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
 <p><a href="../../output/playwright/baseline-2026-11-09/baseline-review.html#backlog">Original review</a> · <a href="backlog.json">Machine-readable tracker</a> · <a href="dependency-review.md">Dependency review</a></p>
 <p>Screenshot and trace links refer to local review artifacts under <code>output/playwright/</code>; they are not part of the extension or the public documentation deployment. Public PRs include the maintained code and CI artifacts.</p>
 <nav aria-label="Baseline items"><a href="#JP-01">JP-01</a><a href="#JP-02">JP-02</a><a href="#JP-03">JP-03</a><a href="#JP-04">JP-04</a><a href="#JP-05">JP-05</a><a href="#JP-06">JP-06</a><a href="#JP-07">JP-07</a><a href="#JP-08">JP-08</a><a href="#JP-09">JP-09</a><a href="#JP-10">JP-10</a><a href="#JP-11">JP-11</a><a href="#JP-12">JP-12</a><a href="#JP-13">JP-13</a><a href="#JP-14">JP-14</a><a href="#JP-15">JP-15</a><a href="#JP-16">JP-16</a><a href="#JP-17">JP-17</a><a href="#JP-18">JP-18</a><a href="#JP-19">JP-19</a><a href="#JP-20">JP-20</a><a href="#JP-21">JP-21</a></nav>
@@ -64,7 +64,7 @@
 <p><strong>Acceptance:</strong> Scan extension-owned UI for contrast failures and manually verify visible text at 100% and 200% zoom. Exclude YouTube-owned findings from extension counts.</p>
 
 
-<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li><li><a href="visual-consistency.md">PR #7 follow-up: shared contrast/status tokens, subsection focus and self-contained shadow CSS</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>axe measured the watch-calendar weekday labels at 3.28:1 (#666 on #111, 9px), below its 4.5:1 requirement for normal text. Onboarding subtitle text measured 2.97:1. Calendar legend and other very small labels are difficult to read in the captured panel.</p><a href="../../output/playwright/baseline-2026-11-09/watch-panel-detail.png">Original screenshot</a></details>
 </article>
 <article id="JP-07">
@@ -74,7 +74,7 @@
 <p><strong>Acceptance:</strong> No violations for aria-hidden-focus, aria-required-children, or aria-progressbar-name. Complete onboarding and navigate core views using keyboard only, then perform a screen-reader check.</p>
 <p><strong>Verification:</strong> Keyboard and automated checks passed; spoken screen-reader verification outstanding.</p>
 <p class="pending"><strong>Outstanding:</strong> Spoken NVDA/Narrator review of onboarding and core navigation</p>
-<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/5">PR #5 follow-up: move-label name and initial watch locale</a></li></ul>
+<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/5">PR #5 follow-up: move-label name and initial watch locale</a></li><li><a href="visual-consistency.md">PR #7 follow-up: shared contrast/status tokens, subsection focus and self-contained shadow CSS</a></li><li><a href="spoken-reader-check.md">Spoken-reader procedure and remaining limitation</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>axe found focusable progress buttons inside aria-hidden=true, buttons inside a role=listbox without option semantics, and a popup progressbar without an accessible name. These are extension-owned findings; unrelated YouTube ARIA errors are excluded.</p><a href="../../output/playwright/baseline-2026-11-09/01-onboarding-language.png">Original screenshot</a></details>
 </article>
 <article id="JP-08">
@@ -144,7 +144,7 @@
 <p><strong>Acceptance:</strong> Package successfully from a workspace containing spaces and Unicode characters, and verify the resulting archive’s root manifest.</p>
 <p><strong>Verification:</strong> Actual Windows packaging from spaces, apostrophe, Hebrew and bracketed paths passes: all 24 runtime files and manifest.json at root.</p>
 
-<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42623548194">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42623548194">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li><li><a href="visual-consistency.md">PR #7 follow-up: shared contrast/status tokens, subsection focus and self-contained shadow CSS</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>The Windows packaging command concatenates -Path and -DestinationPath values with spaces, without quoting them. Packaging succeeded in this workspace, whose path has no spaces; a path such as C:\Users\User Name\Projects will be parsed incorrectly. A spaced-path run was not performed.</p></details>
 </article>
 <article id="JP-15">
@@ -159,32 +159,32 @@
 </article>
 <article id="JP-16">
 <h2>JP-16 · Rebalance statistics toward readable numbers</h2>
-<p class="status">Open</p>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/7">PR #7</a></p>
 <p>Increase numeric hierarchy, remove redundant pair labels, standardize duration formatting, clarify active-versus-total library counts, and show one primary daily metric before secondary history.</p>
 <p><strong>Acceptance:</strong> At 1024×768 and 1440×900, today’s progress and the next useful action are readable without zoom. Count and time labels are unambiguous across surfaces.</p>
+<p><strong>Verification:</strong> Today leads with a readable value, one goal caption and a next action visible at 1024×768 in all six locales. Totals include completed videos; localized summaries and empty/no-goal/met/all-completed states are verified.</p>
 
-
-
+<ul><li><a href="visual-consistency.md">Implementation and validation notes</a></li><li><a href="../../output/playwright/visual-consistency-2026-11-09/verification.html">Before/after screenshots, raw audits and retained candidate</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/7">Reviewable PR and cross-platform checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>The three large goal rings use tiny center labels and repeat the same values underneath. Heatmap and weekly detail are below the initial fold. “Hours practiced” uses HH:MM while other surfaces use h/m/s, and “videos saved” counts only incomplete videos.</p><a href="../../output/playwright/baseline-2026-11-09/populated-stats.png">Original screenshot</a></details>
 </article>
 <article id="JP-17">
 <h2>JP-17 · Use a consistent settings form layout</h2>
-<p class="status">Open</p>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/7">PR #7</a></p>
 <p>Use left-aligned sections, a consistent label/control/help pattern, comfortable input widths, grouped advanced options, and a clearly separated data-danger section. Unify save-on-change versus explicit Save behavior.</p>
 <p><strong>Acceptance:</strong> A user can locate counting, language, and backup settings quickly; helper copy is adjacent to the control; save state and destructive actions are clear.</p>
+<p><strong>Verification:</strong> Language/counting/backups have direct section navigation, visible labels and adjacent help. Save behavior is stated, advanced personalization stays reachable, and Clear is separated. Draft/retry, subsection focus, bulk list actions and cancellation are tested.</p>
 
-
-
+<ul><li><a href="visual-consistency.md">Implementation and validation notes</a></li><li><a href="../../output/playwright/visual-consistency-2026-11-09/verification.html">Before/after screenshots, raw audits and retained candidate</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/7">Reviewable PR and cross-platform checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>Settings span roughly 2,193 pixels at the tested desktop size, with centered prose, differently sized cards, and compact browser-native inputs. The same page mixes profile, motivation, learning rules, onboarding, and destructive data controls.</p><a href="../../output/playwright/baseline-2026-11-09/settings-framework-detail.png">Original screenshot</a></details>
 </article>
 <article id="JP-18">
 <h2>JP-18 · Unify visual tokens across the four extension surfaces</h2>
-<p class="status">Open</p>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/7">PR #7</a></p>
 <p>Extract a small shared token set for text, muted text, surfaces, accent, success, spacing, radii, focus rings, and motion. Preserve semantic green for success and select one primary-action treatment.</p>
 <p><strong>Acceptance:</strong> Compare onboarding, popup, dashboard, and watch panel side by side: controls and status colors follow the same rules without forcing identical layouts.</p>
+<p><strong>Verification:</strong> Shared tokens style all four surfaces, including actual watch shadow DOM. Primary colors, 8 px radius, 44 px border-box minimum height, neutral pending/green success/red error, six-locale 200% layouts and CSS-import bundling are verified.</p>
 
-
-
+<ul><li><a href="visual-consistency.md">Implementation and validation notes</a></li><li><a href="../../output/playwright/visual-consistency-2026-11-09/verification.html">Before/after screenshots, raw audits and retained candidate</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/7">Reviewable PR and cross-platform checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>Dashboard and onboarding emphasize orange, the panel still defines a blue primary button, the roadmap uses vivid neon green for Start, and typography/spacing/radii vary between separate stylesheets. The orange/charcoal brand itself is recognizable and worth retaining.</p><a href="../../output/playwright/baseline-2026-11-09/populated-path.png">Original screenshot</a></details>
 </article>
 <article id="JP-19">

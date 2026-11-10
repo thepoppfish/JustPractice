@@ -1,10 +1,4 @@
-/* Shared readable text and keyboard focus colors, including the isolated YouTube panel. */
-:root,
-:host {
-  --jp-muted: #b7bdc8;
-  --jp-subtle: #a5aeba;
-  --jp-focus: #ffd08a;
-}
+@import './tokens.css';
 
 :is(:root, :host) :is(button, a, input, select, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--jp-focus);
@@ -32,12 +26,18 @@ bdi {
   bottom: 16px;
   max-width: min(360px, calc(100vw - 32px));
   padding: 10px 16px;
-  border: 1px solid #546c59;
-  border-radius: 10px;
-  background: #17291e;
-  color: #d4f5de;
+  border: 1px solid var(--jp-border);
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-raised);
+  color: var(--jp-text);
   font: 14px/1.5 system-ui, sans-serif;
   text-align: start;
+}
+
+.jp-action-status[data-state='success'] {
+  background: var(--jp-success-bg);
+  border-color: var(--jp-success-border);
+  color: var(--jp-success);
 }
 
 .jp-action-error {
@@ -45,9 +45,9 @@ bdi {
   min-width: 0;
   padding: 12px;
   margin-block: 10px;
-  border: 1px solid #c17968;
-  border-radius: 10px;
-  background: #331e1a;
+  border: 1px solid var(--jp-danger-border);
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-danger-bg);
   color: #ffe1d9;
   font: 14px/1.5 system-ui, sans-serif;
   text-align: start;
@@ -56,13 +56,14 @@ bdi {
 
 .jp-action-error p { margin: 0 0 10px; }
 .jp-action-error button {
+  box-sizing: border-box;
   max-inline-size: 100%;
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 14px;
-  border: 1px solid #d3a39a;
+  border: 1px solid var(--jp-accent);
   border-radius: 6px;
-  color: #fff3ef;
-  background: #4e2d25;
+  color: var(--jp-on-accent);
+  background: var(--jp-accent);
   font: inherit;
   cursor: pointer;
 }
@@ -71,9 +72,9 @@ bdi {
 .library-primary {
   display: block;
   padding: 9px 14px;
-  border-radius: 8px;
-  background: #ff8b56;
-  color: #201109;
+  border-radius: var(--jp-radius-sm);
+  background: var(--jp-accent);
+  color: var(--jp-on-accent);
   font: 600 14px/1.4 system-ui, sans-serif;
   text-align: center;
   text-decoration: none;
@@ -87,7 +88,7 @@ bdi {
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
-.library-metrics progress { inline-size: 100%; block-size: 8px; accent-color: #ff8b56; }
+.library-metrics progress { inline-size: 100%; block-size: 8px; accent-color: var(--jp-accent); }
 .library-more { min-inline-size: 0; }
 .library-more summary { padding: 8px 4px; color: #d3d7df; font-size: 13px; cursor: pointer; }
 .library-secondary { display: grid; gap: 10px; padding-block: 10px 2px; }
@@ -126,13 +127,15 @@ bdi {
   text-align: start;
 }
 .jp-library-undo[hidden] { display: none; }
+.jp-library-undo[data-state='success'] { background: var(--jp-success-bg); border-color: var(--jp-success-border); }
+.jp-library-undo[data-state='error'] { background: var(--jp-danger-bg); border-color: var(--jp-danger-border); }
 .jp-library-undo p { margin: 0 0 6px; }
 .jp-library-undo-title { display: block; overflow-wrap: anywhere; max-block-size: 5em; overflow-y: auto; }
 .jp-library-undo-error { color: #ffcec3; }
 .jp-library-undo-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-block-start: 12px; }
 .jp-library-undo button {
   flex: 1 1 90px;
-  min-block-size: 38px;
+  min-block-size: 44px;
   padding: 8px 14px;
   border: 1px solid #909bab;
   border-radius: 7px;
@@ -142,5 +145,5 @@ bdi {
   white-space: normal;
   cursor: pointer;
 }
-.jp-library-undo [data-undo-removal] { background: #ff8b56; color: #201109; border-color: #ff8b56; font-weight: 650; }
+.jp-library-undo [data-undo-removal] { background: var(--jp-accent); color: var(--jp-on-accent); border-color: var(--jp-accent); font-weight: 650; }
 body.has-library-undo { padding-block-end: 240px; }

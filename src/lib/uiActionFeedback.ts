@@ -164,15 +164,17 @@ export class UiActionFeedback {
     });
   }
 
-  private statusText(text: string): void {
+  private statusText(text: string, state: 'working' | 'success' = 'working'): void {
     clearTimeout(this.timer);
     this.status.textContent = text;
+    this.status.dataset.state = state;
     this.status.hidden = false;
   }
 
   private placeError(error: ActionError): void {
     const source = error.source.find();
     if (!source) return;
+    for (let details = source.closest('details'); details; details = details.parentElement?.closest('details') ?? null) details.open = true;
     if (source === this.root) {
       if (!error.node.isConnected) (this.root.querySelector('.content, main') ?? this.root).prepend(error.node);
       return;
@@ -254,7 +256,7 @@ export class UiActionFeedback {
       this.captureDrafts();
       if (this.written && this.errors.get(source.key) === initialError) this.clearError(source.key);
       if (this.written && !this.silent && !this.errors.has(source.key)) {
-        this.statusText(this.t(this.successKey));
+        this.statusText(this.t(this.successKey), 'success');
         this.timer = setTimeout(() => { this.status.hidden = true; }, 3500);
       } else this.status.hidden = true;
       return true;

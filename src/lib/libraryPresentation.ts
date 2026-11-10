@@ -1,6 +1,6 @@
 import type { LibraryItem, PersistedData } from './storage';
 import { escapeAttr, escapeHtml } from './htmlEscape';
-import { formatDuration } from './practiceStats';
+import { formatPracticeDuration } from './practiceDuration';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
 
@@ -27,7 +27,7 @@ export function libraryMetricsHtml(item: LibraryItem, data: PersistedData, t: Tr
   const playback = `${clock(position)} / ${length}`;
   return `<div class="library-metrics">
     <span>${escapeHtml(t('library.length'))}: <bdi>${escapeHtml(length)}</bdi></span>
-    <span>${escapeHtml(t('library.practice'))}: <bdi>${escapeHtml(formatDuration(data.videoSeconds[item.videoId] ?? 0))}</bdi></span>
+    <span>${escapeHtml(t('library.practice'))}: <bdi>${escapeHtml(formatPracticeDuration(data.videoSeconds[item.videoId] ?? 0, t))}</bdi></span>
     <span>${escapeHtml(t('library.playback'))}: <bdi>${escapeHtml(playback)}</bdi></span>
     ${duration ? `<progress max="${duration}" value="${position}" aria-label="${escapeAttr(`${t('library.playback')}: ${item.title}`)}" aria-valuetext="${escapeAttr(playback)}"></progress>` : ''}
   </div>`;

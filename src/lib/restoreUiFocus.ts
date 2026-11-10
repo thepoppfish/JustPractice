@@ -18,7 +18,7 @@ export function rememberUiFocus(root: HTMLElement): () => void {
     if (previous.isConnected || (doc.activeElement !== doc.body && root.contains(doc.activeElement))) return;
     const next = id ? doc.getElementById(id) : view ? root.querySelector<HTMLElement>(`[data-view-panel="${view}"] h2`) : null;
     if (!next || !root.contains(next) || next.closest('[hidden], .view--hidden')) return;
-    if (next.matches('h2')) next.tabIndex = -1;
+    if (next.matches('h1, h2, h3, h4, h5, h6')) next.tabIndex = -1;
     next.focus({ preventScroll: true });
     if ((next instanceof HTMLInputElement || next instanceof HTMLTextAreaElement) && selection?.[0] != null) {
       next.setSelectionRange(selection[0], selection[1]);

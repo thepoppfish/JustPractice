@@ -2,18 +2,18 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0a0a0a;
-  --bg-panel: #111111;
-  --surface: #161616;
-  --surface-hover: #1c1c1c;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --text: #f1f1f1;
+  --bg: var(--jp-bg);
+  --bg-panel: var(--jp-surface);
+  --surface: var(--jp-surface);
+  --surface-hover: var(--jp-raised);
+  --border: var(--jp-border);
+  --border-strong: var(--jp-border);
+  --text: var(--jp-text);
   --muted: var(--jp-muted);
-  --accent: #ff6b26;
-  --accent-soft: rgba(255, 107, 38, 0.14);
+  --accent: var(--jp-accent);
+  --accent-soft: var(--jp-accent-soft);
   --accent-glow: rgba(255, 107, 38, 0.35);
-  --danger: #ff7a7a;
+  --danger: var(--jp-danger);
 }
 
 * {
@@ -213,8 +213,12 @@ body {
 
 @media (max-width: 1100px) {
   .topbar {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: 12px;
   }
+  .topbar-progress { grid-column: 1 / -1; }
+  .topbar-search { grid-column: 1; }
+  .topbar-badge { grid-column: 2; }
 }
 
 .topbar-progress {
@@ -614,6 +618,52 @@ body {
 }
 
 /* Stats view */
+.stats-overview { max-inline-size: 920px; margin: 0 auto var(--jp-space-8); text-align: start; }
+.stats-today { padding: var(--jp-space-6); background: var(--jp-surface); border: 1px solid var(--jp-border); border-radius: var(--jp-radius-lg); }
+.stats-today h3, .stats-secondary-metric h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--jp-muted); }
+.stats-primary-value { margin: 0; font-size: clamp(32px, 4vw, 48px); font-weight: 750; line-height: 1.25; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stats-goal-label { margin: 12px 0; font-size: 14px; color: var(--jp-muted); }
+.stats-today progress { display: block; inline-size: 100%; block-size: 12px; accent-color: var(--jp-accent); }
+.stats-today.is-met { border-color: var(--jp-success-border); }
+.stats-today.is-met .stats-goal-label { color: var(--jp-success); }
+.stats-today.is-met progress { accent-color: var(--jp-success); }
+.stats-next-actions { display: flex; flex-wrap: wrap; gap: var(--jp-space-3); margin-block-start: var(--jp-space-4); }
+.stats-next-actions > button { max-inline-size: 100%; }
+.stats-secondary-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--jp-space-4); margin-block-start: var(--jp-space-4); }
+.stats-secondary-metric { padding: var(--jp-space-4); border: 1px solid var(--jp-border); border-radius: var(--jp-radius-md); background: var(--jp-surface); min-inline-size: 0; }
+.stats-secondary-value { display: block; font-size: 24px; font-weight: 700; overflow-wrap: anywhere; }
+.stats-secondary-metric p, .stats-library-counts { color: var(--jp-muted); font-size: 13px; line-height: 1.5; }
+.stats-secondary-metric p { margin: 8px 0 0; }
+.stats-library-counts { margin: 16px 0 0; }
+@media (max-width: 640px) { .stats-secondary-row { grid-template-columns: 1fr; } }
+
+.settings-view { max-inline-size: 820px; margin-inline: auto; text-align: start; }
+.settings-view > h2 { margin-block: 0 12px; font-size: 26px; }
+.settings-save-model { font-size: 14px; line-height: 1.6; color: var(--jp-muted); max-inline-size: 70ch; }
+.settings-jumps { display: flex; gap: var(--jp-space-2); flex-wrap: wrap; margin-block: 20px 28px; }
+.settings-group { margin-block: 0 var(--jp-space-8); padding-block-start: 4px; scroll-margin-block-start: 24px; }
+.settings-group h3 { font-size: 19px; line-height: 1.4; margin-block: 0 12px; }
+.settings-group .row-title--spaced { margin-block-start: 24px; }
+.settings-view .help { font-size: 14px; line-height: 1.6; }
+.settings-view .settings-block { max-inline-size: none; padding: var(--jp-space-4); margin-block-end: var(--jp-space-3); border-radius: var(--jp-radius-md); }
+.settings-view .settings-block label[for] { display: block; margin-block-end: 8px; font-weight: 600; }
+.settings-view :is(input[type='text'], select, textarea) { inline-size: 100%; max-inline-size: 520px; box-sizing: border-box; padding: 10px 12px; border-radius: var(--jp-radius-sm); border: 1px solid var(--jp-border); background: var(--jp-raised); color: var(--jp-text); font: inherit; }
+.settings-view .settings-block .help { margin: 10px 0 0; font-size: 14px; max-inline-size: 70ch; }
+.settings-view .settings-block label:has(input[type='checkbox']) + .help { margin-inline-start: 30px; }
+.settings-view .data-actions { justify-content: flex-start; }
+.settings-danger { margin-block-start: 20px; padding: var(--jp-space-4); border: 1px solid var(--jp-danger-border); border-radius: var(--jp-radius-md); background: var(--jp-danger-bg); }
+.settings-danger h4 { font-size: 16px; margin: 0 0 8px; color: var(--jp-danger); }
+.settings-danger p { margin: 0 0 16px; font-size: 14px; line-height: 1.6; }
+.settings-advanced { border: 1px solid var(--jp-border); border-radius: var(--jp-radius-md); padding: var(--jp-space-4); }
+.settings-advanced > summary { padding: 4px; font-size: 17px; font-weight: 650; cursor: pointer; }
+.settings-advanced[open] > summary { margin-block-end: 24px; }
+.settings-view .custom-daily-messages-add { justify-content: flex-start; width: 100%; margin: 0 0 12px; }
+.settings-view .custom-daily-messages-add input { flex: 1 1 220px; min-inline-size: 0; }
+.settings-view .custom-daily-messages-add input { text-align: start; }
+.settings-view .custom-daily-message-label { flex: 1 0 100%; }
+.settings-view :is(input, textarea)::placeholder { color: var(--jp-subtle); opacity: 1; }
+.settings-view .custom-daily-messages-block > .help { margin-inline: 0; }
+
 .stat-cards-inline {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1017,7 +1067,7 @@ body {
 }
 
 .goal-ring-title {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1054,7 +1104,7 @@ body {
   transform: translate(-50%, -50%);
   width: calc(100% - 24px);
   max-width: 142px;
-  font-size: 11px;
+  font-size: 20px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--text);
@@ -1071,7 +1121,7 @@ body {
 }
 
 .goal-ring-fraction {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--muted);
   text-align: center;
   line-height: 1.35;
@@ -2534,7 +2584,7 @@ body {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #fff;
-  background: linear-gradient(135deg, #c9a227 0%, #ffd966 45%, #ff6b26 100%);
+  background: linear-gradient(135deg, #c9a227 0%, #ffd966 45%, var(--jp-accent) 100%);
   border: 1px solid rgba(255, 217, 102, 0.55);
   box-shadow: 0 0 16px rgba(255, 217, 102, 0.25);
 }

@@ -171,6 +171,26 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
     });
   });
 
+  root.querySelectorAll<HTMLButtonElement>('[data-settings-section]').forEach((button) => {
+    listen(button, 'click', () => {
+      const target = document.getElementById(button.dataset.settingsSection!);
+      if (!target || !root.contains(target)) return;
+      if (target instanceof HTMLDetailsElement) target.open = true;
+      const heading = target.querySelector<HTMLElement>('summary, h3');
+      if (heading) { if (!heading.matches('summary')) heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+      target.scrollIntoView({ block: 'start' });
+    });
+  });
+
+  root.querySelectorAll<HTMLButtonElement>('[data-stats-view]').forEach((button) => {
+    listen(button, 'click', () => {
+      const view = button.dataset.statsView;
+      if (view !== 'library' && view !== 'completed' && view !== 'goals') return;
+      setActiveView(view);
+      switchView(view);
+    });
+  });
+
   root.querySelectorAll<HTMLButtonElement>('[data-path-action]').forEach((btn) => {
     listen(btn, 'click', async () => {
       const action = btn.getAttribute('data-path-action');

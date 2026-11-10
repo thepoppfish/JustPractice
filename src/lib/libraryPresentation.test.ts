@@ -9,7 +9,7 @@ it('resumes from bounded playback rather than repeat practice time', () => {
   data.videoPlaybackPositionSec[item.videoId] = 123.9;
   expect(playbackForLibraryItem(item, data)).toMatchObject({ position: 123, resume: true, href: 'https://www.youtube.com/watch?v=abcdefghijk&t=123s' });
   const html = libraryMetricsHtml(item, data, createTranslator('en'));
-  expect(html).toContain('30m 0s');
+  expect(html).toContain('30 min');
   expect(html).toContain('value="123"');
   expect(html).toContain('max="600"');
   expect(html).not.toContain('<title>');

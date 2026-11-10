@@ -1,0 +1,70 @@
+/* Shared by extension pages and the isolated watch-panel shadow root. */
+:root, :host {
+  --jp-bg: #101216;
+  --jp-surface: #191d24;
+  --jp-raised: #252b35;
+  --jp-text: #f1f3f7;
+  --jp-muted: #b7bdc8;
+  --jp-subtle: #a5aeba;
+  --jp-border: #3e4755;
+  --jp-accent: #ff8b56;
+  --jp-accent-soft: #39261f;
+  --jp-on-accent: #201109;
+  --jp-success: #a8ebbd;
+  --jp-success-bg: #17291e;
+  --jp-success-border: #546c59;
+  --jp-danger: #ffb5aa;
+  --jp-danger-bg: #331e1a;
+  --jp-danger-border: #c17968;
+  --jp-focus: #ffd08a;
+  --jp-space-1: 4px;
+  --jp-space-2: 8px;
+  --jp-space-3: 12px;
+  --jp-space-4: 16px;
+  --jp-space-6: 24px;
+  --jp-space-8: 32px;
+  --jp-radius-sm: 8px;
+  --jp-radius-md: 12px;
+  --jp-radius-lg: 16px;
+  --jp-motion-fast: 150ms;
+  --jp-motion-base: 220ms;
+  --jp-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Element qualification lets action roles take precedence over legacy class rules. */
+button.jp-primary, a.jp-primary {
+  box-sizing: border-box;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--jp-space-2);
+  min-block-size: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--jp-accent);
+  border-radius: var(--jp-radius-sm);
+  background: var(--jp-accent);
+  color: var(--jp-on-accent);
+  font: 650 14px/1.5 system-ui, sans-serif;
+  text-decoration: none;
+  text-align: center;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  cursor: pointer;
+  transition: filter var(--jp-motion-fast) var(--jp-ease);
+}
+button.jp-primary:hover, a.jp-primary:hover { filter: brightness(1.06); }
+button.jp-secondary, a.jp-secondary {
+  box-sizing: border-box;
+  min-block-size: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--jp-border);
+  border-radius: var(--jp-radius-sm);
+  background: var(--jp-raised);
+  color: var(--jp-text);
+  font: 600 14px/1.5 system-ui, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root, :host { --jp-motion-fast: 0.01ms; --jp-motion-base: 0.01ms; }
+}

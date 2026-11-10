@@ -7,10 +7,9 @@ import {
   type PracticeGoals,
 } from '../lib/storage';
 import {
-  formatGoalPairLine,
-  formatGoalSlash,
   ringDasharrayFromProgress,
 } from '../lib/goalFormat';
+import { formatPracticeDuration } from '../lib/practiceDuration';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
 import { isLegacyLevelTag, isJlptTag, isCefrTag } from '../lib/levelTags';
 import {
@@ -81,7 +80,7 @@ export function libraryWelcomeHtml(t: DashTranslate): string {
 /** Done vs target line under rings */
 function formatGoalFraction(done: number, target: number | null, t: DashTranslate): string {
   if (target === null || target <= 0) return t('dash.goalsNoTarget');
-  return formatGoalPairLine(done, target);
+  return t('stats.target', { target: formatPracticeDuration(target, t) });
 }
 
 function legacyBadgeFrameworkName(d: string, fw: LevelFramework, t: DashTranslate): string {
@@ -162,12 +161,12 @@ export function goalRingCardHtml(
   const has = targetSec !== null && targetSec > 0;
   const progress = has ? Math.min(1, doneSec / (targetSec as number)) : 0;
   const dashStr = ringDasharrayFromProgress(progress);
-  const center = has ? formatGoalSlash(doneSec, targetSec as number) : '—';
+  const center = formatPracticeDuration(doneSec, t);
   return `
     <div class="goal-ring-card">
       <span class="goal-ring-title">${escapeHtml(title)}</span>
-      <div class="goal-ring-graphic" role="img" aria-hidden="true">
-        <svg class="goal-ring-svg" viewBox="0 0 36 36">
+      <div class="goal-ring-graphic">
+        <svg class="goal-ring-svg" viewBox="0 0 36 36" aria-hidden="true">
           <circle class="goal-ring-bg" pathLength="100" cx="18" cy="18" r="15.9155" fill="none" stroke-width="3.2" />
           <circle
             class="goal-ring-fg"

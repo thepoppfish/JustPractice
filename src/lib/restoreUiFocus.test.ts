@@ -41,6 +41,12 @@ it('restores section-heading focus after refresh and skips hidden controls', () 
   root.innerHTML = '<section data-view-panel="path"><h2>Roadmap</h2></section>';
   restore();
   expect(document.activeElement).toBe(root.querySelector('h2'));
+  root.innerHTML = '<h3 id="counting" tabindex="-1">Counting</h3>';
+  root.querySelector<HTMLElement>('h3')!.focus();
+  const restoreSubsection = rememberUiFocus(root);
+  root.innerHTML = '<h3 id="counting">Counting</h3>';
+  restoreSubsection();
+  expect(document.activeElement).toBe(root.querySelector('h3'));
   root.innerHTML = '<input id="setting">';
   root.querySelector<HTMLInputElement>('input')!.focus();
   const restoreHidden = rememberUiFocus(root);
