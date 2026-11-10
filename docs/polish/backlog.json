@@ -158,9 +158,9 @@
     "source": "src/welcome/main.ts:121; src/welcome/main.ts:251; src/welcome/main.ts:277; src/popup/main.ts:187",
     "image": "01-onboarding-language.png",
     "size": "M",
-    "status": "verification-pending",
+    "status": "implemented-awaiting-review",
     "pr": 3,
-    "verification": "Keyboard and automated checks passed; spoken screen-reader verification outstanding.",
+    "verification": "Keyboard-only onboarding/core navigation and automated accessibility checks passed. Manual screen-reader verification was explicitly skipped by the maintainer on 2026-11-10; it was not performed or recorded as a pass and no longer blocks the CV polish work.",
     "checks": [
       {
         "text": "Verification report with screenshots and acceptance checks",
@@ -175,16 +175,17 @@
         "href": "visual-consistency.md"
       },
       {
-        "text": "Spoken-reader procedure and remaining limitation",
+        "text": "Maintainer decision to skip the manual reader check; optional future procedure",
         "href": "spoken-reader-check.md"
       }
     ],
-    "pendingChecks": [
-      "Spoken NVDA/Narrator review of onboarding and core navigation"
-    ],
+    "pendingChecks": [],
     "relatedPrs": [
       3,
       5
+    ],
+    "skippedChecks": [
+      "Manual NVDA/Narrator review of onboarding and core navigation — skipped at the maintainer’s explicit request on 2026-11-10; unverified."
     ]
   },
   {

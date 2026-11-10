@@ -15,7 +15,8 @@ local baseline report.
 - PR #1 merged: distribution, backup recovery and panel bounds (JP-01–03).
 - PR #2 merged: focus/counting policy and current instructions (JP-04–05).
 - PR #3 open: contrast, keyboard semantics and Hebrew layouts (JP-06–08).
-  Spoken screen-reader verification for JP-07 remains outstanding.
+  The maintainer explicitly skipped JP-07's manual screen-reader check on
+  10 November 2026; the implementation and other checks remain in place.
 - PR #4 open: reproducible engineering checks (JP-11–14). Checks passed on
   Linux and Windows, including its documentation follow-up.
 - PR #5 open: mutation feedback and recovery (JP-09), plus follow-ups to JP-07/08.
@@ -25,7 +26,11 @@ local baseline report.
 - PR #9: measured performance and payload reduction (JP-21), plus a practice
   display correction and working Details shortcut. Controlled measurements and
   automated checks pass. JP-21's [manual live-service check](live-playback-check.md)
-  and JP-07's [actual reader check](spoken-reader-check.md) remain outstanding.
+  is the remaining verification gate. JP-07's [reader check](spoken-reader-check.md)
+  is recorded as skipped, not passed.
+
+Earlier PR reports describe the reader check as outstanding at the time of
+their measurements. The current tracker records the subsequent maintainer decision.
 
 Local visual evidence is retained under `output/playwright/` rather than shipped
 inside the extension. The original review is

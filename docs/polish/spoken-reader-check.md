@@ -1,7 +1,10 @@
 # Spoken screen-reader acceptance check (JP-07)
 
-Status: pending. Keyboard, browser accessibility trees and axe checks have
-passed; no spoken-output result has been recorded. The available Windows
+Status: **skipped at the maintainer's request on 10 November 2026**. This manual
+check no longer blocks the CV polish work. It was not performed or recorded as
+a pass; the procedure below is retained as optional future reference.
+
+Keyboard, browser accessibility trees and axe checks have passed. The available Windows
 automation API can inspect controls and send keys but cannot capture or listen
 to system audio. An accessibility-tree inspection cannot establish what a
 reader actually announces.

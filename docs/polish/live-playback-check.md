@@ -40,4 +40,5 @@ candidate after its verification report is finalized. Finish onboarding.
 
 If YouTube also fails here, report the error and observed playback duration
 instead of recording a pass. The separate
-[actual screen-reader check](spoken-reader-check.md) remains JP-07.
+[screen-reader check](spoken-reader-check.md) was explicitly skipped by the
+maintainer; playback verification is the remaining gate.

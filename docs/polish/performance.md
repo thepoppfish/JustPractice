@@ -106,7 +106,8 @@ an unpublished candidate; it does not replace the public 1.0.1 release.
 
 [PR #9](https://github.com/thepoppfish/JustPractice/pull/9) is stacked on #8.
 JP-21 remains verification-pending for the manual real-service check. JP-07's
-actual reader check is independently outstanding.
+manual reader check was explicitly skipped by the maintainer on 10 November
+2026 and is no longer a gate; no reader pass is claimed.
 
 ## Scope, budgets and retained evidence
 
@@ -140,5 +141,5 @@ The six-locale visual matrix checks statistics at 100% and the watch panel,
 Details control and calendar at native 200% zoom (512×300 CSS viewport). Thirty
 captures and twelve scoped raw axe scans are retained; all scans have zero
 violations, with incomplete checks preserved. Hebrew direction/language, long
-labels, missing translation keys and horizontal overflow are checked. Actual
-screen-reader verification remains [JP-07](spoken-reader-check.md).
+labels, missing translation keys and horizontal overflow are checked. The
+maintainer skipped [JP-07's manual screen-reader check](spoken-reader-check.md).

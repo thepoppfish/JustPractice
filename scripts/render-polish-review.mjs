@@ -26,6 +26,7 @@ const details = items.map((item) => `<article id="${escape(item.id)}">
 <p><strong>Acceptance:</strong> ${escape(item.accept)}</p>
 ${item.verification ? `<p><strong>Verification:</strong> ${escape(item.verification)}</p>` : ''}
 ${item.pendingChecks?.length ? `<p class="pending"><strong>Outstanding:</strong> ${item.pendingChecks.map(escape).join('; ')}</p>` : ''}
+${item.skippedChecks?.length ? `<p class="note"><strong>Skipped by maintainer:</strong> ${item.skippedChecks.map(escape).join('; ')}</p>` : ''}
 ${item.checks?.length ? `<ul>${item.checks.map((check) => `<li>${check.href ? `<a href="${escape(check.href)}">${escape(check.text)}</a>` : escape(check.text)}</li>`).join('')}</ul>` : ''}
 <details><summary>Original baseline evidence</summary><p>${escape(item.evidence)}</p>${item.image ? `<a href="../../output/playwright/baseline-2026-11-09/${escape(item.image)}">Original screenshot</a>` : ''}</details>
 </article>`).join('\n');

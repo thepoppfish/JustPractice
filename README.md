@@ -128,8 +128,9 @@ metadata, live streams, ads and browser shutdown timing need ongoing real-world
 testing. Uninstalling loses the browser's local extension data.
 
 The [21-item polish tracker](docs/polish/README.md) distinguishes merged fixes,
-open PRs and outstanding acceptance checks. Manual acceptance still includes
-the actual screen-reader review and sustained live YouTube playback; automated
+open PRs and outstanding acceptance checks. Sustained live YouTube playback
+remains a manual acceptance check; the maintainer skipped the manual
+screen-reader check. Automated
 Chromium service failures are recorded separately from controlled measurements. Historical
 planning/audit snapshots are indexed separately in [the docs guide](docs/README.md).
 
