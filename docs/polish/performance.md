@@ -95,6 +95,15 @@ This supports live counting/persistence, not a sustained-performance pass or a
 claim about the cause of the slow playback. Follow [the remaining live-playback
 check](live-playback-check.md); its throughput/control qualification remains open.
 
+The subsequent extension-disabled control advanced 533.129 media seconds over
+603.710 wall seconds (88.3%). It also had a substantial stall, advancing only
+2.412 seconds over a 58.055-second interval with the JustPractice panel absent
+in every sample. Thus this symptom occurs without JustPractice. The trials'
+quality policies and potential cache/network conditions differ, so the average
+throughput difference is not a causal extension-overhead measurement. The
+control does not replace a passing installed-candidate live run. See the
+[recorded comparison](live-playback-result-2026-11-10.md#extension-disabled-control).
+
 ## Checks and retained candidate
 
 The corrected source passed 411 unit tests in 58 files and all 18 installed

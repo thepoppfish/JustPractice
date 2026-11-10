@@ -21,6 +21,12 @@ The later normal-Chrome run did not reproduce that 43-second failure. Its slow
 media advancement has no established cause; the remaining check is sustained
 responsiveness, rather than an unverified ten-minute practice counter.
 
+A subsequent ten-minute control with both copies disabled also stalled: media
+advanced 2.412 seconds over one 58.055-second interval. Its overall advancement
+was 88.3%, above the 85% threshold. This demonstrates that the stall can occur
+without JustPractice, but neither establishes its cause nor replaces a passing
+installed-candidate check. See the recorded result for comparison limits.
+
 Use a disposable normal Chrome profile, keeping personal data out of evidence.
 Use the source candidate from PR #9 and its preceding stack; the public 1.0.1
 download is older. Build the branch with `npm ci` and `npm run build`, then load

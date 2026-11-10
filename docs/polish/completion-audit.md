@@ -37,6 +37,9 @@ tests and PR CI artifacts provide the repository-side review path.
 
 The remaining verification gate is JP-21's sustained live-service responsiveness;
 the normal-Chrome tracking, pause and reload checks now have passing evidence.
+A subsequent disabled-extension control also reproduced a substantial stall;
+its 88.3% overall advancement met the numeric threshold, but does not verify
+the installed candidate or establish the slowdown's cause.
 JP-07's manual reader check was explicitly skipped by the maintainer; its
 original acceptance text is preserved with that exception recorded in the tracker.
 No merge or publication is performed by this audit. Existing real user data is

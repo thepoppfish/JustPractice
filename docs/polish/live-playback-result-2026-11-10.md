@@ -4,7 +4,9 @@
 The browser extension connection allowed the candidate to be tested in the
 maintainer's normal Chrome session. This run did not reproduce the earlier
 43-second discarded-stream failure. Slow media advancement and an unsuccessful
-follow-up prevent recording a complete JP-21 live-performance pass.
+follow-up prevent recording a complete JP-21 live-performance pass. A subsequent
+extension-disabled control also reproduced a substantial stall; the problem is
+not exclusive to JustPractice, but its cause remains unestablished.
 
 ## Candidate and method
 
@@ -58,6 +60,41 @@ The browser log API returned no captured warning/error entries; that is not
 evidence that every component was error-free. No unrelated extension, network
 setting or browser protection was changed.
 
+## Extension-disabled control
+
+After the maintainer confirmed both 1.0.1 and 1.0.3 were disabled, a fresh tab
+played the same video in the same connected Chrome profile. The JustPractice
+panel count was zero in every sample. The control used muted 1× playback at
+fixed **1080p60**, confirmed in YouTube's visible quality menu; no seek, speed
+or quality change occurred during the measured interval. Other extensions and
+browser settings were left alone. Some browser commands timed out during setup,
+before this measurement, with JustPractice already absent.
+
+| Control check | Recorded result |
+| --- | --- |
+| Start | 08:12:54 UTC; media 0.771 seconds |
+| Final elapsed time | 603.710 seconds (10 min 4 s) |
+| Final media position | 533.900 seconds (8 min 54 s; YouTube's snapshot displayed 8:53) |
+| Actual media advancement | 533.129 seconds, **88.3%** of wall time |
+| Substantial stall | Between elapsed 193.401 and 251.456 seconds, media advanced only 2.412 seconds over 58.055 seconds |
+| Sampled state | Every sample had no JustPractice panel, playback speed 1×, duration 634.601 seconds, ready state 4 and no media error; playback was unpaused until the final Pause action |
+| End control | Pause succeeded and the final sampled video state was paused |
+
+The control meets the numeric 85% window-advancement threshold, despite the
+mid-run stall. It does not verify an installed candidate: JustPractice was
+disabled. The stall demonstrates that JustPractice is not required for this
+symptom to occur. It does not establish the cause or prove zero extension
+overhead. These were sequential single trials, with potentially different
+cache/network conditions and different quality policies: the candidate began
+with Auto reporting 1080p60 and later switched to 720p60, whereas the control
+stayed fixed at 1080p60. The 83.4% versus 88.3% results therefore must not be
+presented as a measured causal slowdown from the extension.
+
+The earlier 43-second discarded-stream error did not recur in either normal-
+Chrome run. No runtime fix is justified solely by these observations. A
+repeatable installed-candidate run under stable playback conditions, or matched
+profiling if a difference persists, remains the route to completing JP-21.
+
 ## Evidence and remaining check
 
 Local evidence is in `output/playwright/normal-chrome-2026-11-10/`: `result.json`
@@ -66,9 +103,18 @@ records the incomplete preflight, and `verification.html` links screenshots.
 These normal-profile captures stay local and are excluded from source/runtime
 packages; no personal export, cookies or browser profile is included.
 
+The control's samples, `result.json`, screenshots and `verification.html` are
+retained separately in `output/playwright/normal-chrome-control-2026-11-10/`.
+Its report links the earlier candidate evidence. Both installed copies were
+left disabled after this control; no extension or practice data was removed.
+
 JP-21 remains verification-pending for a live session meeting the existing
 sustained-playback threshold with usable controls. Practice counting, stopping
 while paused and persistence now have normal-Chrome evidence. No runtime fix
 was made from an unestablished cause. Controlled performance measurements and
 the cross-platform regression suite remain separate evidence in
 [the performance notes](performance.md).
+
+The source/documentation head `84af551` passed both full Linux and Windows jobs
+in [run 42779402710](https://github.com/thepoppfish/JustPractice/actions/runs/42779402710).
+The control follow-up changes evidence and documentation only.
