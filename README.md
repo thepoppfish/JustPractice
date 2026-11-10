@@ -46,6 +46,10 @@ Persisted data lives under the storage key **`jpPractice`**.
 
 Practice progress is batched about every 30 seconds and flushed when the page loses focus or is hidden. The linked tutorial is an older recording of the saving flow; these instructions describe current counting behavior.
 
+## Keyboard access
+
+Use **Tab** to reach controls and arrow keys to choose onboarding languages and frameworks. In the popup, **Left/Right**, **Home**, and **End** switch tabs. In the year calendar, arrow keys move between days and weeks, **Home/End** jump to the first/last day, and **Enter** opens a month. Focus the watch panel’s move handle and use arrow keys to reposition it; hold **Shift** for larger steps. Hebrew uses a right-to-left layout while video titles and numeric progress retain their own reading direction. The setup greeting stays still when reduced motion is enabled.
+
 ## Backups
 
 Use **Dashboard → Settings → Your data → Export JSON** before replacing a profile or uninstalling. Restore accepts recognized JustPractice exports up to 8 MB, checks their data and version, and previews the video count and practice minutes before confirmation. A recovery copy in browser session storage protects the previous data if a replacement fails or the service worker restarts during restore.

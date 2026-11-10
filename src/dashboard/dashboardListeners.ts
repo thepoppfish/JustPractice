@@ -347,6 +347,7 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       const filter = btn.getAttribute('data-ach-filter') ?? 'all';
       root.querySelectorAll('[data-ach-filter]').forEach((chip) => {
         chip.classList.toggle('is-active', chip === btn);
+        chip.setAttribute('aria-pressed', String(chip === btn));
       });
       root.querySelectorAll<HTMLElement>('.achievement-section').forEach((section) => {
         const cat = section.getAttribute('data-ach-category') ?? '';
@@ -469,7 +470,7 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
 
   const hmRoot = root.querySelector('[data-year-hm-root]');
   if (hmRoot instanceof HTMLElement) {
-    attachYearHeatmapInteractive({
+    const detachHeatmap = attachYearHeatmapInteractive({
       root: hmRoot,
       locale: vm.resolvedLocale,
       variant: 'dashboard',
@@ -492,5 +493,6 @@ export function attachDashboardListeners(input: AttachDashboardListenersInput): 
       initialZoom: getYearHeatmapZoom(),
       onZoomChange: (zoom) => setYearHeatmapZoom(zoom),
     });
+    signal.addEventListener('abort', detachHeatmap, { once: true });
   }
 }

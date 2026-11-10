@@ -447,5 +447,9 @@
   "dash.restoreUnsupportedVersion": "This backup uses an unsupported version. Update JustPractice or choose a supported export.",
   "dash.restoreTooLarge": "This backup is too large. Choose a JSON export smaller than 8 MB.",
   "dash.restoreSummary": "Restore {videos} saved videos ({completed} completed) and {minutes} minutes of practice.",
-  "dash.libraryWelcomeHint": "Pause the video or switch tabs to pause tracking. Focus options are in Settings."
+  "dash.libraryWelcomeHint": "Pause the video or switch tabs to pause tracking. Focus options are in Settings.",
+  "yearHeatmap.prevYear": "Previous year",
+  "yearHeatmap.nextYear": "Next year",
+  "panel.moveHint": "Move panel with arrow keys. Hold Shift for larger steps.",
+  "yearHeatmap.keyboardHelp": "Use arrow keys to move by day or week, Home/End to jump, and Enter to open a month."
 }

@@ -1,3 +1,5 @@
+@import '../styles/accessibility.css';
+
 :root {
   color-scheme: dark;
   --bg: #0f0f10;
@@ -5,7 +7,7 @@
   --surface-2: #242428;
   --border: rgba(255, 255, 255, 0.1);
   --text: #f1f3f4;
-  --muted: #9aa0a6;
+  --muted: var(--jp-muted);
   --accent: #ff6b26;
   --accent-soft: rgba(255, 107, 38, 0.18);
   --radius: 14px;
@@ -74,9 +76,13 @@ body {
   gap: 8px;
   justify-content: center;
   margin-bottom: 24px;
+  margin-top: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .welcome-progress-dot {
+  display: block;
   width: 8px;
   height: 8px;
   border-radius: 999px;
@@ -194,14 +200,12 @@ body {
   font-weight: 600;
   margin: 0 0 6px;
   color: var(--text);
-  animation: welcome-fade-in 0.6s ease both;
 }
 
 .welcome-carousel-pick {
   font-size: 14px;
   margin: 0;
   color: var(--muted);
-  animation: welcome-fade-in 0.6s 0.08s ease both;
 }
 
 @keyframes welcome-hello-glow-pulse {
@@ -233,9 +237,17 @@ body {
   gap: 8px;
   justify-content: center;
   margin-bottom: 8px;
+  margin-inline: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
 }
 
 .welcome-lang-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
   appearance: none;
   border: 1px solid var(--border);
   background: var(--surface-2);
@@ -249,6 +261,19 @@ body {
     border-color 0.15s ease,
     background 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.welcome-lang-chip input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.welcome-lang-chip:has(input:focus-visible),
+.welcome-framework-card:has(input:focus-visible) {
+  outline: 2px solid var(--jp-focus);
+  outline-offset: 3px;
 }
 
 .welcome-lang-chip:hover {
@@ -265,6 +290,10 @@ body {
   display: grid;
   gap: 10px;
   margin-bottom: 8px;
+  margin-inline: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
 }
 
 .welcome-framework-card {
@@ -372,7 +401,7 @@ body {
 }
 
 .welcome-goal-input::placeholder {
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--jp-muted);
   font-weight: 600;
 }
 
@@ -386,7 +415,7 @@ body {
 
 .welcome-tutorial-list {
   margin: 0 0 16px;
-  padding-left: 1.2rem;
+  padding-inline-start: 1.2rem;
   color: var(--muted);
   font-size: 14px;
 }

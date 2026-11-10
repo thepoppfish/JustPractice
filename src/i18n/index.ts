@@ -8,6 +8,7 @@ import es from './locales/es.json';
 import de from './locales/de.json';
 
 export type MessageKey = keyof typeof en;
+export { applyUiLocale } from './applyLocale';
 
 export type { ResolvedLocale } from './localeMeta';
 export {

@@ -73,7 +73,7 @@ import {
   parseYoutubeVideoId,
   resolveYoutubeVideoIdFromPage,
 } from '../lib/youtubeIds';
-import { createTranslator, resolveLocale, type ResolvedLocale } from '../i18n';
+import { applyUiLocale, createTranslator, resolveLocale, type ResolvedLocale } from '../i18n';
 import {
   refreshWatchPanelCalendarSnapshot,
   runWatchPanelAfterJpPracticeStorageChange,
@@ -157,6 +157,8 @@ function practiceCountParams() {
 function refreshPracticeUiFromMeter(): void {
   updateDailyGoalRing();
   if (!shadowRoot) return;
+  // Frequent media samples must not replace the calendar control a keyboard user is using.
+  if (shadowRoot.activeElement?.closest('[part="cal-grid"]')) return;
   if (calendarViewIncludesToday()) {
     renderCalendar(lastDailySnapshot);
   } else {
@@ -344,6 +346,7 @@ function paintCalStreak(dailySeconds: Record<string, number>): void {
 }
 
 function syncWatchPanelLabels(): void {
+  if (shadowRoot) applyUiLocale(panelLocale, shadowRoot.host as HTMLElement);
   syncWatchPanelLabelsUi({
     shadowRoot,
     inLibrary,

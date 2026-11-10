@@ -20,7 +20,9 @@ import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import { aggregatePracticeStats, formatDuration } from '../lib/practiceStats';
 import { levelFromTotalXp, MAX_ACCOUNT_LEVEL, xpIntoCurrentLevel } from '../lib/playerProgress';
 import { escapeAttr, escapeHtml } from '../lib/htmlEscape';
-import { createTranslator, resolveLocale } from '../i18n';
+import { applyUiLocale, createTranslator, resolveLocale } from '../i18n';
+import { attachPopupTabs } from './popupTabs';
+import { rememberUiFocus } from '../lib/restoreUiFocus';
 
 type FilterLevel = '' | 'unset' | 'legacy' | LevelTag;
 
@@ -103,7 +105,8 @@ async function renderAsync(): Promise<void> {
   try {
     data = await loadData();
   } catch {
-    app.innerHTML = `<div class="wrap"><p class="empty">${escapeHtml(createTranslator(resolveLocale(undefined))('popup.loadError'))}</p></div>`;
+    applyUiLocale(resolveLocale(undefined));
+    app.innerHTML = `<main class="wrap"><p class="empty">${escapeHtml(createTranslator(resolveLocale(undefined))('popup.loadError'))}</p></main>`;
     return;
   }
   lastRenderedSignature = signatureOf(data);
@@ -111,7 +114,9 @@ async function renderAsync(): Promise<void> {
   const st = ensureSettingsShape({ ...defaultSettings(), ...data.settings });
   const fw = st.levelFramework ?? 'jlpt';
   const customLevels = st.customLevels ?? [];
-  const t = createTranslator(resolveLocale(st.uiLocale));
+  const locale = resolveLocale(st.uiLocale);
+  applyUiLocale(locale);
+  const t = createTranslator(locale);
 
   const validFilterTags = new Set(tagsForFramework(fw, customLevels));
   if (
@@ -174,30 +179,29 @@ async function renderAsync(): Promise<void> {
     : []),
   ].join('');
 
+  const restoreFocus = rememberUiFocus(app);
   app.innerHTML = `
-    <div class="wrap">
+    <main class="wrap">
       <div class="popup-head">
         <div class="popup-title-row">
           <img class="popup-logo" src="${escapeAttr(appIconUrl(32))}" width="28" height="28" alt="" />
-          <h1>${escapeHtml(APP_NAME)}</h1>
+          <h1 dir="ltr">${escapeHtml(APP_NAME)}</h1>
         </div>
-        <div class="popup-xp-row" aria-label="${escapeAttr(t('progress.xpBarAria'))}">
+        <div class="popup-xp-row">
           <span class="popup-rank-badge">${escapeHtml(t('popup.rank', { level: String(accountLevel) }))}</span>
           ${prestigeBadge}
-          <div class="popup-xp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${maxLevel ? accountLevel : xpBar.xpNeededForNext}" aria-valuenow="${maxLevel ? accountLevel : xpBar.xpIntoLevel}">
+          <div class="popup-xp-bar" role="progressbar" aria-label="${escapeAttr(t('progress.xpBarAria'))}" aria-valuemin="0" aria-valuemax="${maxLevel ? accountLevel : xpBar.xpNeededForNext}" aria-valuenow="${maxLevel ? accountLevel : xpBar.xpIntoLevel}">
             <div class="popup-xp-fill" style="width:${maxLevel ? 100 : xpBar.progressPercent}%"></div>
           </div>
-          <span class="popup-xp-label">${xpLabel}</span>
+          <bdi class="popup-xp-label">${xpLabel}</bdi>
         </div>
       </div>
       <p class="open-dash"><button type="button" class="linkish" id="open-dashboard">${escapeHtml(t('popup.openDashboard'))}</button></p>
-      <div class="tabs">
-        <button type="button" data-tab="library" class="${activeTab === 'library' ? 'active' : ''}">${escapeHtml(t('popup.tabLibrary'))}</button>
-        <button type="button" data-tab="stats" class="${activeTab === 'stats' ? 'active' : ''}">${escapeHtml(t('popup.tabStats'))}</button>
-        <button type="button" data-tab="settings" class="${activeTab === 'settings' ? 'active' : ''}">${escapeHtml(t('popup.tabSettings'))}</button>
+      <div class="tabs" role="tablist" aria-label="${escapeAttr(t('dash.mainNavAria'))}">
+        ${(['library', 'stats', 'settings'] as const).map((tab) => `<button type="button" id="tab-${tab}" role="tab" aria-controls="panel-${tab}" aria-selected="${activeTab === tab}" tabindex="${activeTab === tab ? 0 : -1}" data-tab="${tab}" class="${activeTab === tab ? 'active' : ''}">${escapeHtml(t(tab === 'library' ? 'popup.tabLibrary' : tab === 'stats' ? 'popup.tabStats' : 'popup.tabSettings'))}</button>`).join('')}
       </div>
-      <div id="panel-library" class="panel${activeTab === 'library' ? ' active' : ''}">
-        <input type="search" class="search" placeholder="${escapeAttr(t('popup.searchPlaceholder'))}" value="${escapeAttr(
+      <div id="panel-library" role="tabpanel" aria-labelledby="tab-library" tabindex="0"${activeTab === 'library' ? '' : ' hidden'} class="panel${activeTab === 'library' ? ' active' : ''}">
+        <input type="search" id="popup-search" class="search" dir="auto" aria-label="${escapeAttr(t('popup.searchPlaceholder'))}" placeholder="${escapeAttr(t('popup.searchPlaceholder'))}" value="${escapeAttr(
           searchQuery,
         )}" />
         <div class="filter-row">
@@ -214,26 +218,26 @@ async function renderAsync(): Promise<void> {
           }
         </div>
       </div>
-      <div id="panel-stats" class="panel${activeTab === 'stats' ? ' active' : ''}">
+      <div id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" tabindex="0"${activeTab === 'stats' ? '' : ' hidden'} class="panel${activeTab === 'stats' ? ' active' : ''}">
         <div class="stats-grid">
           <div class="stat-card">
             <h2>${escapeHtml(t('common.today'))}</h2>
-            <div class="value">${formatDuration(today)}</div>
+            <bdi class="value">${formatDuration(today)}</bdi>
           </div>
           <div class="stat-card">
             <h2>${escapeHtml(t('common.thisWeek'))}</h2>
-            <div class="value">${formatDuration(week)}</div>
+            <bdi class="value">${formatDuration(week)}</bdi>
           </div>
           <div class="stat-card">
             <h2>${escapeHtml(t('common.allTime'))}</h2>
-            <div class="value">${formatDuration(all)}</div>
+            <bdi class="value">${formatDuration(all)}</bdi>
           </div>
         </div>
-        <p class="help" style="margin-top:12px;color:var(--muted);font-size:11px;line-height:1.4;">
+        <p class="help stats-help">
           ${escapeHtml(t('popup.helpStats'))}
         </p>
       </div>
-      <div id="panel-settings" class="panel${activeTab === 'settings' ? ' active' : ''}">
+      <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" tabindex="0"${activeTab === 'settings' ? '' : ' hidden'} class="panel${activeTab === 'settings' ? ' active' : ''}">
         <div class="settings">
           <label>
             <input type="checkbox" id="pause-unfocused" ${data.settings.pauseWhenUnfocused ? 'checked' : ''} />
@@ -249,10 +253,10 @@ async function renderAsync(): Promise<void> {
           <p class="help">${escapeHtml(t('settings.showWatchPanelHelp'))}</p>
         </div>
       </div>
-    </div>
+    </main>
   `;
 
-  wireTabs();
+  attachPopupTabs(app, (tab) => { activeTab = tab as PopupTab; });
   app.querySelector('#open-dashboard')?.addEventListener('click', () => {
     void chrome.runtime.openOptionsPage();
   });
@@ -309,6 +313,7 @@ async function renderAsync(): Promise<void> {
     });
     render();
   });
+  restoreFocus();
 }
 
 function libraryItemHtml(
@@ -324,8 +329,8 @@ function libraryItemHtml(
     <div class="item item-with-thumb">
       <img class="item-thumb" src="${escapeAttr(thumbSrc)}" width="120" height="68" alt="" loading="lazy" decoding="async" />
       <div class="item-body">
-        <div class="item-title">${escapeHtml(item.title)}</div>
-        <div class="item-meta">${escapeHtml(item.channel)} · ${escapeHtml(lvl)}</div>
+        <div class="item-title" dir="auto">${escapeHtml(item.title)}</div>
+        <div class="item-meta"><bdi>${escapeHtml(item.channel)}</bdi> · <bdi>${escapeHtml(lvl)}</bdi></div>
         <div class="item-actions">
           <a href="${href}" target="_blank" rel="noreferrer">${escapeHtml(t('common.open'))}</a>
           <button type="button" class="danger" data-remove="${escapeAttr(item.videoId)}">${escapeHtml(t('common.remove'))}</button>
@@ -333,22 +338,6 @@ function libraryItemHtml(
       </div>
     </div>
   `;
-}
-
-function wireTabs(): void {
-  const buttons = app.querySelectorAll<HTMLButtonElement>('.tabs button');
-  const panels = app.querySelectorAll<HTMLElement>('.panel');
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const tab = btn.getAttribute('data-tab');
-      if (tab === 'library' || tab === 'stats' || tab === 'settings') activeTab = tab;
-      buttons.forEach((b) => b.classList.toggle('active', b === btn));
-      panels.forEach((p) => {
-        const id = p.id.replace('panel-', '');
-        p.classList.toggle('active', id === tab);
-      });
-    });
-  });
 }
 
 let storageRenderTimer: ReturnType<typeof setTimeout> | null = null;

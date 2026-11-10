@@ -26,7 +26,6 @@ import {
   canPrestige,
   isWeekendPracticeBonusActive,
   levelFromTotalXp,
-  MAX_ACCOUNT_LEVEL,
   MAX_PRESTIGE_LEVEL,
   PRESTIGE_XP_BONUS_PER_LEVEL,
   xpIntoCurrentLevel,
@@ -203,17 +202,17 @@ export function buildDashboardViewModel(input: {
   );
 
   const filterChipsInner = `
-              <button type="button" class="filter-chip ${libraryLevelFilter === '' ? 'is-active' : ''}" data-level-filter="all">${escapeHtml(t('dash.filterAll'))}</button>
-              <button type="button" class="filter-chip ${libraryLevelFilter === 'unset' ? 'is-active' : ''}" data-level-filter="unset">${escapeHtml(t('common.unrated'))}</button>
+              <button type="button" class="filter-chip ${libraryLevelFilter === '' ? 'is-active' : ''}" data-level-filter="all" aria-pressed="${libraryLevelFilter === ''}">${escapeHtml(t('dash.filterAll'))}</button>
+              <button type="button" class="filter-chip ${libraryLevelFilter === 'unset' ? 'is-active' : ''}" data-level-filter="unset" aria-pressed="${libraryLevelFilter === 'unset'}">${escapeHtml(t('common.unrated'))}</button>
               ${tagsForFramework(fw, customLevels)
                 .map(
                   (L) =>
-                    `<button type="button" class="filter-chip ${libraryLevelFilter === L ? 'is-active' : ''}" data-level-filter="${escapeAttr(L)}">${escapeHtml(L)}</button>`,
+                    `<button type="button" class="filter-chip ${libraryLevelFilter === L ? 'is-active' : ''}" data-level-filter="${escapeAttr(L)}" aria-pressed="${libraryLevelFilter === L}">${escapeHtml(L)}</button>`,
                 )
                 .join('')}
               ${
                 hasLegacyVideos
-                  ? `<button type="button" class="filter-chip ${libraryLevelFilter === 'legacy' ? 'is-active' : ''}" data-level-filter="legacy">${escapeHtml(t('dash.filterLegacy'))}</button>`
+                  ? `<button type="button" class="filter-chip ${libraryLevelFilter === 'legacy' ? 'is-active' : ''}" data-level-filter="legacy" aria-pressed="${libraryLevelFilter === 'legacy'}">${escapeHtml(t('dash.filterLegacy'))}</button>`
                   : ''
               }`;
 

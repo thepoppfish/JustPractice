@@ -447,5 +447,9 @@
   "dash.restoreUnsupportedVersion": "Diese Sicherung verwendet eine nicht unterstützte Version. Aktualisiere JustPractice oder wähle einen unterstützten Export.",
   "dash.restoreTooLarge": "Diese Sicherung ist zu groß. Wähle einen JSON-Export mit weniger als 8 MB.",
   "dash.restoreSummary": "{videos} gespeicherte Videos ({completed} abgeschlossen) und {minutes} Übungsminuten wiederherstellen.",
-  "dash.libraryWelcomeHint": "Pausiere das Video oder wechsle den Tab, um die Erfassung zu pausieren. Fokusoptionen findest du in den Einstellungen."
+  "dash.libraryWelcomeHint": "Pausiere das Video oder wechsle den Tab, um die Erfassung zu pausieren. Fokusoptionen findest du in den Einstellungen.",
+  "yearHeatmap.prevYear": "Vorheriges Jahr",
+  "yearHeatmap.nextYear": "Nächstes Jahr",
+  "panel.moveHint": "Panel mit den Pfeiltasten bewegen. Mit Umschalt sind die Schritte größer.",
+  "yearHeatmap.keyboardHelp": "Mit Pfeiltasten Tage oder Wochen wählen, mit Pos1/Ende zum Anfang oder Ende springen und mit Eingabe einen Monat öffnen."
 }

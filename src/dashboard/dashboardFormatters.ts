@@ -51,7 +51,7 @@ export function dashWelcomeHtml(
 ): string {
   const greeting =
     displayName.trim().length > 0
-      ? t('dash.helloName', { name: displayName.trim() })
+      ? t('dash.helloName', { name: '\u2068' + displayName.trim() + '\u2069' })
       : t('dash.hello');
   const motivation =
     dailyMotivationMessage

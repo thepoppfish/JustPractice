@@ -46,6 +46,7 @@ export function startHelloCarousel(p: {
 
   let running = true;
   let animating = false;
+  let activeAnimation: ReturnType<typeof animate> | null = null;
   let holdTimer: ReturnType<typeof setTimeout> | null = null;
 
   const holdMs = p.reducedMotion ? 2400 : 1050;
@@ -82,7 +83,7 @@ export function startHelloCarousel(p: {
       return;
     }
     animating = true;
-    animate([p.helloEl, p.labelEl], {
+    activeAnimation = animate([p.helloEl, p.labelEl], {
       opacity: [1, 0],
       translateY: [0, -16],
       scale: [1, 0.94],
@@ -95,7 +96,7 @@ export function startHelloCarousel(p: {
         }
         index = next;
         applySlide(index);
-        animate([p.helloEl, p.labelEl], {
+        activeAnimation = animate([p.helloEl, p.labelEl], {
           opacity: [0, 1],
           translateY: [20, 0],
           scale: [0.9, 1],
@@ -113,12 +114,17 @@ export function startHelloCarousel(p: {
   applySlide(index);
   p.helloEl.style.opacity = '1';
   p.labelEl.style.opacity = '1';
-  scheduleNext();
+  if (!p.reducedMotion) scheduleNext();
 
   return {
     stop: () => {
       running = false;
       clearHoldTimer();
+      activeAnimation?.cancel();
+      for (const el of [p.helloEl, p.labelEl]) {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      }
     },
   };
 }

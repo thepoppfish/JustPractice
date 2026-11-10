@@ -52,39 +52,39 @@ export function dashboardSidebarHtml(vm: DashboardViewModel): string {
       <aside class="sidebar" aria-label="${escapeHtml(vm.t('dash.mainNavAria'))}">
         <div class="brand">
           <img class="brand-logo" src="${escapeAttr(appIconUrl(48))}" width="36" height="36" alt="" />
-          <span class="brand-text">Just<span class="brand-accent">Practice</span></span>
+          <h1 class="brand-text" dir="ltr">Just<span class="brand-accent">Practice</span></h1>
         </div>
         <nav class="side-nav">
           <div class="nav-group">
             <div class="nav-label">${escapeHtml(vm.t('nav.groupPractice'))}</div>
-            <button type="button" class="${vm.navItemClass('library')}" data-view="library">
+            <button type="button" class="${vm.navItemClass('library')}" data-view="library" aria-current="${vm.navItemClass('library').includes('is-active') ? 'page' : 'false'}">
               <span class="nav-ico" aria-hidden="true">${icoLibrary()}</span>
               ${escapeHtml(vm.t('nav.library'))}
             </button>
-            <button type="button" class="${vm.navItemClass('path')}" data-view="path">
+            <button type="button" class="${vm.navItemClass('path')}" data-view="path" aria-current="${vm.navItemClass('path').includes('is-active') ? 'page' : 'false'}">
               <span class="nav-ico" aria-hidden="true">${icoClock()}</span>
               ${escapeHtml(vm.t('nav.path'))}
             </button>
-            <button type="button" class="${vm.navItemClass('completed')}" data-view="completed">
+            <button type="button" class="${vm.navItemClass('completed')}" data-view="completed" aria-current="${vm.navItemClass('completed').includes('is-active') ? 'page' : 'false'}">
               <span class="nav-ico" aria-hidden="true">${icoCheck()}</span>
               ${escapeHtml(vm.t('nav.completed'))}
             </button>
-            <button type="button" class="${vm.navItemClass('stats')}" data-view="stats">
+            <button type="button" class="${vm.navItemClass('stats')}" data-view="stats" aria-current="${vm.navItemClass('stats').includes('is-active') ? 'page' : 'false'}">
               <span class="nav-ico" aria-hidden="true">${icoChart()}</span>
               ${escapeHtml(vm.t('nav.stats'))}
             </button>
-            <button type="button" class="${vm.navItemClass('progress')}" data-view="progress">
+            <button type="button" class="${vm.navItemClass('progress')}" data-view="progress" aria-current="${vm.navItemClass('progress').includes('is-active') ? 'page' : 'false'}">
               <span class="nav-ico" aria-hidden="true">${icoTrophy()}</span>
               ${escapeHtml(vm.t('nav.progress'))}
             </button>
-            <button type="button" class="${vm.navItemClass('goals')}" data-view="goals">
+            <button type="button" class="${vm.navItemClass('goals')}" data-view="goals" aria-current="${vm.navItemClass('goals').includes('is-active') ? 'page' : 'false'}">
               <span class="nav-ico" aria-hidden="true">${icoTarget()}</span>
               ${escapeHtml(vm.t('nav.goals'))}
             </button>
           </div>
           <div class="nav-group">
             <div class="nav-label">${escapeHtml(vm.t('nav.groupApp'))}</div>
-            <button type="button" class="${vm.navItemClass('settings')}" data-view="settings">
+            <button type="button" class="${vm.navItemClass('settings')}" data-view="settings" aria-current="${vm.navItemClass('settings').includes('is-active') ? 'page' : 'false'}">
               <span class="nav-ico" aria-hidden="true">${icoGear()}</span>
               ${escapeHtml(vm.t('nav.settings'))}
             </button>
@@ -128,7 +128,7 @@ export function dashboardTopbarHtml(vm: DashboardViewModel, searchQuery: string)
 ${dashboardTopbarMetricsHtml(vm)}
           <div class="topbar-search">
             <span class="search-ico" aria-hidden="true">${icoSearch()}</span>
-            <input type="search" id="dash-search" class="search-pill" placeholder="${escapeAttr(
+            <input type="search" id="dash-search" dir="auto" aria-label="${escapeAttr(vm.t('dash.searchPlaceholder'))}" class="search-pill" placeholder="${escapeAttr(
               vm.t('dash.searchPlaceholder'),
             )}" value="${escapeAttr(searchQuery)}" autocomplete="off" />
           </div>
@@ -155,13 +155,13 @@ export function libraryPanelBodyHtml(vm: DashboardViewModel): string {
                       <img class="card-thumb" src="${escapeAttr(thumb)}" width="320" height="180" alt="" loading="lazy" decoding="async" />
                       <span class="card-badge">${escapeHtml(lvl)}</span>
                       <div class="card-shade" aria-hidden="true"></div>
-                      <h3 class="card-title">${escapeHtml(item.title)}</h3>
+                      <h3 class="card-title" dir="auto">${escapeHtml(item.title)}</h3>
                     </div>
                   </a>
                   <div class="card-footer">
                     <div class="card-meta">
-                      <span class="card-ch">${escapeHtml(item.channel)}</span>
-                      <span class="card-time">${formatDuration(seconds)}</span>
+                      <bdi class="card-ch">${escapeHtml(item.channel)}</bdi>
+                      <bdi class="card-time">${formatDuration(seconds)}</bdi>
                     </div>
                     <button type="button" class="btn-remove" data-remove="${escapeAttr(item.videoId)}">${escapeHtml(vm.t('common.remove'))}</button>
                   </div>
@@ -175,7 +175,7 @@ export function dashboardLibrarySectionHtml(vm: DashboardViewModel): string {
   return `
           <section class="${vm.viewPanelClass('library')} dash-section-center" data-view-panel="library" aria-label="${escapeHtml(vm.t('nav.library'))}">
             <h2 class="row-title dash-section-head">${escapeHtml(vm.t('dash.titleLibrary'))}</h2>
-            <div class="filter-chips" role="toolbar" aria-label="${escapeAttr(vm.t('dash.filterAria'))}">
+            <div class="filter-chips" role="group" aria-label="${escapeAttr(vm.t('dash.filterAria'))}">
 ${vm.filterChipsInner}
             </div>
             <div class="library-panel-body" data-library-body>${libraryPanelBodyHtml(vm)}</div>
@@ -202,15 +202,15 @@ export function dashboardCompletedSectionHtml(vm: DashboardViewModel): string {
                     <div class="card-media">
                       <img class="card-thumb" src="${escapeAttr(thumb)}" width="320" height="180" alt="" loading="lazy" decoding="async" />
                       <span class="card-badge card-badge--completed">${escapeHtml(vm.t('dash.completedBadge'))}</span>
-                      <span class="card-badge card-badge--level">${escapeHtml(lvl)}</span>
+                      <span class="card-badge card-badge--level" dir="auto">${escapeHtml(lvl)}</span>
                       <div class="card-shade" aria-hidden="true"></div>
-                      <h3 class="card-title">${escapeHtml(item.title)}</h3>
+                      <h3 class="card-title" dir="auto">${escapeHtml(item.title)}</h3>
                     </div>
                   </a>
                   <div class="card-footer">
                     <div class="card-meta">
-                      <span class="card-ch">${escapeHtml(item.channel)}</span>
-                      <span class="card-time">${formatDuration(seconds)}</span>
+                      <bdi class="card-ch">${escapeHtml(item.channel)}</bdi>
+                      <bdi class="card-time">${formatDuration(seconds)}</bdi>
                       ${
                         completedOn ?
                           `<span class="card-completed-date">${escapeHtml(vm.t('dash.completedOn', { date: completedOn }))}</span>`
@@ -428,7 +428,7 @@ export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
   const categoryFilters = vm.achievementCategories
     .map(
       (cat) =>
-        `<button type="button" class="filter-chip" data-ach-filter="${escapeAttr(cat)}">${escapeHtml(vm.t(`progress.category.${cat}`))}</button>`,
+        `<button type="button" class="filter-chip" data-ach-filter="${escapeAttr(cat)}" aria-pressed="false">${escapeHtml(vm.t(`progress.category.${cat}`))}</button>`,
     )
     .join('');
 
@@ -482,7 +482,7 @@ export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
                         <div class="progress-xp-bar-fill" style="width:${barWidth}%"></div>
                         <span class="progress-xp-bar-milestone" aria-hidden="true"></span>
                       </div>
-                  <p class="progress-xp-bar-label">
+                  <p class="progress-xp-bar-label"><bdi>
                     ${
                       maxLevel
                         ? escapeHtml(vm.t('progress.maxLevel'))
@@ -493,43 +493,43 @@ export function dashboardProgressSectionHtml(vm: DashboardViewModel): string {
                             }),
                           )
                     }
-                      </p>
+                      </bdi></p>
                     </div>
                     <p class="progress-total-xp">${escapeHtml(vm.t('progress.cycleXp', { xp: String(vm.totalXp) }))}</p>
                     <p class="progress-lifetime-xp">${escapeHtml(vm.t('progress.lifetimeXp', { xp: String(vm.lifetimeXp) }))}</p>
                   </div>
                 </div>
                 ${prestigeCtaHtml}
-                <div class="progress-momentum-stats" role="list">
-                  <article class="progress-momentum-stat" role="listitem">
+                <ul class="progress-momentum-stats">
+                  <li class="progress-momentum-stat">
                     <span class="progress-momentum-stat__ico" aria-hidden="true">${icoClock()}</span>
                     <div class="progress-momentum-stat__text">
                       <span class="progress-momentum-stat__label">${escapeHtml(vm.t('common.today'))}</span>
                       <span class="progress-momentum-stat__value">${formatDuration(vm.today)}</span>
                     </div>
-                  </article>
-                  <article class="progress-momentum-stat" role="listitem">
+                  </li>
+                  <li class="progress-momentum-stat">
                     <span class="progress-momentum-stat__ico progress-momentum-stat__ico--flame" aria-hidden="true">${icoFlame()}</span>
                     <div class="progress-momentum-stat__text">
                       <span class="progress-momentum-stat__label">${escapeHtml(vm.t('progress.statStreak'))}</span>
                       <span class="progress-momentum-stat__value progress-momentum-stat__value--streak">${streakValue}</span>
                     </div>
-                  </article>
-                  <article class="progress-momentum-stat" role="listitem">
+                  </li>
+                  <li class="progress-momentum-stat">
                     <span class="progress-momentum-stat__ico" aria-hidden="true">${icoCheck()}</span>
                     <div class="progress-momentum-stat__text">
                       <span class="progress-momentum-stat__label">${escapeHtml(vm.t('nav.completed'))}</span>
                       <span class="progress-momentum-stat__value">${vm.completedCount}</span>
                     </div>
-                  </article>
-                </div>
+                  </li>
+                </ul>
               </div>
             </div>
             </div>
             <h2 class="row-title row-title--spaced">${escapeHtml(vm.t('progress.achievementsTitle'))}</h2>
             <p class="row-sub row-sub--tight">${escapeHtml(vm.t('progress.achievementsIntro'))}</p>
-            <div class="filter-chips progress-trophy-filters" role="toolbar" aria-label="${escapeHtml(vm.t('progress.achievementFiltersAria'))}">
-              <button type="button" class="filter-chip is-active" data-ach-filter="all">${escapeHtml(vm.t('dash.filterAll'))}</button>
+            <div class="filter-chips progress-trophy-filters" role="group" aria-label="${escapeHtml(vm.t('progress.achievementFiltersAria'))}">
+              <button type="button" class="filter-chip is-active" data-ach-filter="all" aria-pressed="true">${escapeHtml(vm.t('dash.filterAll'))}</button>
               ${categoryFilters}
             </div>
             <div class="achievement-sections">

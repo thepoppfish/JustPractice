@@ -1,3 +1,5 @@
+@import '../styles/accessibility.css';
+
 :root {
   color-scheme: dark;
   --bg: #0a0a0a;
@@ -7,7 +9,7 @@
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.12);
   --text: #f1f1f1;
-  --muted: #8e9298;
+  --muted: var(--jp-muted);
   --accent: #ff6b26;
   --accent-soft: rgba(255, 107, 38, 0.14);
   --accent-glow: rgba(255, 107, 38, 0.35);
@@ -53,7 +55,7 @@ body {
 /* Sidebar */
 .sidebar {
   background: var(--bg-panel);
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   padding: 22px 14px 28px;
   display: flex;
   flex-direction: column;
@@ -65,7 +67,7 @@ body {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    border-right: none;
+    border-inline-end: none;
     border-bottom: 1px solid var(--border);
     padding: 14px 16px;
     gap: 12px;
@@ -110,6 +112,7 @@ body {
 }
 
 .brand-text {
+  margin: 0;
   font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -151,7 +154,7 @@ body {
   align-items: center;
   gap: 10px;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: 10px 12px;
   border: none;
   border-radius: 10px;
@@ -276,7 +279,7 @@ body {
 
 .search-ico {
   position: absolute;
-  left: 14px;
+  inset-inline-start: 14px;
   color: var(--muted);
   pointer-events: none;
   display: flex;
@@ -284,7 +287,8 @@ body {
 
 .search-pill {
   width: 100%;
-  padding: 11px 14px 11px 42px;
+  padding-block: 11px;
+  padding-inline: 42px;
   border-radius: 999px;
   border: 1px solid var(--border-strong);
   background: var(--surface);
@@ -298,7 +302,7 @@ body {
 }
 
 .search-pill::placeholder {
-  color: #6a6f76;
+  color: var(--jp-muted);
 }
 
 .search-pill:focus {
@@ -407,7 +411,7 @@ body {
 .card-badge {
   position: absolute;
   top: 10px;
-  left: 10px;
+  inset-inline-start: 10px;
   z-index: 2;
   padding: 4px 10px;
   border-radius: 999px;
@@ -421,7 +425,7 @@ body {
 
 .card-badge--completed {
   top: 10px;
-  left: 10px;
+  inset-inline-start: 10px;
   background: rgba(66, 198, 111, 0.88);
   border-color: rgba(120, 230, 160, 0.55);
   color: #0a1a10;
@@ -429,8 +433,8 @@ body {
 
 .card-badge--level {
   top: 10px;
-  left: auto;
-  right: 10px;
+  inset-inline-start: auto;
+  inset-inline-end: 10px;
 }
 
 .video-card--completed .card-media {
@@ -475,6 +479,9 @@ body {
 }
 
 .card-title {
+  background: rgba(10, 10, 10, 0.86);
+  box-shadow: 0 0 0 4px rgba(10, 10, 10, 0.86);
+  border-radius: 3px;
   position: absolute;
   left: 12px;
   right: 12px;
@@ -872,7 +879,7 @@ body {
 
 .chart-val--neutral,
 .chart-val--future {
-  color: #6a6d72;
+  color: var(--jp-muted);
 }
 
 .level-grid {
@@ -1334,7 +1341,7 @@ body {
   grid-row: 1;
   justify-self: start;
   align-self: end;
-  text-align: left;
+  text-align: start;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1697,7 +1704,7 @@ body {
 
 .custom-daily-messages-text {
   flex: 1;
-  text-align: left;
+  text-align: start;
   font-size: 14px;
 }
 
@@ -1919,12 +1926,12 @@ body {
 .year-hm-month-slot--prev .year-hm-month-slot-scale,
 .year-hm-month-slot--next .year-hm-month-slot-scale {
   transform: scale(0.72);
-  opacity: 0.4;
+  opacity: 1;
 }
 
 .year-hm-month-slot--prev:hover .year-hm-month-slot-scale,
 .year-hm-month-slot--next:hover .year-hm-month-slot-scale {
-  opacity: 0.55;
+  opacity: 1;
   transform: scale(0.76);
 }
 
@@ -2160,11 +2167,11 @@ body {
 }
 
 .month-hm-time--missed {
-  opacity: 0.55;
+  color: var(--muted);
 }
 
 .month-hm-time--empty {
-  opacity: 0.35;
+  color: var(--muted);
 }
 
 .year-hm--dashboard .month-hm-time--under,
@@ -2190,7 +2197,7 @@ body {
   width: 100%;
   max-width: 720px;
   margin: 0 auto 28px;
-  text-align: left;
+  text-align: start;
 }
 
 .dash-section-center[data-view-panel='progress'] .progress-journey-lead {
@@ -2199,14 +2206,14 @@ body {
   font-size: 14px;
   line-height: 1.5;
   color: var(--muted);
-  text-align: left;
+  text-align: start;
 }
 
 .dash-section-center[data-view-panel='progress'] .progress-journey-meta,
 .dash-section-center[data-view-panel='progress'] .progress-xp-bar-label,
 .dash-section-center[data-view-panel='progress'] .progress-total-xp,
 .dash-section-center[data-view-panel='progress'] .progress-lifetime-xp {
-  text-align: left;
+  text-align: start;
 }
 
 .dash-section-center[data-view-panel='progress'] .progress-journey-meta__head {
@@ -2227,7 +2234,7 @@ body {
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(255, 107, 38, 0.12) 0%, rgba(12, 12, 12, 0.85) 100%);
   box-shadow: 0 0 0 1px rgba(255, 107, 38, 0.08) inset;
-  text-align: left;
+  text-align: start;
   overflow: hidden;
 }
 
@@ -2272,7 +2279,7 @@ body {
   height: 0;
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
-  border-left: 7px solid var(--accent);
+  border-inline-start: 7px solid var(--accent);
   transition: transform 0.15s ease;
 }
 
@@ -2351,7 +2358,7 @@ body {
 
 .progress-xp-guide__list {
   margin: 0;
-  padding-left: 1.15em;
+  padding-inline-start: 1.15em;
 }
 
 .progress-xp-guide__list li {
@@ -2686,6 +2693,8 @@ body {
 }
 
 .progress-momentum-stats {
+  list-style: none;
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
@@ -3562,4 +3571,21 @@ body {
   font-size: 12px;
   font-weight: 700;
   color: #58cc02;
+}
+
+/* Charts keep chronological order while surrounding Hebrew content follows RTL. */
+.year-hm-chart, .year-hm-month-carousel { direction: ltr; }
+.brand-text { direction: ltr; unicode-bidi: isolate; }
+
+.month-hm-week { display: contents; }
+.year-hm-month-title { margin: 0; }
+
+@media (max-width: 800px) {
+  .year-hm--dashboard .year-hm-month-slot--prev,
+  .year-hm--dashboard .year-hm-month-slot--next { display: none; }
+  .year-hm--dashboard .year-hm-month-carousel-track > .year-hm-month-slot--center {
+    flex: 0 1 300px;
+    width: min(300px, 100%);
+    min-width: 0;
+  }
 }

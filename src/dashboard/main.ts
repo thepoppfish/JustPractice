@@ -9,7 +9,8 @@ import { startStorageSyncPoll } from '../lib/storageSyncPoll';
 import { signatureOf } from '../lib/dataSignature';
 import { isPlaceholderYoutubePageTitle } from '../lib/youtubePageTitle';
 import { escapeHtml } from '../lib/htmlEscape';
-import { createTranslator, resolveLocale } from '../i18n';
+import { rememberUiFocus } from '../lib/restoreUiFocus';
+import { applyUiLocale, createTranslator, resolveLocale } from '../i18n';
 import { buildDashboardViewModel, type DashView } from './dashboardViewModel';
 import { dashboardShellHtml } from './dashboardTemplates';
 import {
@@ -302,6 +303,11 @@ function switchView(view: DashView): void {
   activeView = view;
   persistDashView(view);
   switchActiveView(app, view);
+  const heading = app.querySelector<HTMLElement>(`[data-view-panel="${view}"] h2`);
+  if (heading) {
+    heading.tabIndex = -1;
+    heading.focus();
+  }
 }
 
 function refreshLibraryPanels(): void {
@@ -347,10 +353,10 @@ async function refreshAfterMutation(panels: readonly DashView[] = defaultMutatio
   const vm = buildVm(data);
   libraryLevelFilter = vm.libraryLevelFilter;
 
-  document.documentElement.setAttribute('lang', vm.resolvedLocale);
-  document.documentElement.setAttribute('dir', vm.resolvedLocale === 'he' ? 'rtl' : 'ltr');
+  applyUiLocale(vm.resolvedLocale);
 
   const needsChrome = panels.some((p) => p === 'settings');
+  const restoreFocus = rememberUiFocus(app);
   const needsTopbar =
     panels.includes('library') ||
     panels.includes('path') ||
@@ -367,6 +373,7 @@ async function refreshAfterMutation(panels: readonly DashView[] = defaultMutatio
   switchActiveView(app, activeView);
   await persistPathPlanIfNeeded(vm);
   bindDashboardListeners(vm);
+  restoreFocus();
   if (panels.includes('path')) {
     refreshPathTrailLayout(app);
     scheduleRoadmapCelebration(vm);
@@ -403,8 +410,7 @@ async function renderAsync(): Promise<void> {
   const vm = buildVm(data);
   libraryLevelFilter = vm.libraryLevelFilter;
 
-  document.documentElement.setAttribute('lang', vm.resolvedLocale);
-  document.documentElement.setAttribute('dir', vm.resolvedLocale === 'he' ? 'rtl' : 'ltr');
+  applyUiLocale(vm.resolvedLocale);
 
   requestLibraryMetaEnrich(data);
   scheduleLibraryDurationBackfill(data);
@@ -420,10 +426,12 @@ async function renderAsync(): Promise<void> {
   }
 
   suppressStorageRender();
+  const restoreFocus = rememberUiFocus(app);
   patchDashboardChrome(app, vm, searchQuery);
   patchDashboardPanels(app, vm, DASH_VIEWS);
   switchActiveView(app, activeView);
   bindDashboardListeners(vm);
+  restoreFocus();
   if (activeView === 'path') {
     refreshPathTrailLayout(app);
     scheduleRoadmapCelebration(vm);

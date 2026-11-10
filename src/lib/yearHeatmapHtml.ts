@@ -175,9 +175,9 @@ function yearHeatmapNavHtml(opts: YearHeatmapHtmlOptions): string {
   const yearInner =
     opts.hideYearNav
       ? ''
-      : `<button type="button" class="secondary year-hm-prev" aria-label="${escapeAttr(opts.navPrevLabel)}">‹</button>
+      : `<button type="button" id="jp-year-prev-${opts.variant}" class="secondary year-hm-prev" aria-label="${escapeAttr(opts.navPrevLabel)}">‹</button>
         <span class="year-hm-year">${opts.grid.year}</span>${flawlessBadge}
-        <button type="button" class="secondary year-hm-next" aria-label="${escapeAttr(opts.navNextLabel)}">›</button>`;
+        <button type="button" id="jp-year-next-${opts.variant}" class="secondary year-hm-next" aria-label="${escapeAttr(opts.navNextLabel)}">›</button>`;
   if (!yearInner && !backBtn) return '';
   return `
       <div class="year-hm-nav" data-year-hm-nav>
@@ -225,7 +225,7 @@ export function yearHeatmapSectionHtml(opts: YearHeatmapHtmlOptions): string {
   const navHtml = opts.hideYearNav ? '' : yearHeatmapNavHtml(opts);
 
   return `
-    <div class="year-hm ${variantClass}${allGreenClass}" data-year-hm-root aria-label="${escapeAttr(opts.ariaLabel)}">
+    <div class="year-hm ${variantClass}${allGreenClass}" data-year-hm-root role="group" aria-label="${escapeAttr(opts.ariaLabel)}">
       ${navHtml}
       <div class="year-hm-stage" data-year-hm-stage>
         <div class="year-hm-year-layer" data-year-hm-year-layer>

@@ -5,13 +5,13 @@ import { buildMonthDetailGrid } from './yearHeatmapMonth';
 import type { MonthDetailCell, MonthDetailGrid } from './yearHeatmapMonth';
 import { yearHeatmapWeekdayLabels } from './yearHeatmapHtml';
 import type { YearHeatmapPracticeData } from './yearHeatmapMonth';
-import type { YearHeatmapTranslate } from './yearHeatmapHtml';
+import type { YearHeatmapTranslate, YearHeatmapStatusLabelFn } from './yearHeatmapHtml';
 
 export function monthHeatmapLegendHtml(t: YearHeatmapTranslate): string {
   const red = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--none"></span>${escapeHtml(String(t('dash.chartKeyNone')))}</span>`;
   const green = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--active"></span>${escapeHtml(String(t('dash.chartKeyActive')))}</span>`;
   const missed = `<span class="year-hm-key"><span class="month-hm-legend-mark" aria-hidden="true">X</span>${escapeHtml(String(t('dash.monthHeatmapLegendX')))}</span>`;
-  return `<div class="month-hm-legend year-hm-keys-row" aria-label="${escapeAttr(String(t('dash.monthHeatmapLegendAria')))}">${red}${green}${missed}</div>`;
+  return `<div class="month-hm-legend year-hm-keys-row" role="group" aria-label="${escapeAttr(String(t('dash.monthHeatmapLegendAria')))}">${red}${green}${missed}</div>`;
 }
 
 function monthDayClass(cell: MonthDetailCell): string {
@@ -45,27 +45,29 @@ function monthCellTimeHtml(cell: MonthDetailCell, peek: boolean): string {
   return '<span class="month-hm-time month-hm-time--empty" aria-hidden="true">—</span>';
 }
 
-function monthChartHtml(detail: MonthDetailGrid, locale?: string, peek = false): string {
+function monthChartHtml(detail: MonthDetailGrid, locale?: string, peek = false, statusLabel?: YearHeatmapStatusLabelFn): string {
   const weekdays = yearHeatmapWeekdayLabels(locale);
   const dowHtml = weekdays
-    .map((w) => `<span class="month-hm-dow">${escapeHtml(w)}</span>`)
+    .map((w, i) => `<span class="month-hm-dow" role="columnheader" aria-label="${escapeAttr(new Date(2024, 0, 7 + i).toLocaleDateString(locale, { weekday: 'long' }))}">${escapeHtml(w)}</span>`)
     .join('');
   const cellsHtml = detail.cells
-    .map((cell) => {
+    .map((cell, index) => {
+      const open = index % 7 === 0 ? '<div class="month-hm-week" role="row">' : '';
+      const close = index % 7 === 6 || index === detail.cells.length - 1 ? '</div>' : '';
       if (cell.kind === 'pad') {
-        return '<span class="month-hm-cell month-hm-cell--empty" aria-hidden="true"></span>';
+        return `${open}<span class="month-hm-cell month-hm-cell--empty" role="cell" aria-hidden="true"></span>${close}`;
       }
-      return `<div class="${monthDayClass(cell)}" data-date="${escapeAttr(cell.dateKey)}" role="gridcell">
+      return `${open}<div class="${monthDayClass(cell)}" data-date="${escapeAttr(cell.dateKey)}" role="cell" aria-colindex="${index % 7 + 1}" aria-label="${escapeAttr(statusLabel?.(cell.display, cell.dateKey, cell.seconds, true) ?? cell.dateKey)}">
         <span class="month-hm-day-num">${cell.dayOfMonth}</span>
         ${monthCellTimeHtml(cell, peek)}
-      </div>`;
+      </div>${close}`;
     })
     .join('');
 
   return `
-      <div class="month-hm-chart" role="grid" aria-label="${escapeAttr(detail.label)}">
-        <div class="month-hm-dow-header" aria-hidden="true">${dowHtml}</div>
-        <div class="month-hm-cells">${cellsHtml}</div>
+      <div class="month-hm-chart" role="table" aria-colcount="7" aria-label="${escapeAttr(detail.label)}">
+        <div class="month-hm-dow-header" role="row">${dowHtml}</div>
+        <div class="month-hm-cells" role="rowgroup">${cellsHtml}</div>
       </div>`;
 }
 
@@ -75,6 +77,8 @@ function monthDetailCardInnerHtml(
   peek: boolean,
   monthLegendHtml = '',
   monthlyGoalMetLabel = '',
+  locale?: string,
+  statusLabel?: YearHeatmapStatusLabelFn,
 ): string {
   const goldenClass = detail.isGoldenMonth ? ' year-hm-month-detail--golden' : '';
   const diamondClass = detail.isDiamondMonth ? ' year-hm-month-detail--diamond' : '';
@@ -96,11 +100,11 @@ function monthDetailCardInnerHtml(
   return `
       <div class="year-hm-month-detail${goldenClass}${diamondClass}${peekClass}" data-month-detail>
         <div class="year-hm-month-heading">
-          <span class="year-hm-month-title">${escapeHtml(detail.label)}${flawlessMonthMark}</span>
+          <h3 class="year-hm-month-title">${escapeHtml(detail.label)}${flawlessMonthMark}</h3>
           ${monthlyGoalBadge}
           ${totalLine}
         </div>
-        ${monthChartHtml(detail, undefined, peek)}
+        ${monthChartHtml(detail, locale, peek, statusLabel)}
         ${legendBlock}
       </div>`;
 }
@@ -109,7 +113,7 @@ export function monthDetailCardHtml(
   detail: MonthDetailGrid,
   formatMonthTotal: (totalSec: number) => string,
   peek = false,
-  p?: { monthLegendHtml?: string; monthlyGoalMetLabel?: string },
+  p?: { monthLegendHtml?: string; monthlyGoalMetLabel?: string; locale?: string; statusLabel?: YearHeatmapStatusLabelFn },
 ): string {
   return `<div class="year-hm-month-slot-scale">${monthDetailCardInnerHtml(
     detail,
@@ -117,6 +121,8 @@ export function monthDetailCardHtml(
     peek,
     p?.monthLegendHtml ?? '',
     p?.monthlyGoalMetLabel ?? '',
+    p?.locale,
+    p?.statusLabel,
   )}</div>`;
 }
 
@@ -127,7 +133,7 @@ export function monthDetailLayerHtml(
 ): string {
   const formatMonthTotal =
     p.formatMonthTotal ?? ((sec) => `${formatDuration(sec)} total`);
-  return monthDetailCardHtml(detail, formatMonthTotal);
+  return monthDetailCardHtml(detail, formatMonthTotal, false, { locale: p.locale });
 }
 
 export interface MonthCarouselHtmlOptions {
@@ -141,6 +147,7 @@ export interface MonthCarouselHtmlOptions {
   formatMonthTotal: (totalSec: number) => string;
   monthLegendHtml?: string;
   monthlyGoalMetLabel?: string;
+  statusLabel?: YearHeatmapStatusLabelFn;
 }
 
 function buildDetail(
@@ -174,7 +181,7 @@ export function monthCarouselLayerHtml(opts: MonthCarouselHtmlOptions): string {
     monthLegendHtml = '',
     monthlyGoalMetLabel = '',
   } = opts;
-  const monthExtras = { monthLegendHtml, monthlyGoalMetLabel };
+  const monthExtras = { monthLegendHtml, monthlyGoalMetLabel, locale, statusLabel: opts.statusLabel };
   const canPrev = monthIndex > 0;
   const canNext = monthIndex < 11;
 
@@ -185,15 +192,15 @@ export function monthCarouselLayerHtml(opts: MonthCarouselHtmlOptions): string {
 
   const prevSlot =
     prevDetail
-      ? `<div class="year-hm-month-slot year-hm-month-slot--prev" data-year-hm-month-slot="prev" data-month-index="${monthIndex - 1}" title="${escapeAttr(prevDetail.label)}">
-        ${monthDetailCardHtml(prevDetail, formatMonthTotal, true)}
+      ? `<div class="year-hm-month-slot year-hm-month-slot--prev" data-year-hm-month-slot="prev" data-month-index="${monthIndex - 1}" title="${escapeAttr(prevDetail.label)}" aria-hidden="true">
+        ${monthDetailCardHtml(prevDetail, formatMonthTotal, true, { locale })}
       </div>`
       : '<div class="year-hm-month-slot year-hm-month-slot--prev year-hm-month-slot--empty" aria-hidden="true"></div>';
 
   const nextSlot =
     nextDetail
-      ? `<div class="year-hm-month-slot year-hm-month-slot--next" data-year-hm-month-slot="next" data-month-index="${monthIndex + 1}" title="${escapeAttr(nextDetail.label)}">
-        ${monthDetailCardHtml(nextDetail, formatMonthTotal, true)}
+      ? `<div class="year-hm-month-slot year-hm-month-slot--next" data-year-hm-month-slot="next" data-month-index="${monthIndex + 1}" title="${escapeAttr(nextDetail.label)}" aria-hidden="true">
+        ${monthDetailCardHtml(nextDetail, formatMonthTotal, true, { locale })}
       </div>`
       : '<div class="year-hm-month-slot year-hm-month-slot--next year-hm-month-slot--empty" aria-hidden="true"></div>';
 

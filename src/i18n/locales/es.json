@@ -447,5 +447,9 @@
   "dash.restoreUnsupportedVersion": "Esta copia usa una versión no compatible. Actualiza JustPractice o elige una exportación compatible.",
   "dash.restoreTooLarge": "Esta copia es demasiado grande. Elige una exportación JSON de menos de 8 MB.",
   "dash.restoreSummary": "Restaurar {videos} vídeos guardados ({completed} completados) y {minutes} minutos de práctica.",
-  "dash.libraryWelcomeHint": "Pausa el vídeo o cambia de pestaña para pausar el registro. Las opciones de foco están en Ajustes."
+  "dash.libraryWelcomeHint": "Pausa el vídeo o cambia de pestaña para pausar el registro. Las opciones de foco están en Ajustes.",
+  "yearHeatmap.prevYear": "Año anterior",
+  "yearHeatmap.nextYear": "Año siguiente",
+  "panel.moveHint": "Mueve el panel con las flechas. Mantén Mayús para pasos más grandes.",
+  "yearHeatmap.keyboardHelp": "Usa las flechas para cambiar de día o semana, Inicio/Fin para ir a los extremos y Entrar para abrir un mes."
 }

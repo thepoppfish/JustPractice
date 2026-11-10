@@ -244,6 +244,12 @@ function renderWatchPanelYearHeatmap(p: RenderWatchPanelCalendarParams): void {
 
 export function renderWatchPanelCalendar(p: RenderWatchPanelCalendarParams): void {
   if (!p.shadowRoot) return;
+  for (const [part, key] of [
+    ['cal-prev', p.useYearHeatmap ? 'yearHeatmap.prevYear' : 'yearHeatmap.prevMonth'],
+    ['cal-next', p.useYearHeatmap ? 'yearHeatmap.nextYear' : 'yearHeatmap.nextMonth'],
+  ]) {
+    p.shadowRoot.querySelector(`[part="${part}"]`)?.setAttribute('aria-label', p.panelT(key));
+  }
   if (p.useYearHeatmap) {
     renderWatchPanelYearHeatmap(p);
     return;

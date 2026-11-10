@@ -267,7 +267,7 @@
   "welcome.stepTutorial": "איך זה עובד",
   "welcome.stepDone": "מוכנים",
   "welcome.progressAria": "שלב {current} מתוך {total}",
-  "welcome.frameworkTitle": "איזו מערכת רמות אתם משתמשים?",
+  "welcome.frameworkTitle": "באיזו מערכת רמות אתם משתמשים?",
   "welcome.frameworkHint": "תייגו סרטונים שמורים לפי קושי. אפשר לשנות בכל עת בהגדרות.",
   "welcome.frameworkCustomHint": "אפשר לערוך רמות מותאמות אישית בהגדרות אחרי ההגדרה.",
   "welcome.goalTitle": "הגדירו יעד תרגול יומי",
@@ -281,11 +281,11 @@
   "welcome.tutorialWatchPrompt": "לבחירתכם: צפו בהדגמה המקורית לשמירת סרטונים. הטקסט שלמעלה מסביר את כללי הספירה הנוכחיים.",
   "welcome.tutorialWatchOnYoutube": "צפייה ב-YouTube",
   "welcome.doneTitle": "אתם מוכנים!",
-  "welcome.doneSubtitle": "הצמידו את ההרחבה מאייקון הפuzzle של Chrome לגישה מהירה.",
+  "welcome.doneSubtitle": "הצמידו את ההרחבה דרך סמל התוספים בסרגל של Chrome לגישה מהירה.",
   "welcome.openYoutube": "פתחו YouTube",
   "welcome.openDashboard": "פתחו לוח בקרה",
   "welcome.privacy": "כל הנתונים נשארים במכשיר הזה.",
-  "welcome.pinHint": "לחצו על אייקון הפuzzle בסרגל Chrome, ואז הצמידו את JustPractice.",
+  "welcome.pinHint": "לחצו על סמל התוספים בסרגל של Chrome, ואז הצמידו את JustPractice.",
   "settings.showWelcomeAgain": "הציגו שוב את מדריך הברכה",
   "settings.showWelcomeAgainHelp": "פתחו מחדש את אשף ההגדרה בלשונית חדשה.",
   "popup.openDashboard": "פתיחת סטטיסטיקה והגדרות מלאות",
@@ -447,5 +447,9 @@
   "dash.restoreUnsupportedVersion": "גרסת הגיבוי אינה נתמכת. עדכנו את JustPractice או בחרו קובץ ייצוא נתמך.",
   "dash.restoreTooLarge": "קובץ הגיבוי גדול מדי. בחרו קובץ JSON קטן מ־8 MB.",
   "dash.restoreSummary": "שחזור {videos} סרטונים שמורים ({completed} הושלמו) ו־{minutes} דקות תרגול.",
-  "dash.libraryWelcomeHint": "השהו את הסרטון או עברו ללשונית אחרת כדי להשהות את המעקב. אפשרויות המיקוד נמצאות בהגדרות."
+  "dash.libraryWelcomeHint": "השהו את הסרטון או עברו ללשונית אחרת כדי להשהות את המעקב. אפשרויות המיקוד נמצאות בהגדרות.",
+  "yearHeatmap.prevYear": "השנה הקודמת",
+  "yearHeatmap.nextYear": "השנה הבאה",
+  "panel.moveHint": "הזיזו את הלוח עם מקשי החצים. החזיקו Shift לצעדים גדולים יותר.",
+  "yearHeatmap.keyboardHelp": "השתמשו בחצים למעבר בין ימים ושבועות, Home/End לקפיצה להתחלה או לסוף, ו-Enter לפתיחת חודש."
 }
