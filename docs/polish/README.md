@@ -25,8 +25,10 @@ local baseline report.
 - PR #8 open: privacy/data flow, permission review and project case study (JP-19–20).
 - PR #9: measured performance and payload reduction (JP-21), plus a practice
   display correction and working Details shortcut. Controlled measurements and
-  automated checks pass. JP-21's [manual live-service check](live-playback-check.md)
-  is the remaining verification gate. JP-07's [reader check](spoken-reader-check.md)
+  automated checks pass. A [normal-Chrome run](live-playback-result-2026-11-10.md)
+  passed ten-minute media tracking, pause and reload checks, but fell below the
+  existing sustained-playback throughput threshold. JP-21's remaining gate is
+  [live responsiveness](live-playback-check.md). JP-07's [reader check](spoken-reader-check.md)
   is recorded as skipped, not passed.
 
 Earlier PR reports describe the reader check as outstanding at the time of

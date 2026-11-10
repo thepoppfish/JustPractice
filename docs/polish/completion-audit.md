@@ -33,11 +33,14 @@ tests and PR CI artifacts provide the repository-side review path.
 | JP-18 shared tokens | Same report: four-surface comparison, actual shadow CSS, computed primary styles, status colors, measured contrast and six-locale native zoom | Implemented in #7. #9 retries observation of current controls during repaint without changing expected styles. |
 | JP-19 privacy/permissions | `privacy-case-study-2026-11-09`: source request/permission audit, responsive privacy/site pages, actual same-folder unpacked Reload retaining data and extension ID | Implemented in #8; alarms permission removed, remaining permissions/services documented. |
 | JP-20 CV case study | README synthetic product screenshots/provenance, verified install path, [architecture](../ARCHITECTURE.md), transaction decision/regressions, contributor commands and historical-doc labels | Implemented in #8. Source-candidate features and screenshots are explicitly distinguished from the older public download. |
-| JP-21 measured costs | `performance-2026-11-09`: canonical original/final library traces, CPU profiles, budgets, six-locale watch captures, successful ten-minute controlled playback, 24-file candidate and payload measurements | **Verification outstanding in #9.** Automated and controlled checks pass. Actual YouTube discards its stream around 43 seconds even without the extension; a [manual normal-Chrome sustained-playback check](live-playback-check.md) remains required. See [performance notes](performance.md). |
+| JP-21 measured costs | `performance-2026-11-09`: before/after profiles, budgets, locale captures, ten-minute controlled playback and packaging; `normal-chrome-2026-11-10`: actual ten-minute media, counter, pause and reload samples | **Verification outstanding in #9.** Normal Chrome reached 622 seconds of media with 619 seconds counted; pause/reload checks passed. Media advancement was 83.4% of wall time, below the existing 85% threshold; a lower-resolution follow-up did not start. [Recorded result and limits](live-playback-result-2026-11-10.md). Sustained live responsiveness remains pending. |
 
-The remaining verification gate is JP-21's sustained live-service playback.
+The remaining verification gate is JP-21's sustained live-service responsiveness;
+the normal-Chrome tracking, pause and reload checks now have passing evidence.
 JP-07's manual reader check was explicitly skipped by the maintainer; its
 original acceptance text is preserved with that exception recorded in the tracker.
 No merge or publication is performed by this audit. Existing real user data is
-not used for testing; disposable profiles and synthetic fixtures exercise
-preservation, recovery and failure paths.
+not modified by fixture testing; disposable profiles and synthetic fixtures exercise
+preservation, recovery and failure paths. The later normal-Chrome live run used
+a separate candidate library; the maintainer left the old extension installed
+and disabled, preserving its data.

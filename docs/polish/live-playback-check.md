@@ -1,6 +1,10 @@
 # Manual live-playback acceptance check (JP-21)
 
-Status: pending. Controlled installed-extension playback, library benchmarks,
+Status: partially verified. The [10 November normal-Chrome result](live-playback-result-2026-11-10.md)
+verified more than ten minutes of actual media tracking, a stable paused counter
+and reload persistence. Media advanced for only 83.4% of wall time, below the
+existing 85% sustained-playback threshold; a fixed-360p follow-up did not start.
+JP-21 therefore remains verification-pending. Controlled installed-extension playback, library benchmarks,
 packaging and browser regressions are recorded separately in
 [the performance notes](performance.md). This check covers sustained playback
 on the actual YouTube service in a normal Chrome session.
@@ -12,6 +16,10 @@ headless and visible windows, and on two different public videos. Practice
 stopped when playback stopped. These observations do not establish the service's
 underlying cause or prove ten minutes of actual streaming playback. No consent,
 sign-in or other restriction was bypassed.
+
+The later normal-Chrome run did not reproduce that 43-second failure. Its slow
+media advancement has no established cause; the remaining check is sustained
+responsiveness, rather than an unverified ten-minute practice counter.
 
 Use a disposable normal Chrome profile, keeping personal data out of evidence.
 Use the source candidate from PR #9 and its preceding stack; the public 1.0.1

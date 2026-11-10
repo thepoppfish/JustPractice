@@ -1,8 +1,10 @@
 # Watch payload and measured performance (JP-21)
 
 Controlled verification has passed. The source has passed local and
-Linux/Windows checks; actual sustained YouTube playback needs a manual result after the service failures
-described below. No release, merge or publication is part of this work.
+Linux/Windows checks. A [normal-Chrome live run](live-playback-result-2026-11-10.md)
+now verifies ten minutes of actual practice tracking and reload persistence;
+sustained live-performance acceptance remains pending. No release, merge or
+publication is part of this work.
 
 ## Measured changes
 
@@ -83,9 +85,15 @@ The corrected installed build's diagnostic run also stopped around 44 seconds:
 44 seconds were both persisted and displayed, with no extension page errors.
 Its new guard rejected the discarded media source and retained the full player
 error screenshot; the run is not counted as successful sustained playback.
-Follow [the manual live-playback check](live-playback-check.md) in normal Chrome
-and report the actual outcome. This requirement remains open independently of
-the controlled playback and installed-browser tests.
+The [10 November normal-Chrome run](live-playback-result-2026-11-10.md) reached
+622.261 seconds of media with 619 seconds displayed, unchanged during a subsequent
+46-second pause. Reload preserved the total, with four additional seconds counted
+during brief reload autoplay. The earlier 43-second failure did not recur.
+However, media advancement was only 83.4% of the 745.835-second window, below
+the existing 85% threshold. A fixed-360p follow-up did not start successfully.
+This supports live counting/persistence, not a sustained-performance pass or a
+claim about the cause of the slow playback. Follow [the remaining live-playback
+check](live-playback-check.md); its throughput/control qualification remains open.
 
 ## Checks and retained candidate
 
@@ -105,16 +113,19 @@ Its watch bundle matches the inspected Linux CI runtime byte for byte. This is
 an unpublished candidate; it does not replace the public 1.0.1 release.
 
 [PR #9](https://github.com/thepoppfish/JustPractice/pull/9) is stacked on #8.
-JP-21 remains verification-pending for the manual real-service check. JP-07's
+JP-21 remains verification-pending for sustained real-service responsiveness;
+the live tracking and reload checks have passed. JP-07's
 manual reader check was explicitly skipped by the maintainer on 10 November
 2026 and is no longer a gate; no reader pass is claimed.
 
 ## Scope, budgets and retained evidence
 
-Measurements use disposable installed-extension profiles, synthetic library
+Controlled measurements use disposable installed-extension profiles, synthetic library
 records and thumbnails, Chromium 158.0.8127.18 on Windows 11 with an Intel Core
 Ultra 7 268V, an unthrottled 1440×900 viewport and reduced motion. No personal
-browser profile or export is used. Controlled playback uses a visible real
+browser profile or export is used in those measurements. The separate 10 November
+live check used the maintainer's normal Chrome session with an isolated candidate
+library; its raw captures remain local. Controlled playback uses a visible real
 HTMLVideoElement fed by a canvas MediaStream; it excludes YouTube network,
 decoding and ad costs. A separate anonymous live YouTube follow-up uses the
 public project tutorial with muted native looping and normal network/player code.

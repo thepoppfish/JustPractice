@@ -604,9 +604,9 @@
     "size": "M",
     "status": "verification-pending",
     "pr": 9,
-    "verification": "411 unit tests / 58 files and 18 installed-browser cases pass locally and on Linux/Windows. Final 25/100/500-item startup/search fits chosen budgets. The retained 346,144-byte watch bundle is 50.8% smaller; the 24-file ZIP is 17.4% smaller. Corrected controlled playback saved and displayed 598 seconds over 600 seconds, with zero page errors/steady long tasks and +0.30 MiB post-GC heap. Actual YouTube discards media around 43 seconds on two videos even without the extension; sustained live-service acceptance remains manual.",
+    "verification": "411 unit tests / 58 files and 18 installed-browser cases pass locally and on Linux/Windows. Final 25/100/500-item startup/search fits chosen budgets. The retained 346,144-byte watch bundle is 50.8% smaller; the 24-file ZIP is 17.4% smaller. Corrected controlled playback saved and displayed 598 seconds over 600 seconds. Normal Chrome on 10 November reached 622 seconds of media with 619 seconds counted; pause and reload persistence passed. Media advanced for 83.4% of wall time, below the existing 85% sustained-playback threshold. A fixed-360p follow-up did not start; live responsiveness remains unverified.",
     "pendingChecks": [
-      "Manual ten-minute actual YouTube playback in normal Chrome; automated service failure reproduced without the extension"
+      "Normal-Chrome sustained playback meeting the existing 85% media-advancement threshold with usable controls; ten-minute counting, pause and reload persistence have passed"
     ],
     "checks": [
       {
@@ -618,7 +618,11 @@
         "href": "../../output/playwright/performance-2026-11-09/verification.html"
       },
       {
-        "text": "Required normal-Chrome live-playback check",
+        "text": "Normal-Chrome tracking, pause/reload result and live-performance limits (10 November)",
+        "href": "live-playback-result-2026-11-10.md"
+      },
+      {
+        "text": "Remaining sustained-live-responsiveness procedure",
         "href": "live-playback-check.md"
       },
       {
