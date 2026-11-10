@@ -56,6 +56,12 @@ Use **Tab** to reach controls and arrow keys to choose onboarding languages and 
 
 Use **Dashboard → Settings → Your data → Export JSON** before replacing a profile or uninstalling. Restore accepts recognized JustPractice exports up to 8 MB, checks their data and version, and previews the video count and practice minutes before confirmation. A recovery copy in browser session storage protects the previous data if a replacement fails or the service worker restarts during restore.
 
+Save failures appear beside the affected control with **Try again**. Edited
+values stay on the current page while storage updates arrive; successful writes
+are acknowledged. Unsaved drafts are kept in page memory, so copy them before
+refreshing after an extension update. Export feedback confirms that a download
+was requested; keep the downloaded JSON somewhere safe.
+
 ## Release checks
 
 ```bash

@@ -1,3 +1,19 @@
+import type { ExtensionMessage } from './messages';
+
+/** A rejected response is a failed operation, just like a rejected transport. */
+export function requireOkResponse<T>(response: unknown): T {
+  if (!response || typeof response !== 'object' || !('ok' in response) || response.ok !== true) {
+    const error = response && typeof response === 'object' && 'error' in response
+      ? String(response.error) : 'No valid response from the extension';
+    throw new Error(error);
+  }
+  return response as T;
+}
+
+export async function sendChecked<T>(message: ExtensionMessage): Promise<T> {
+  return requireOkResponse<T>(await chrome.runtime.sendMessage(message));
+}
+
 /** Normalize errors from `chrome.runtime.sendMessage` (MV3 service worker / invalidated contexts). */
 
 export function messagingFailureText(err: unknown): string {

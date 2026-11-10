@@ -3,7 +3,7 @@
 *{box-sizing:border-box}body{margin:0;background:#101318;color:#ebedf2;font:16px/1.65 system-ui}main{max-width:1080px;margin:auto;padding:32px 24px}a{color:#ffc18e}a:focus-visible,summary:focus-visible{outline:3px solid #ffd08a;outline-offset:4px}h1,h2{line-height:1.25}h2{font-size:22px}article{padding:24px 0;border-bottom:1px solid #46505f;scroll-margin-top:24px}nav{display:flex;flex-wrap:wrap;gap:12px}.status{color:#b1edc0;font-weight:600}.pending{padding:12px;background:#35261b;border-left:3px solid #ffa466}details{color:#b7bdc8}summary{cursor:pointer}li{margin:8px 0}code{overflow-wrap:anywhere}.note{padding:16px;background:#202630;border-radius:8px}
 </style><main><h1>JustPractice · baseline progress</h1>
 <p>All 21 original requirements retained. Updated 2026-11-09.</p>
-<p class="note">5 Merged · 6 Implemented · PR open · 1 Implemented · verification outstanding · 9 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
+<p class="note">5 Merged · 7 Implemented · PR open · 1 Implemented · verification outstanding · 8 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
 <p><a href="../../output/playwright/baseline-2026-11-09/baseline-review.html#backlog">Original review</a> · <a href="backlog.json">Machine-readable tracker</a> · <a href="dependency-review.md">Dependency review</a></p>
 <p>Screenshot and trace links refer to local review artifacts under <code>output/playwright/</code>; they are not part of the extension or the public documentation deployment. Public PRs include the maintained code and CI artifacts.</p>
 <nav aria-label="Baseline items"><a href="#JP-01">JP-01</a><a href="#JP-02">JP-02</a><a href="#JP-03">JP-03</a><a href="#JP-04">JP-04</a><a href="#JP-05">JP-05</a><a href="#JP-06">JP-06</a><a href="#JP-07">JP-07</a><a href="#JP-08">JP-08</a><a href="#JP-09">JP-09</a><a href="#JP-10">JP-10</a><a href="#JP-11">JP-11</a><a href="#JP-12">JP-12</a><a href="#JP-13">JP-13</a><a href="#JP-14">JP-14</a><a href="#JP-15">JP-15</a><a href="#JP-16">JP-16</a><a href="#JP-17">JP-17</a><a href="#JP-18">JP-18</a><a href="#JP-19">JP-19</a><a href="#JP-20">JP-20</a><a href="#JP-21">JP-21</a></nav>
@@ -74,7 +74,7 @@
 <p><strong>Acceptance:</strong> No violations for aria-hidden-focus, aria-required-children, or aria-progressbar-name. Complete onboarding and navigate core views using keyboard only, then perform a screen-reader check.</p>
 <p><strong>Verification:</strong> Keyboard and automated checks passed; spoken screen-reader verification outstanding.</p>
 <p class="pending"><strong>Outstanding:</strong> Spoken NVDA/Narrator review of onboarding and core navigation</p>
-<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/5">PR #5 follow-up: move-label name and initial watch locale</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>axe found focusable progress buttons inside aria-hidden=true, buttons inside a role=listbox without option semantics, and a popup progressbar without an accessible name. These are extension-owned findings; unrelated YouTube ARIA errors are excluded.</p><a href="../../output/playwright/baseline-2026-11-09/01-onboarding-language.png">Original screenshot</a></details>
 </article>
 <article id="JP-08">
@@ -84,17 +84,17 @@
 <p><strong>Acceptance:</strong> Hebrew snapshots have correct document/shadow direction and language metadata; mixed Hebrew/English titles and numbers read correctly. Verify French, German, Spanish, and Japanese label lengths too.</p>
 
 
-<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/5">PR #5 follow-up: move-label name and initial watch locale</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>The dashboard correctly set lang=he and dir=rtl. The Hebrew popup retained lang=en with no dir, and Hebrew onboarding set lang=he but no document direction. The screenshots show left-to-right control layout mixed with Hebrew content.</p><a href="../../output/playwright/baseline-2026-11-09/popup-hebrew-populated.png">Original screenshot</a></details>
 </article>
 <article id="JP-09">
 <h2>JP-09 · Show save and failure feedback for user mutations</h2>
-<p class="status">Open</p>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/5">PR #5</a></p>
 <p>Use one checked message helper; surface actionable inline errors and saved feedback; disable conflicting controls while writes are pending; preserve edited input on failure.</p>
 <p><strong>Acceptance:</strong> Inject a storage quota failure and a rejected background response: the UI reports failure and retains the user’s input. Successful changes produce quiet, consistent feedback.</p>
+<p><strong>Verification:</strong> 384 tests / 55 files, nine installed-browser scenarios, real service-worker quota rejection, rejected/disconnected messaging, export recovery, duplicate-write protection and draft retention passed locally. Six locale error layouts fit at 100%/200%, with scoped axe and measured contrast evidence. Unsaved drafts are in page memory; refreshing may discard them.</p>
 
-
-
+<ul><li><a href="mutation-feedback.md">Mutation feedback implementation and verification scope</a></li><li><a href="../../output/playwright/mutation-feedback-2026-11-09/verification.html">Screenshots, zoom checks, fault-injection and axe evidence</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/5/checks">PR #5 latest Linux/Windows checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>Several settings and library handlers await send() without checking an {ok:false} response. Export catches errors silently. Initial load has an error view, but successful/failed saves are not consistently acknowledged. Storage-quota and disconnected-worker errors were not fault-injected in this baseline.</p><a href="../../output/playwright/baseline-2026-11-09/populated-goals.png">Original screenshot</a></details>
 </article>
 <article id="JP-10">
@@ -114,7 +114,7 @@
 <p><strong>Acceptance:</strong> On a clean checkout and again after npm run build, npm run lint succeeds with the same result and no generated-code findings.</p>
 <p><strong>Verification:</strong> Local lint passes with zero errors/warnings before and after building; generated builds, release copies, browser reports and review artifacts are excluded.</p>
 
-<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42622579932">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42623548194">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>npm run lint currently reports 106 errors and 25 warnings. Of these, 98 errors/16 warnings come from the generated public/assets/youtube-content.bundle.js; eight errors come from Node globals in build scripts. The earlier clean checkout had far fewer errors because the generated bundle did not exist.</p></details>
 </article>
 <article id="JP-12">
@@ -124,7 +124,7 @@
 <p><strong>Acceptance:</strong> Known advisories are resolved or individually triaged with affected execution paths; test/build/package remain green.</p>
 <p><strong>Verification:</strong> Critical/high advisories resolved. Raw audit retains seven moderate entries for one development-only Minimatch advisory, narrowly triaged with a 2027-02-09 expiry. Production audit reports zero findings.</p>
 
-<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42622579932">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42623548194">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>npm audit reports 20 affected packages: 8 moderate, 10 high, 2 critical. Critical entries are Vitest and Tinypool. npm audit --omit=dev reports zero advisories. These counts describe the installed development graph, not proven vulnerabilities in the shipped extension.</p></details>
 </article>
 <article id="JP-13">
@@ -132,9 +132,9 @@
 <p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/4">PR #4</a></p>
 <p>Add CI for a pinned supported Node version: npm ci, lint, tests, type checking, production build, dist verification, and packaging on a supported OS. Add a browser smoke flow once the highest-priority bugs are fixed.</p>
 <p><strong>Acceptance:</strong> A pull request gets a green, repeatable check and a runtime ZIP artifact. Add a separate test type-check if tests remain excluded from the app tsconfig.</p>
-<p><strong>Verification:</strong> GitHub Linux and Windows jobs passed from clean installs: lint before/after build, dependency policy, app/test type checks, production build, 365 tests, distribution verification, actual special-path packaging, two installed-browser smoke flows, and uploaded runtime ZIP/screenshots/traces. Implementation commit c26ddfd; run 42622579932.</p>
+<p><strong>Verification:</strong> GitHub Linux and Windows jobs passed from clean installs: lint before/after build, dependency policy, app/test type checks, production build, 365 tests, distribution verification, actual special-path packaging, two installed-browser smoke flows, and uploaded runtime ZIP/screenshots/traces. Implementation commit c26ddfd; run 42622579932. Documentation follow-up 588040c also passed both jobs in run 42623548194.</p>
 
-<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42622579932">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42623548194">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>No .github workflow files are present. The project has meaningful unit tests and runtime-closure verification, but checks currently depend on a developer running them locally. TypeScript excludes test files from its build check.</p></details>
 </article>
 <article id="JP-14">
@@ -144,7 +144,7 @@
 <p><strong>Acceptance:</strong> Package successfully from a workspace containing spaces and Unicode characters, and verify the resulting archive’s root manifest.</p>
 <p><strong>Verification:</strong> Actual Windows packaging from spaces, apostrophe, Hebrew and bracketed paths passes: all 24 runtime files and manifest.json at root.</p>
 
-<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42622579932">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42623548194">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>The Windows packaging command concatenates -Path and -DestinationPath values with spaces, without quoting them. Packaging succeeded in this workspace, whose path has no spaces; a path such as C:\Users\User Name\Projects will be parsed incorrectly. A spaced-path run was not performed.</p></details>
 </article>
 <article id="JP-15">

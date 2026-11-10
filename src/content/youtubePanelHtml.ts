@@ -35,7 +35,7 @@ ${watchPanelShadowCss()}
           hidden
         ></div>
         <div class="row" part="save-row">
-          <button type="button" class="secondary" part="add">${escapeHtml(labels.saveToLibrary)}</button>
+          <button type="button" class="secondary" part="add" data-commit-parts="difficulty">${escapeHtml(labels.saveToLibrary)}</button>
         </div>
         <div class="row" part="complete-row">
           <button type="button" class="secondary" part="complete-btn">${escapeHtml(labels.markComplete)}</button>

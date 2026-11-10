@@ -1,5 +1,6 @@
 import { MSG } from '../lib/messages';
 import type { ExtensionResponse, PracticeTickOkResponse } from '../lib/messages';
+import { uiActionFeedback } from '../lib/uiActionFeedback';
 import {
   STORAGE_KEY,
   dateKeyFromTimestamp,
@@ -110,6 +111,7 @@ let ui: {
 } | null = null;
 
 let currentVideoId: string | null = null;
+let pendingPanelPreferences: Partial<AppSettings> = {};
 let practiceEnabled = false;
 let settingsCache: AppSettings = defaultSettings();
 let panelLocale: ResolvedLocale = resolveLocale(undefined);
@@ -525,6 +527,23 @@ export function mountWatchPanelShellSync(): void {
   }
 }
 
+async function persistPanelPreferences(payload: Partial<AppSettings>, part: 'collapse' | 'drag-handle'): Promise<void> {
+  if (!ui) return;
+  const source = ui.root.querySelector<HTMLElement>(`[part="${part}"]`);
+  if (!source) return;
+  const actions = uiActionFeedback(ui.root, panelT);
+  await actions.run(source, async () => {
+    pendingPanelPreferences = { ...pendingPanelPreferences, ...payload };
+    settingsCache = { ...settingsCache, ...pendingPanelPreferences };
+    applyPanelHostPosition();
+    applyWatchPanelCollapsed();
+    await actions.sender(sendMsg)({ type: MSG.SET_SETTINGS, payload });
+    for (const key of Object.keys(payload) as (keyof AppSettings)[]) {
+      if (pendingPanelPreferences[key] === payload[key]) delete pendingPanelPreferences[key];
+    }
+  }, () => { void persistPanelPreferences(payload, part); });
+}
+
 function ensurePanel(): void {
   ensureWatchPanelIfAbsent({
     panelHostId: PANEL_HOST_ID,
@@ -540,12 +559,7 @@ function ensurePanel(): void {
     handlers: {
       onCollapseClick: () => {
         const next = !settingsCache.watchPanelCollapsed;
-        settingsCache = { ...settingsCache, watchPanelCollapsed: next };
-        applyWatchPanelCollapsed();
-        sendMsgFireAndForget({
-          type: MSG.SET_SETTINGS,
-          payload: { watchPanelCollapsed: next },
-        });
+        fireAsyncWatch(persistPanelPreferences({ watchPanelCollapsed: next }, 'collapse'));
       },
       onAddClick: () => fireAsyncWatch(saveToLibrary()),
       onCompleteClick: () =>
@@ -570,10 +584,7 @@ function ensurePanel(): void {
         fireAsyncWatch(refreshCalendarOnly());
       },
       onDragCommit: (left, top) => {
-        sendMsgFireAndForget({
-          type: MSG.SET_SETTINGS,
-          payload: { watchPanelLeft: left, watchPanelTop: top },
-        });
+        fireAsyncWatch(persistPanelPreferences({ watchPanelLeft: left, watchPanelTop: top }, 'drag-handle'));
       },
     },
     onMounted: ({ shadowRoot: sr, ui: u }) => {
@@ -686,11 +697,12 @@ async function refreshState(videoId: string | null): Promise<void> {
   }
   await refreshWatchPanelLibraryUiFromRemoteState({
     videoId,
+    isCurrent: () => currentVideoId === videoId,
     shadowRoot,
     ui,
     mut: {
       setSettingsCache: (s) => {
-        settingsCache = s;
+        settingsCache = { ...s, ...pendingPanelPreferences };
       },
       setLastDailySnapshot: (d) => {
         mergeDailySnapshotIntoPanel(d);
@@ -802,6 +814,7 @@ async function onDifficultyChange(value: string): Promise<void> {
     getInLibrary: () => inLibrary,
     readTitle,
     readChannel,
+    panelT,
     flash: flashAfterLibraryWrite,
     afterPersist: async (videoId) => {
       await refreshState(videoId);
@@ -851,6 +864,8 @@ export async function onWatchPanelVideoChanged(): Promise<void> {
       const previousVideoId = currentVideoId;
       currentVideoId = nextId;
       if (previousVideoId !== nextId) {
+        pendingPanelPreferences = {};
+        if (ui) uiActionFeedback(ui.root, panelT).reset();
         inLibrary = false;
         libraryItemForCurrentVideo = null;
         syncPracticeEnabledFromVideoBinding();

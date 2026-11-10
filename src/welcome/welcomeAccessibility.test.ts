@@ -16,8 +16,9 @@ beforeEach(async () => {
 
 afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = ''; });
 
-function click(selector: string) {
+async function click(selector: string) {
   document.querySelector<HTMLElement>(selector)!.click();
+  await vi.waitFor(() => expect(document.getElementById('app')?.getAttribute('aria-busy')).toBeNull());
 }
 
 describe('accessible onboarding', () => {
@@ -27,23 +28,24 @@ describe('accessible onboarding', () => {
     expect(document.querySelector('[role="listbox"]')).toBeNull();
     expect(document.querySelector('.welcome-progress [aria-current="step"]')?.textContent).toBe('Language');
     expect(document.querySelector('.welcome-progress button')).toBeNull();
-    expect(document.querySelector('[aria-live]')).toBeNull();
+    expect(document.querySelector('.welcome-hello-stage[aria-live]')).toBeNull();
+    expect(document.querySelector<HTMLElement>('.jp-action-status')?.hidden).toBe(true);
   });
 
-  it('keeps the selected language focused while applying Hebrew direction', () => {
-    click('input[data-locale="he"]');
+  it('keeps the selected language focused while applying Hebrew direction', async () => {
+    await click('input[data-locale="he"]');
     expect([document.documentElement.lang, document.documentElement.dir]).toEqual(['he', 'rtl']);
     expect((document.activeElement as HTMLInputElement).value).toBe('he');
-    click('#welcome-continue');
+    await click('#welcome-continue');
     expect(document.activeElement).toBe(document.querySelector('h2'));
-    click('input[value="cefr"]');
+    await click('input[value="cefr"]');
     expect(document.querySelector('input[value="cefr"]')?.parentElement?.classList.contains('is-selected')).toBe(true);
   });
 
-  it('updates preset semantics, retains custom minutes and restores heading focus when going back', () => {
-    click('input[data-locale="en"]');
-    click('#welcome-continue');
-    click('#welcome-continue');
+  it('updates preset semantics, retains custom minutes and restores heading focus when going back', async () => {
+    await click('input[data-locale="en"]');
+    await click('#welcome-continue');
+    await click('#welcome-continue');
     const chip = document.querySelector<HTMLButtonElement>('[data-goal-minutes]')!;
     chip.click();
     expect(chip.getAttribute('aria-pressed')).toBe('true');
@@ -51,8 +53,8 @@ describe('accessible onboarding', () => {
     input.value = '17';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     expect(document.querySelectorAll('[data-goal-minutes][aria-pressed="true"]')).toHaveLength(0);
-    click('#welcome-continue');
-    click('#welcome-back');
+    await click('#welcome-continue');
+    await click('#welcome-back');
     expect(document.querySelector<HTMLInputElement>('#welcome-goal-minutes')!.value).toBe('17');
     expect(document.activeElement).toBe(document.querySelector('h2'));
   });

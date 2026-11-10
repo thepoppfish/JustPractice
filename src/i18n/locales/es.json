@@ -451,5 +451,12 @@
   "yearHeatmap.prevYear": "Año anterior",
   "yearHeatmap.nextYear": "Año siguiente",
   "panel.moveHint": "Mueve el panel con las flechas. Mantén Mayús para pasos más grandes.",
-  "yearHeatmap.keyboardHelp": "Usa las flechas para cambiar de día o semana, Inicio/Fin para ir a los extremos y Entrar para abrir un mes."
+  "yearHeatmap.keyboardHelp": "Usa las flechas para cambiar de día o semana, Inicio/Fin para ir a los extremos y Entrar para abrir un mes.",
+  "feedback.working": "Procesando…",
+  "feedback.saved": "Cambios guardados.",
+  "feedback.failed": "No se pudo completar la acción. Los valores introducidos siguen en esta página. Inténtalo de nuevo.",
+  "feedback.quota": "El almacenamiento está lleno. Tu cambio sigue aquí. Exporta una copia de seguridad o libera espacio del navegador y vuelve a intentarlo.",
+  "feedback.reconnect": "La extensión no está disponible. Tu cambio sigue aquí. Cópialo antes de actualizar esta página y vuelve a intentarlo.",
+  "feedback.retry": "Reintentar",
+  "feedback.exportStarted": "Se ha solicitado la descarga de la copia de seguridad."
 }

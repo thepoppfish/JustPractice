@@ -17,6 +17,9 @@ passed on **Linux and Windows** for implementation commit `c26ddfd`:
   library, settings persistence, popup search and tabs.
 - Uploaded per-platform runtime ZIP, screenshots and traces (14-day retention).
 
+[Run 42623548194](https://github.com/thepoppfish/JustPractice/actions/runs/42623548194)
+also passed on both platforms for documentation follow-up commit `588040c`.
+
 The same commands passed locally on Windows. A separate native 200% Hebrew
 popup check measured CSS viewport width 190, client/content width 182 with no
 horizontal overflow; lower controls remained reachable. Local evidence is in

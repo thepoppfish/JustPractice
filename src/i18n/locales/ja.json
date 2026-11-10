@@ -451,5 +451,12 @@
   "yearHeatmap.prevYear": "前年",
   "yearHeatmap.nextYear": "翌年",
   "panel.moveHint": "矢印キーでパネルを移動します。Shiftキーを押すと大きく移動します。",
-  "yearHeatmap.keyboardHelp": "矢印キーで日や週を移動し、Home/Endで先頭・末尾に移動、Enterで月を開きます。"
+  "yearHeatmap.keyboardHelp": "矢印キーで日や週を移動し、Home/Endで先頭・末尾に移動、Enterで月を開きます。",
+  "feedback.working": "処理中…",
+  "feedback.saved": "変更を保存しました。",
+  "feedback.failed": "操作を完了できませんでした。入力内容はこのページに残っています。もう一度お試しください。",
+  "feedback.quota": "保存領域がいっぱいです。入力内容は残っています。バックアップをエクスポートするか、ブラウザーの保存領域を空けてから再試行してください。",
+  "feedback.reconnect": "拡張機能を利用できません。入力内容は残っています。ページを再読み込みする前にコピーしてから、もう一度お試しください。",
+  "feedback.retry": "再試行",
+  "feedback.exportStarted": "バックアップのダウンロードを開始しました。"
 }
