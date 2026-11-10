@@ -45,7 +45,7 @@ describe('storage changes update counting eligibility before resync', () => {
   it.each(['saved', 'removed', 'cleared'] as const)('applies %s library state synchronously', (state) => {
     const persisted = state === 'cleared' ? undefined : emptyPersisted();
     if (persisted && state === 'saved') {
-      persisted.library.push({ videoId: 'abc123', title: 'Practice', channel: 'Test', difficulty: null, addedAt: 1 });
+      persisted.library.push({ videoId: 'abc123', title: 'Practice', channel: 'Test', difficulty: null, addedAt: 1, completedAt: null, durationSec: null });
     }
     const calls: string[] = [];
     let saved = state !== 'saved';

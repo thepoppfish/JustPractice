@@ -3,6 +3,8 @@ public/assets/youtube-content.bundle.js
 public/assets/youtube-content.bundle.js.map
 dist/
 release/
+playwright-report/
+test-results/
 *.tsbuildinfo
 *.log
 .DS_Store

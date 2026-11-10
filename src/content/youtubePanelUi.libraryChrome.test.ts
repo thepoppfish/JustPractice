@@ -61,15 +61,15 @@ describe('syncWatchPanelVideoLibraryChrome', () => {
     const sr = mountPanelShadow();
     syncWatchPanelVideoLibraryChrome({ shadowRoot: sr, readTitle: () => 'A title' });
 
-    expect(sr.querySelector('.wrap')?.dataset.jpLibraryChrome).toBe('0');
-    expect(sr.querySelector('[part="save-row"]')?.hidden).toBe(true);
-    expect(sr.querySelector('[part="complete-row"]')?.hidden).toBe(true);
-    expect(sr.querySelector('.level-controls')?.hidden).toBe(true);
-    expect(sr.querySelector('[part="status"]')?.hidden).toBe(true);
-    expect(sr.querySelector('[part="hint"]')?.hidden).toBe(true);
-    expect(sr.querySelector('[part="library-banner"]')?.hidden).toBe(true);
-    expect(sr.querySelector('[part="complete-prompt"]')?.hidden).toBe(true);
-    expect(sr.querySelector('[part="title"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('.wrap')?.dataset.jpLibraryChrome).toBe('0');
+    expect(sr.querySelector<HTMLElement>('[part="save-row"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('[part="complete-row"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('.level-controls')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('[part="status"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('[part="hint"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('[part="library-banner"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('[part="complete-prompt"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('[part="title"]')?.hidden).toBe(true);
   });
 
   it('hides library chrome when /watch URL still has the browse feed (mini player)', () => {
@@ -85,9 +85,9 @@ describe('syncWatchPanelVideoLibraryChrome', () => {
     const sr = mountPanelShadow();
     syncWatchPanelVideoLibraryChrome({ shadowRoot: sr, readTitle: () => 'Watch title' });
 
-    expect(sr.querySelector('.wrap')?.dataset.jpLibraryChrome).toBe('0');
-    expect(sr.querySelector('[part="save-row"]')?.hidden).toBe(true);
-    expect(sr.querySelector('[part="hint"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('.wrap')?.dataset.jpLibraryChrome).toBe('0');
+    expect(sr.querySelector<HTMLElement>('[part="save-row"]')?.hidden).toBe(true);
+    expect(sr.querySelector<HTMLElement>('[part="hint"]')?.hidden).toBe(true);
   });
 
   it('shows library chrome on dedicated watch pages', () => {
@@ -101,13 +101,13 @@ describe('syncWatchPanelVideoLibraryChrome', () => {
 
     syncWatchPanelVideoLibraryChrome({ shadowRoot: sr, readTitle: () => 'Watch title' });
 
-    expect(sr.querySelector('.wrap')?.dataset.jpLibraryChrome).toBe('1');
-    expect(sr.querySelector('[part="save-row"]')?.hidden).toBe(false);
-    expect(sr.querySelector('[part="complete-row"]')?.hidden).toBe(false);
-    expect(sr.querySelector('.level-controls')?.hidden).toBe(false);
-    expect(sr.querySelector('[part="status"]')?.hidden).toBe(false);
-    expect(sr.querySelector('[part="hint"]')?.hidden).toBe(false);
-    expect(sr.querySelector('[part="title"]')?.hidden).toBe(false);
-    expect(sr.querySelector('[part="title"]')?.textContent).toBe('Watch title');
+    expect(sr.querySelector<HTMLElement>('.wrap')?.dataset.jpLibraryChrome).toBe('1');
+    expect(sr.querySelector<HTMLElement>('[part="save-row"]')?.hidden).toBe(false);
+    expect(sr.querySelector<HTMLElement>('[part="complete-row"]')?.hidden).toBe(false);
+    expect(sr.querySelector<HTMLElement>('.level-controls')?.hidden).toBe(false);
+    expect(sr.querySelector<HTMLElement>('[part="status"]')?.hidden).toBe(false);
+    expect(sr.querySelector<HTMLElement>('[part="hint"]')?.hidden).toBe(false);
+    expect(sr.querySelector<HTMLElement>('[part="title"]')?.hidden).toBe(false);
+    expect(sr.querySelector<HTMLElement>('[part="title"]')?.textContent).toBe('Watch title');
   });
 });

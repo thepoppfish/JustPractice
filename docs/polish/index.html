@@ -1,0 +1,219 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JustPractice · baseline progress</title><style>
+*{box-sizing:border-box}body{margin:0;background:#101318;color:#ebedf2;font:16px/1.65 system-ui}main{max-width:1080px;margin:auto;padding:32px 24px}a{color:#ffc18e}a:focus-visible,summary:focus-visible{outline:3px solid #ffd08a;outline-offset:4px}h1,h2{line-height:1.25}h2{font-size:22px}article{padding:24px 0;border-bottom:1px solid #46505f;scroll-margin-top:24px}nav{display:flex;flex-wrap:wrap;gap:12px}.status{color:#b1edc0;font-weight:600}.pending{padding:12px;background:#35261b;border-left:3px solid #ffa466}details{color:#b7bdc8}summary{cursor:pointer}li{margin:8px 0}code{overflow-wrap:anywhere}.note{padding:16px;background:#202630;border-radius:8px}
+</style><main><h1>JustPractice · baseline progress</h1>
+<p>All 21 original requirements retained. Updated 2026-11-09.</p>
+<p class="note">5 Merged · 6 Implemented · PR open · 1 Implemented · verification outstanding · 9 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
+<p><a href="../../output/playwright/baseline-2026-11-09/baseline-review.html#backlog">Original review</a> · <a href="backlog.json">Machine-readable tracker</a> · <a href="dependency-review.md">Dependency review</a></p>
+<p>Screenshot and trace links refer to local review artifacts under <code>output/playwright/</code>; they are not part of the extension or the public documentation deployment. Public PRs include the maintained code and CI artifacts.</p>
+<nav aria-label="Baseline items"><a href="#JP-01">JP-01</a><a href="#JP-02">JP-02</a><a href="#JP-03">JP-03</a><a href="#JP-04">JP-04</a><a href="#JP-05">JP-05</a><a href="#JP-06">JP-06</a><a href="#JP-07">JP-07</a><a href="#JP-08">JP-08</a><a href="#JP-09">JP-09</a><a href="#JP-10">JP-10</a><a href="#JP-11">JP-11</a><a href="#JP-12">JP-12</a><a href="#JP-13">JP-13</a><a href="#JP-14">JP-14</a><a href="#JP-15">JP-15</a><a href="#JP-16">JP-16</a><a href="#JP-17">JP-17</a><a href="#JP-18">JP-18</a><a href="#JP-19">JP-19</a><a href="#JP-20">JP-20</a><a href="#JP-21">JP-21</a></nav>
+<article id="JP-01">
+<h2>JP-01 · Attach an installable extension ZIP to the public release</h2>
+<p class="status">Merged · <a href="https://github.com/thepoppfish/JustPractice/pull/1">PR #1</a></p>
+<p>Publish the verified runtime ZIP as a release asset, add concise release notes, and point the download CTA directly to that asset. Keep source archives clearly separate.</p>
+<p><strong>Acceptance:</strong> In a clean profile, download the release asset, extract it, load unpacked, and finish onboarding without npm. Verify manifest.json is at the archive root.</p>
+
+
+<ul><li><a href="../../output/playwright/p1-fixes-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>GitHub latest release 1.0.0 has zero uploaded assets. The two displayed downloads are GitHub source archives. The README and website tell users to download justpractice-*.zip and load an extracted manifest.json, which is not available there.</p><a href="../../output/playwright/baseline-2026-11-09/release-no-extension-zip.png">Original screenshot</a></details>
+</article>
+<article id="JP-02">
+<h2>JP-02 · Reject unrelated or invalid backups before clearing data</h2>
+<p class="status">Merged · <a href="https://github.com/thepoppfish/JustPractice/pull/1">PR #1</a></p>
+<p>Require a recognizable JustPractice payload and supported schema, validate nested values and size, show a restore summary, and retain a recovery snapshot until replacement succeeds.</p>
+<p><strong>Acceptance:</strong> Reject empty/unrelated/malformed/oversized backups without writing. Valid exports round-trip. A failed write after clear restores the previous snapshot.</p>
+
+
+<ul><li><a href="../../output/playwright/p1-fixes-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>The UI accepted {&quot;unrelated&quot;:&quot;not a JustPractice backup&quot;}. After the existing confirmation, chrome.storage.local contained only that unrelated object; the library and settings were removed. The handler validates only that the root is an object.</p><a href="../../output/playwright/baseline-2026-11-09/invalid-backup-result.png">Original screenshot</a></details>
+</article>
+<article id="JP-03">
+<h2>JP-03 · Keep the expanded watch panel inside short browser windows</h2>
+<p class="status">Merged · <a href="https://github.com/thepoppfish/JustPractice/pull/1">PR #1</a></p>
+<p>Constrain panel height to available viewport space, keep the drag bar visible, make the body scroll, and clamp default as well as saved positions after content/layout changes.</p>
+<p><strong>Acceptance:</strong> At 1280×600, 1024×600, and 200% zoom, drag/collapse/save remain reachable. Resize, collapse, expand, and popup reset preserve valid bounds.</p>
+
+
+<ul><li><a href="../../output/playwright/p1-fixes-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>At a settled 1280×600 viewport, the panel bounds were x=949, y=-127, width=300, height=639. Its drag/collapse controls were above the viewport; Playwright could not click collapse because it was off-screen. Default positioning uses bottom:88px and skips the clamp for auto top/left.</p><a href="../../output/playwright/baseline-2026-11-09/watch-panel-600h-loaded.png">Original screenshot</a></details>
+</article>
+<article id="JP-04">
+<h2>JP-04 · Make the focus setting affect the playback meter</h2>
+<p class="status">Merged · <a href="https://github.com/thepoppfish/JustPractice/pull/2">PR #2</a></p>
+<p>Define whether focus means active tab or active browser window, then implement that policy in the meter; alternatively remove the ineffective setting and describe visible-tab counting accurately.</p>
+<p><strong>Acceptance:</strong> Controlled tests distinguish visible/focused, visible/unfocused, and hidden playback with the option on and off. Document the same rules on every surface.</p>
+
+
+<ul><li><a href="../../output/playwright/counting-guidance-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>The checkbox persists and changes hint text, but practiceMeterEligibility passes no focus value or pauseWhenUnfocused flag. isEligibleForPlaybackMeter always checks only saved/enabled/visible/not-ended. The focus accessor has no call sites. The attempted two-window check could not establish a genuinely unfocused document under browser automation, so this conclusion is from the source.</p><a href="../../output/playwright/baseline-2026-11-09/settings-framework-detail.png">Original screenshot</a></details>
+</article>
+<article id="JP-05">
+<h2>JP-05 · Align instructions with the current saving and counting behavior</h2>
+<p class="status">Merged · <a href="https://github.com/thepoppfish/JustPractice/pull/2">PR #2</a></p>
+<p>Choose the intended automatic/opt-in behavior, update all six locales plus README/site/manifest/tutorial, and remove retired strings and claims. Make save-to-start and pause behavior explicit.</p>
+<p><strong>Acceptance:</strong> A new user can explain when counting starts/stops after reading only the UI. Each advertised interaction exists in the current release.</p>
+
+
+<ul><li><a href="../../output/playwright/counting-guidance-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>README, popup help, dashboard empty state, and XP rules refer to a “Count practice time” toggle, but current panel markup has no such control: counting follows saved-library membership automatically. README also advertises a thumbnail hover strip that did not appear on the live search page, and README/manifest still advertise removed goal reminders.</p><a href="../../output/playwright/baseline-2026-11-09/watch-panel-detail.png">Original screenshot</a></details>
+</article>
+<article id="JP-06">
+<h2>JP-06 · Raise contrast and size of essential helper text</h2>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/3">PR #3</a></p>
+<p>Use shared readable muted-text tokens, increase small helper text, and verify text over translucent surfaces against real YouTube backgrounds. Keep subdued future states distinguishable.</p>
+<p><strong>Acceptance:</strong> Scan extension-owned UI for contrast failures and manually verify visible text at 100% and 200% zoom. Exclude YouTube-owned findings from extension counts.</p>
+
+
+<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>axe measured the watch-calendar weekday labels at 3.28:1 (#666 on #111, 9px), below its 4.5:1 requirement for normal text. Onboarding subtitle text measured 2.97:1. Calendar legend and other very small labels are difficult to read in the captured panel.</p><a href="../../output/playwright/baseline-2026-11-09/watch-panel-detail.png">Original screenshot</a></details>
+</article>
+<article id="JP-07">
+<h2>JP-07 · Repair onboarding roles and name the popup XP bar</h2>
+<p class="status">Implemented · verification outstanding · <a href="https://github.com/thepoppfish/JustPractice/pull/3">PR #3</a></p>
+<p>Expose step navigation with suitable semantics, use a radio group or fully implemented listbox for languages, name the XP bar, and expose current navigation/filter state. Check route-change focus.</p>
+<p><strong>Acceptance:</strong> No violations for aria-hidden-focus, aria-required-children, or aria-progressbar-name. Complete onboarding and navigate core views using keyboard only, then perform a screen-reader check.</p>
+<p><strong>Verification:</strong> Keyboard and automated checks passed; spoken screen-reader verification outstanding.</p>
+<p class="pending"><strong>Outstanding:</strong> Spoken NVDA/Narrator review of onboarding and core navigation</p>
+<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>axe found focusable progress buttons inside aria-hidden=true, buttons inside a role=listbox without option semantics, and a popup progressbar without an accessible name. These are extension-owned findings; unrelated YouTube ARIA errors are excluded.</p><a href="../../output/playwright/baseline-2026-11-09/01-onboarding-language.png">Original screenshot</a></details>
+</article>
+<article id="JP-08">
+<h2>JP-08 · Apply Hebrew language and direction consistently</h2>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/3">PR #3</a></p>
+<p>Centralize locale application for dashboard, popup, onboarding, and shadow panel. Use logical CSS properties and isolate Latin tags/numbers where necessary.</p>
+<p><strong>Acceptance:</strong> Hebrew snapshots have correct document/shadow direction and language metadata; mixed Hebrew/English titles and numbers read correctly. Verify French, German, Spanish, and Japanese label lengths too.</p>
+
+
+<ul><li><a href="../../output/playwright/accessibility-hebrew-2026-11-09/verification.html">Verification report with screenshots and acceptance checks</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>The dashboard correctly set lang=he and dir=rtl. The Hebrew popup retained lang=en with no dir, and Hebrew onboarding set lang=he but no document direction. The screenshots show left-to-right control layout mixed with Hebrew content.</p><a href="../../output/playwright/baseline-2026-11-09/popup-hebrew-populated.png">Original screenshot</a></details>
+</article>
+<article id="JP-09">
+<h2>JP-09 · Show save and failure feedback for user mutations</h2>
+<p class="status">Open</p>
+<p>Use one checked message helper; surface actionable inline errors and saved feedback; disable conflicting controls while writes are pending; preserve edited input on failure.</p>
+<p><strong>Acceptance:</strong> Inject a storage quota failure and a rejected background response: the UI reports failure and retains the user’s input. Successful changes produce quiet, consistent feedback.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>Several settings and library handlers await send() without checking an {ok:false} response. Export catches errors silently. Initial load has an error view, but successful/failed saves are not consistently acknowledged. Storage-quota and disconnected-worker errors were not fault-injected in this baseline.</p><a href="../../output/playwright/baseline-2026-11-09/populated-goals.png">Original screenshot</a></details>
+</article>
+<article id="JP-10">
+<h2>JP-10 · Give library removal an undo path</h2>
+<p class="status">Open</p>
+<p>Move removal into a secondary action menu and offer an Undo toast. Keep explicit confirmation for full data replacement/clear rather than adding friction to every small action.</p>
+<p><strong>Acceptance:</strong> An accidental removal can be reversed with its title, difficulty, completion status, and saved timestamp intact.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>Clicking Remove deleted a card immediately; the library count changed from six to five. There was no undo affordance. Clear-all and restore already use confirmation dialogs.</p><a href="../../output/playwright/baseline-2026-11-09/10-library-populated.png">Original screenshot</a></details>
+</article>
+<article id="JP-11">
+<h2>JP-11 · Make lint deterministic before and after building</h2>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/4">PR #4</a></p>
+<p>Ignore generated public bundles and audit output; configure Node globals for scripts; remove unused source imports; decide how test files should be linted.</p>
+<p><strong>Acceptance:</strong> On a clean checkout and again after npm run build, npm run lint succeeds with the same result and no generated-code findings.</p>
+<p><strong>Verification:</strong> Local lint passes with zero errors/warnings before and after building; generated builds, release copies, browser reports and review artifacts are excluded.</p>
+
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42622579932">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>npm run lint currently reports 106 errors and 25 warnings. Of these, 98 errors/16 warnings come from the generated public/assets/youtube-content.bundle.js; eight errors come from Node globals in build scripts. The earlier clean checkout had far fewer errors because the generated bundle did not exist.</p></details>
+</article>
+<article id="JP-12">
+<h2>JP-12 · Update and triage development-tool advisories</h2>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/4">PR #4</a></p>
+<p>Update compatible toolchain versions, review remaining advisory conditions, rebuild and run the tests, and document any justified exception. Avoid an unreviewed force update.</p>
+<p><strong>Acceptance:</strong> Known advisories are resolved or individually triaged with affected execution paths; test/build/package remain green.</p>
+<p><strong>Verification:</strong> Critical/high advisories resolved. Raw audit retains seven moderate entries for one development-only Minimatch advisory, narrowly triaged with a 2027-02-09 expiry. Production audit reports zero findings.</p>
+
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42622579932">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>npm audit reports 20 affected packages: 8 moderate, 10 high, 2 critical. Critical entries are Vitest and Tinypool. npm audit --omit=dev reports zero advisories. These counts describe the installed development graph, not proven vulnerabilities in the shipped extension.</p></details>
+</article>
+<article id="JP-13">
+<h2>JP-13 · Add a reproducible CI and release check</h2>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/4">PR #4</a></p>
+<p>Add CI for a pinned supported Node version: npm ci, lint, tests, type checking, production build, dist verification, and packaging on a supported OS. Add a browser smoke flow once the highest-priority bugs are fixed.</p>
+<p><strong>Acceptance:</strong> A pull request gets a green, repeatable check and a runtime ZIP artifact. Add a separate test type-check if tests remain excluded from the app tsconfig.</p>
+<p><strong>Verification:</strong> GitHub Linux and Windows jobs passed from clean installs: lint before/after build, dependency policy, app/test type checks, production build, 365 tests, distribution verification, actual special-path packaging, two installed-browser smoke flows, and uploaded runtime ZIP/screenshots/traces. Implementation commit c26ddfd; run 42622579932.</p>
+
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42622579932">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>No .github workflow files are present. The project has meaningful unit tests and runtime-closure verification, but checks currently depend on a developer running them locally. TypeScript excludes test files from its build check.</p></details>
+</article>
+<article id="JP-14">
+<h2>JP-14 · Quote Windows archive paths</h2>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/4">PR #4</a></p>
+<p>Pass paths as literal, safely quoted PowerShell arguments or use a cross-platform archive library/tool with structured arguments.</p>
+<p><strong>Acceptance:</strong> Package successfully from a workspace containing spaces and Unicode characters, and verify the resulting archive’s root manifest.</p>
+<p><strong>Verification:</strong> Actual Windows packaging from spaces, apostrophe, Hebrew and bracketed paths passes: all 24 runtime files and manifest.json at root.</p>
+
+<ul><li><a href="https://github.com/thepoppfish/JustPractice/actions/runs/42622579932">GitHub Linux/Windows quality workflow</a></li><li><a href="../../output/playwright/quality-checks-2026-11-09/verification.html">Quality batch verification, six screenshots, zoom and traces</a></li></ul>
+<details><summary>Original baseline evidence</summary><p>The Windows packaging command concatenates -Path and -DestinationPath values with spaces, without quoting them. Packaging succeeded in this workspace, whose path has no spaces; a path such as C:\Users\User Name\Projects will be parsed incorrectly. A spaced-path run was not performed.</p></details>
+</article>
+<article id="JP-15">
+<h2>JP-15 · Make library cards easier to scan and act on</h2>
+<p class="status">Open</p>
+<p>Place title and channel below the thumbnail, make “Continue/Open” the clear primary action, show duration/progress consistently, and put secondary actions in a menu. Consider editing difficulty from the dashboard.</p>
+<p><strong>Acceptance:</strong> Long Japanese, Hebrew, and English titles remain readable, thumbnails are not obscured, and the main action is obvious at a glance.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>Titles are drawn over thumbnails that already contain text, while truncated channel names and red Remove buttons occupy the footer. A user can open the video by clicking the media, but the explicit action emphasis is removal.</p><a href="../../output/playwright/baseline-2026-11-09/10-library-populated.png">Original screenshot</a></details>
+</article>
+<article id="JP-16">
+<h2>JP-16 · Rebalance statistics toward readable numbers</h2>
+<p class="status">Open</p>
+<p>Increase numeric hierarchy, remove redundant pair labels, standardize duration formatting, clarify active-versus-total library counts, and show one primary daily metric before secondary history.</p>
+<p><strong>Acceptance:</strong> At 1024×768 and 1440×900, today’s progress and the next useful action are readable without zoom. Count and time labels are unambiguous across surfaces.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>The three large goal rings use tiny center labels and repeat the same values underneath. Heatmap and weekly detail are below the initial fold. “Hours practiced” uses HH:MM while other surfaces use h/m/s, and “videos saved” counts only incomplete videos.</p><a href="../../output/playwright/baseline-2026-11-09/populated-stats.png">Original screenshot</a></details>
+</article>
+<article id="JP-17">
+<h2>JP-17 · Use a consistent settings form layout</h2>
+<p class="status">Open</p>
+<p>Use left-aligned sections, a consistent label/control/help pattern, comfortable input widths, grouped advanced options, and a clearly separated data-danger section. Unify save-on-change versus explicit Save behavior.</p>
+<p><strong>Acceptance:</strong> A user can locate counting, language, and backup settings quickly; helper copy is adjacent to the control; save state and destructive actions are clear.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>Settings span roughly 2,193 pixels at the tested desktop size, with centered prose, differently sized cards, and compact browser-native inputs. The same page mixes profile, motivation, learning rules, onboarding, and destructive data controls.</p><a href="../../output/playwright/baseline-2026-11-09/settings-framework-detail.png">Original screenshot</a></details>
+</article>
+<article id="JP-18">
+<h2>JP-18 · Unify visual tokens across the four extension surfaces</h2>
+<p class="status">Open</p>
+<p>Extract a small shared token set for text, muted text, surfaces, accent, success, spacing, radii, focus rings, and motion. Preserve semantic green for success and select one primary-action treatment.</p>
+<p><strong>Acceptance:</strong> Compare onboarding, popup, dashboard, and watch panel side by side: controls and status colors follow the same rules without forcing identical layouts.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>Dashboard and onboarding emphasize orange, the panel still defines a blue primary button, the roadmap uses vivid neon green for Start, and typography/spacing/radii vary between separate stylesheets. The orange/charcoal brand itself is recognizable and worth retaining.</p><a href="../../output/playwright/baseline-2026-11-09/populated-path.png">Original screenshot</a></details>
+</article>
+<article id="JP-19">
+<h2>JP-19 · Explain local storage, network requests, and permissions precisely</h2>
+<p class="status">Open</p>
+<p>Add a concise privacy/data-flow page, explain each permission, state what uninstalling loses, recommend backups, and review whether the legacy alarms permission still needs to ship.</p>
+<p><strong>Acceptance:</strong> The public docs list contacted services and the purpose of each permission, match actual behavior, and link clearly from the README and site.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>Practice data is stored locally. The app also requests YouTube metadata/watch pages and thumbnail images, and the site embeds a YouTube tutorial. The manifest requests storage, contextMenus, alarms, and scripting; alarms is currently used only to clear a retired reminder alarm.</p><a href="../../output/playwright/baseline-2026-11-09/website-desktop.png">Original screenshot</a></details>
+</article>
+<article id="JP-20">
+<h2>JP-20 · Turn the repository into a clear project case study</h2>
+<p class="status">Open</p>
+<p>Lead with the user problem and a current screenshot/GIF; include a verified install path, concise architecture, local-data design, storage-race solution, checks, limitations, and a short roadmap. Archive or refresh stale audits; keep the tests.</p>
+<p><strong>Acceptance:</strong> In under two minutes a reviewer can understand the problem, see the product, run it, locate the tests, and discuss one meaningful engineering decision.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>The README explains installation and features but has no embedded screenshots, architecture overview, test command/results, design tradeoffs, known limitations, or maintainer-oriented contribution path. Several internal slimdown/audit documents are stale snapshots.</p><a href="../../output/playwright/baseline-2026-11-09/10-library-populated.png">Original screenshot</a></details>
+</article>
+<article id="JP-21">
+<h2>JP-21 · Measure large-library and content-script costs before optimizing</h2>
+<p class="status">Open</p>
+<p>Profile startup, search, playback sampling/calendar updates, large libraries, and memory over a long YouTube session. Then consider minification, selective rendering, and reducing unnecessary DOM replacement where measurements support it.</p>
+<p><strong>Acceptance:</strong> Retain before/after traces and choose budgets for time to usable panel, search latency, long tasks, and memory. No optimization should regress tracking or packaging.</p>
+
+
+
+<details><summary>Original baseline evidence</summary><p>The packaged ZIP is 284,940 bytes across 24 runtime files. The standalone YouTube script is roughly 627 KB uncompressed and has no minification option; it includes locale/UI code. The dashboard builds multiple view sections, including hidden ones. No representative long-session or 100+ video performance trace was taken.</p></details>
+</article></main></html>

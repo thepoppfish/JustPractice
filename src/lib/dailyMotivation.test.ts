@@ -15,7 +15,6 @@ describe('dailyMotivationForToday', () => {
 
   it('includes custom messages in the pool', () => {
     const custom = ['My test line only here'];
-    const ms = Date.parse('2026-01-01T12:00:00');
     let hit = false;
     for (let d = 1; d <= 400; d++) {
       const msg = dailyMotivationForToday(custom, t, Date.parse(`2026-02-${String(d).padStart(2, '0')}T12:00:00`));

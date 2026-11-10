@@ -7,8 +7,6 @@ import {
   CEFR_LEVELS,
   JLPT_LEVELS,
   defaultGoals,
-  defaultPlayerProgress,
-  defaultSettings,
   emptyPersisted,
   ensureSettingsShape,
   inferExtensionInstalledDateKey,
@@ -18,7 +16,6 @@ import {
   type LevelTag,
   type LibraryItem,
   type PersistedData,
-  type PracticeGoals,
 } from './storageTypes';
 
 function normalizeDifficulty(x: unknown): LevelTag | null {
