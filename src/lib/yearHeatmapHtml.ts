@@ -74,10 +74,10 @@ export function yearHeatmapCellTitle(
 }
 
 function yearHeatmapDayKeysHtml(t: YearHeatmapTranslate, showGoalKey: boolean): string {
-  const none = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--none"></span>${escapeHtml(String(t('dash.chartKeyNone')))}</span>`;
-  const active = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--active"></span>${escapeHtml(String(t('dash.chartKeyActive')))}</span>`;
+  const none = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--none"></span>${escapeHtml(String(t('calendar.chartKeyNone')))}</span>`;
+  const active = `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--active"></span>${escapeHtml(String(t('calendar.chartKeyActive')))}</span>`;
   const goal = showGoalKey
-    ? `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--goal"></span>${escapeHtml(String(t('dash.chartKeyGoal')))}</span>`
+    ? `<span class="year-hm-key"><span class="year-hm-key-dot year-hm-key-dot--goal"></span>${escapeHtml(String(t('calendar.chartKeyGoal')))}</span>`
     : '';
   return `${none}${active}${goal}`;
 }

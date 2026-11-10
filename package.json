@@ -19,6 +19,8 @@
     "test:smoke": "playwright test",
     "audit:dependencies": "node scripts/check-dependency-audit.mjs",
     "verify:packaging-paths": "node scripts/verify-packaging-paths.mjs",
+    "profile:watch": "node scripts/profile-watch.mjs",
+    "profile:library": "node scripts/profile-library.mjs",
     "review:polish": "node scripts/render-polish-review.mjs"
   },
   "devDependencies": {
@@ -27,7 +29,9 @@
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.65.0",
     "@types/chrome": "^0.0.287",
-    "@types/d3": "^7.4.3",
+    "@types/d3-array": "3.2.2",
+    "@types/d3-selection": "3.0.11",
+    "@types/d3-shape": "3.1.8",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^24.19.2",
     "esbuild": "^0.25.0",
@@ -42,7 +46,9 @@
   },
   "dependencies": {
     "animejs": "^4.4.1",
-    "d3": "^7.9.0"
+    "d3-array": "3.2.4",
+    "d3-selection": "3.0.0",
+    "d3-shape": "3.2.0"
   },
   "engines": {
     "node": ">=24.15.0 <25"

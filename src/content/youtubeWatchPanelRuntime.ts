@@ -330,7 +330,6 @@ function mergeDailySnapshotIntoPanel(incoming: Record<string, number>): void {
   lastDailySnapshot = mergeIncomingDailySnapshot(
     lastDailySnapshot,
     incoming,
-    practiceEnabled ? practiceMeter.getPendingWholeSeconds() : 0,
   );
 }
 
@@ -616,7 +615,6 @@ function applyCalendarSnapshot(
   lastDailySnapshot = mergeIncomingDailySnapshot(
     lastDailySnapshot,
     dailySeconds,
-    practiceEnabled ? practiceMeter.getPendingWholeSeconds() : 0,
   );
   extensionInstallDateKey = installKey;
   if (playerProgress) {

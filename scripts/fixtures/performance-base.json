@@ -1,0 +1,94 @@
+{
+  "dailySeconds": {
+    "2026-11-09": 1200,
+    "2026-11-08": 3600,
+    "2026-11-07": 1800
+  },
+  "extensionInstalledDateKey": "2026-11-01",
+  "library": [
+    {
+      "addedAt": 1794234598111,
+      "channel": "English Learning Studio",
+      "completedAt": 1794150934937,
+      "difficulty": "N3",
+      "durationSec": 1560,
+      "practiceToken": "d4a6f870-897a-4294-8bb5-840d8512f4a9",
+      "title": "How I practise listening every day — a long English lesson title with several useful examples",
+      "videoId": "abcdefghijk"
+    },
+    {
+      "addedAt": 1794234598116,
+      "channel": "ערוץ ללימוד שפות",
+      "completedAt": null,
+      "difficulty": "N2",
+      "durationSec": 876,
+      "practiceToken": "284f1fb7-a81c-4250-8009-850c1b4351a6",
+      "title": "איך אני מתרגל הקשבה בכל יום — כותרת ארוכה בעברית עם דוגמאות שימושיות לתרגול",
+      "videoId": "lmnopqrstuv"
+    },
+    {
+      "addedAt": 1794234598122,
+      "channel": "日本語練習チャンネル",
+      "completedAt": null,
+      "difficulty": "N4",
+      "durationSec": 4200,
+      "practiceToken": "56cb3fb4-5326-4fe6-8a2a-782bfc511648",
+      "title": "日本語のリスニングを毎日練習する方法：長いタイトルでも読みやすい動画ライブラリと学習の記録",
+      "videoId": "wxyzABCDEFG"
+    }
+  ],
+  "onboardingCompletedAt": 1794234647993,
+  "playerProgress": {
+    "achievements": {
+      "lib_1": 1794234598171
+    },
+    "completeXpAwarded": {},
+    "lastDailyGoalXpDateKey": null,
+    "lastStreakXpDateKey": null,
+    "lifetimeXp": 0,
+    "practiceXpCarrySeconds": 0,
+    "prestigeLevel": 0,
+    "totalXp": 0
+  },
+  "roadmapBonusPick": null,
+  "roadmapCompletionSnapshot": null,
+  "schemaVersion": 16,
+  "settings": {
+    "calendarShowPracticeTime": false,
+    "customDailyMessages": [],
+    "customLevels": [
+      "Beginner",
+      "Intermediate",
+      "Advanced"
+    ],
+    "dailyMotivationEnabled": true,
+    "displayName": "",
+    "goalNotificationsEnabled": false,
+    "goalNudgeHourLocal": null,
+    "goals": {
+      "dailyTargetSec": 3600,
+      "weeklyTargetSec": 25200,
+      "monthlyTargetSec": 108000
+    },
+    "lastNotifiedGoalMetDate": null,
+    "lastNotifiedGoalNudgeDate": null,
+    "learningFocusHideRecommendations": true,
+    "levelFramework": "jlpt",
+    "pauseWhenUnfocused": true,
+    "uiLocale": "en",
+    "watchPanelXpToastsEnabled": true,
+    "yearHeatmapCalendar": true
+  },
+  "todayPathPlan": null,
+  "videoDailySeconds": {},
+  "videoPlaybackPositionSec": {
+    "abcdefghijk": 835,
+    "lmnopqrstuv": 163,
+    "wxyzABCDEFG": 60
+  },
+  "videoSeconds": {
+    "abcdefghijk": 2700,
+    "lmnopqrstuv": 300,
+    "wxyzABCDEFG": 90
+  }
+}
