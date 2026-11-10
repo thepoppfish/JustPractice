@@ -247,9 +247,23 @@
     "source": "src/dashboard/dashboardListeners.ts:74; src/dashboard/dashboardTemplates.ts:166; src/popup/main.ts:277",
     "image": "10-library-populated.png",
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 6,
+    "verification": "Metadata-exact removal/undo, cross-view recovery and popup reopening pass; session/local-write failure, retry, stale membership, conflict, expiry and profile replacement are covered. Practice history and XP remain unchanged.",
+    "checks": [
+      {
+        "text": "Implementation and validation notes",
+        "href": "library-actions.md"
+      },
+      {
+        "text": "Screenshots, raw axe checks, traces and retained candidate",
+        "href": "../../output/playwright/library-actions-2026-11-09/verification.html"
+      },
+      {
+        "text": "Reviewable PR and cross-platform checks",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/6"
+      }
+    ]
   },
   {
     "id": "JP-11",
@@ -376,9 +390,23 @@
     "source": "src/dashboard/dashboardTemplates.ts:154; src/dashboard/dashboard.css:393",
     "image": "10-library-populated.png",
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 6,
+    "verification": "Titles/channels now flow below unobscured previews, with primary Open/Continue and native secondary actions. Separate length/practice/playback labels, direct dashboard level editing and long EN/HE/JA titles are verified in six locales at native 100%/200% zoom.",
+    "checks": [
+      {
+        "text": "Implementation and validation notes",
+        "href": "library-actions.md"
+      },
+      {
+        "text": "Screenshots, raw axe checks, traces and retained candidate",
+        "href": "../../output/playwright/library-actions-2026-11-09/verification.html"
+      },
+      {
+        "text": "Reviewable PR and cross-platform checks",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/6"
+      }
+    ]
   },
   {
     "id": "JP-16",

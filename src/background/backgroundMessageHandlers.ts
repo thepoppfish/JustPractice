@@ -7,6 +7,8 @@ import {
   withStorageTransaction,
   type StorageTransaction,
   emptyPersisted,
+  STORAGE_KEY,
+  type PersistedData,
 } from '../lib/storage';
 import {
   processAchievementScan,
@@ -28,6 +30,7 @@ import { addVideoDailyPractice } from '../lib/videoDailyPractice';
 import { rebuildContextMenusFromStorage } from './backgroundContextMenus';
 import { prepareBackup } from '../lib/backup';
 import { restoreStorageSafely } from '../lib/storageRecovery';
+import { stageRemoval, getLibraryUndo, undoLibraryRemoval, dismissLibraryUndo, clearLibraryUndo } from './backgroundLibraryUndo';
 
 const MAX_TICK_SECONDS = 120;
 
@@ -92,6 +95,7 @@ async function handleStorageMessage(
       } else {
         p.library.push({
           videoId,
+          practiceToken: crypto.randomUUID(),
           title: cleanTitle ?? (title.trim() || 'Unknown title'),
           channel: cleanChannel ?? (channel.trim() || 'Unknown channel'),
           addedAt: Date.now(),
@@ -117,10 +121,21 @@ async function handleStorageMessage(
     }
     case MSG.REMOVE_LIBRARY: {
       const p = await readPersisted();
+      const index = p.library.findIndex((item) => item.videoId === message.payload.videoId);
+      if (index < 0) return { ok: true, undo: null };
+      const undo = await stageRemoval(p, p.library[index], index);
       p.library = p.library.filter((x) => x.videoId !== message.payload.videoId);
       await writePersisted(p);
-      return { ok: true };
+      return { ok: true, undo };
     }
+    case MSG.GET_LIBRARY_UNDO:
+      return { ok: true, undo: await getLibraryUndo(await readPersisted()) };
+    case MSG.UNDO_LIBRARY_REMOVAL:
+      return await undoLibraryRemoval(await readPersisted(), message.payload.token, writePersisted)
+        ? { ok: true } : { ok: false, code: 'undo_unavailable', error: 'This removal can no longer be undone.' };
+    case MSG.DISMISS_LIBRARY_UNDO:
+      await dismissLibraryUndo(await readPersisted(), message.payload.token);
+      return { ok: true };
     case MSG.SET_DIFFICULTY: {
       const p = await readPersisted();
       const item = p.library.find((x) => x.videoId === message.payload.videoId);
@@ -156,6 +171,7 @@ async function handleStorageMessage(
           rawTitle && !isPlaceholderYoutubePageTitle(rawTitle) ? rawTitle : 'Unknown title';
         p.library.push({
           videoId,
+          practiceToken: crypto.randomUUID(),
           title: safeTitle,
           channel: channel?.trim() || 'Unknown channel',
           addedAt: now,
@@ -195,7 +211,8 @@ async function handleStorageMessage(
       let { deltaSeconds } = message.payload;
       const p = await readPersisted();
       const { videoId, endedAtMs } = message.payload;
-      const inLibrary = p.library.some((x) => x.videoId === videoId);
+      const item = p.library.find((x) => x.videoId === videoId);
+      const inLibrary = Boolean(item && (!item.practiceToken || item.practiceToken === message.payload.practiceToken));
       // A tick can already be in flight when another view removes/clears the video.
       // Recheck inside the transaction so that stale tabs cannot recreate practice data.
       if (deltaSeconds <= 0 || !inLibrary) {
@@ -283,12 +300,16 @@ async function handleStorageMessage(
       return { ok: true };
     }
     case MSG.CLEAR_ALL_EXTENSION_DATA: {
+      await clearLibraryUndo();
       await writePersisted(emptyPersisted());
       return { ok: true };
     }
     case MSG.RESTORE_EXTENSION_STORAGE: {
       try {
         const { storage } = prepareBackup(message.payload);
+        await clearLibraryUndo();
+        const imported = storage[STORAGE_KEY] as PersistedData;
+        imported.library = imported.library.map((item) => ({ ...item, practiceToken: crypto.randomUUID() }));
         await restoreStorageSafely(storage);
         return { ok: true };
       } catch (e) {

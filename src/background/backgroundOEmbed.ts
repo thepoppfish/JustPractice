@@ -20,7 +20,7 @@ export async function enrichLibraryItemFromOEmbed(
       const row = latest.library.find((x) => x.videoId === videoId);
       // A removed/re-added entry is a different save. Never revive the old row
       // or replace fields edited while this request was in flight.
-      if (!row || row.addedAt !== item.addedAt) return;
+      if (!row || row.addedAt !== item.addedAt || row.practiceToken !== item.practiceToken) return;
       let changed = false;
       const fillTitle = row.title === item.title && (
         mode === 'overwrite' ||

@@ -43,6 +43,7 @@ export class UiActionFeedback {
   private status: HTMLElement;
   private written = false;
   private successKey = 'feedback.saved';
+  private silent = false;
   private activeSource: HTMLElement | null = null;
   private generation = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -72,6 +73,8 @@ export class UiActionFeedback {
     this.successKey = key;
     this.commitActiveControls();
   }
+
+  silenceSuccess(): void { this.silent = true; }
 
   reset(): void {
     this.generation++;
@@ -239,6 +242,7 @@ export class UiActionFeedback {
     this.activeSource = element;
     this.written = false;
     this.successKey = 'feedback.saved';
+    this.silent = false;
     try {
       const result = operation();
       if (result instanceof Promise) {
@@ -249,7 +253,7 @@ export class UiActionFeedback {
       if (generation !== this.generation) return false;
       this.captureDrafts();
       if (this.written && this.errors.get(source.key) === initialError) this.clearError(source.key);
-      if (this.written && !this.errors.has(source.key)) {
+      if (this.written && !this.silent && !this.errors.has(source.key)) {
         this.statusText(this.t(this.successKey));
         this.timer = setTimeout(() => { this.status.hidden = true; }, 3500);
       } else this.status.hidden = true;

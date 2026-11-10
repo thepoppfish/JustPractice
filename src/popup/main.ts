@@ -25,6 +25,9 @@ import { attachPopupTabs } from './popupTabs';
 import { rememberUiFocus } from '../lib/restoreUiFocus';
 import { sendChecked } from '../lib/extensionMessaging';
 import { uiActionFeedback } from '../lib/uiActionFeedback';
+import { libraryUndoUi } from '../lib/libraryUndoUi';
+import type { LibraryUndoOffer } from '../lib/libraryUndo';
+import { libraryMetricsHtml, librarySecondaryActionsHtml, playbackForLibraryItem } from '../lib/libraryPresentation';
 
 type FilterLevel = '' | 'unset' | 'legacy' | LevelTag;
 
@@ -122,6 +125,7 @@ async function renderAsync(): Promise<void> {
   applyUiLocale(locale);
   const t = createTranslator(locale);
   actions.setTranslator(t);
+  const undo = libraryUndoUi(app, t, renderAsync);
 
   const validFilterTags = new Set(tagsForFramework(fw, customLevels));
   if (
@@ -220,7 +224,7 @@ async function renderAsync(): Promise<void> {
           ${
             filtered.length === 0 ?
               `<div class="empty">${escapeHtml(emptyMessage(inProgress.length, t))}</div>`
-            : filtered.map((item) => libraryItemHtml(item, fw, customLevels, t)).join('')
+            : filtered.map((item) => libraryItemHtml(item, data, fw, customLevels, t)).join('')
           }
         </div>
       </div>
@@ -288,8 +292,20 @@ async function renderAsync(): Promise<void> {
     btn.addEventListener('click', (event) => actions.handle(event, async () => {
       const id = btn.getAttribute('data-remove');
       if (!id) return;
-      await actions.sender(send)({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
-      render();
+      const result = await actions.sender(send)<{ ok: true; undo: LibraryUndoOffer | null }>({ type: MSG.REMOVE_LIBRARY, payload: { videoId: id } });
+      actions.silenceSuccess();
+      await renderAsync();
+      undo.removed(result.undo);
+    }));
+  });
+
+  app.querySelectorAll<HTMLButtonElement>('[data-library-complete]').forEach((btn) => {
+    btn.addEventListener('click', (event) => actions.handle(event, async () => {
+      const videoId = btn.dataset.libraryComplete;
+      if (!videoId) return;
+      await actions.sender(send)({ type: MSG.SET_LIBRARY_COMPLETION, payload: { videoId, complete: btn.dataset.complete === 'true' } });
+      await renderAsync();
+      if (document.activeElement === document.body) app.querySelector<HTMLInputElement>('#popup-search')?.focus({ preventScroll: true });
     }));
   });
 
@@ -325,11 +341,13 @@ async function renderAsync(): Promise<void> {
 
 function libraryItemHtml(
   item: LibraryItem,
+  data: PersistedData,
   fw: LevelFramework,
   customLevels: readonly string[],
   t: (key: string, params?: Record<string, string | number>) => string,
 ): string {
-  const href = `https://www.youtube.com/watch?v=${encodeURIComponent(item.videoId)}`;
+  const { href, resume } = playbackForLibraryItem(item, data);
+  const primary = t(resume ? 'library.continue' : 'common.open');
   const lvl = difficultyLabel(item.difficulty, fw, customLevels, t);
   const thumbSrc = thumbnailUrlForVideoId(item.videoId);
   return `
@@ -338,9 +356,10 @@ function libraryItemHtml(
       <div class="item-body">
         <div class="item-title" dir="auto">${escapeHtml(item.title)}</div>
         <div class="item-meta"><bdi>${escapeHtml(item.channel)}</bdi> · <bdi>${escapeHtml(lvl)}</bdi></div>
+        ${libraryMetricsHtml(item, data, t)}
         <div class="item-actions">
-          <a href="${href}" target="_blank" rel="noreferrer">${escapeHtml(t('common.open'))}</a>
-          <button type="button" class="danger" data-remove="${escapeAttr(item.videoId)}">${escapeHtml(t('common.remove'))}</button>
+          <a class="library-primary" href="${escapeAttr(href)}" target="_blank" rel="noreferrer" aria-label="${escapeAttr(primary + ': ' + item.title)}">${escapeHtml(primary)}</a>
+          ${librarySecondaryActionsHtml(item, 'popup', t)}
         </div>
       </div>
     </div>

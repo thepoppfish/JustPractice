@@ -458,5 +458,18 @@
   "feedback.quota": "Le stockage est plein. Votre saisie est conservée sur cette page. Exportez une sauvegarde ou libérez de l’espace dans le navigateur, puis réessayez.",
   "feedback.reconnect": "L’extension est indisponible. Votre saisie est conservée sur cette page. Copiez-la avant d’actualiser la page, puis réessayez.",
   "feedback.retry": "Réessayer",
-  "feedback.exportStarted": "Téléchargement de la sauvegarde demandé."
+  "feedback.exportStarted": "Téléchargement de la sauvegarde demandé.",
+  "library.more": "Autres actions",
+  "library.continue": "Reprendre",
+  "library.length": "Durée",
+  "library.practice": "Pratique",
+  "library.playback": "Position de lecture la plus avancée",
+  "library.unknownLength": "Inconnue",
+  "library.markComplete": "Marquer comme terminé",
+  "library.removed": "Vidéo retirée de la bibliothèque",
+  "library.undo": "Annuler",
+  "library.dismiss": "Fermer",
+  "library.restored": "Vidéo restaurée",
+  "library.undoFailed": "Impossible d’annuler. Réessayez.",
+  "library.undoUnavailable": "Cette suppression ne peut plus être annulée."
 }

@@ -31,7 +31,7 @@ export async function enrichLibraryItemDuration(videoId: string): Promise<boolea
   return withStorageTransaction(async ({ read, write }) => {
     const latest = await read();
     const row = latest.library.find((x) => x.videoId === videoId);
-    if (!row || row.addedAt !== item.addedAt || hasKnownDuration(row)) return false;
+    if (!row || row.addedAt !== item.addedAt || row.practiceToken !== item.practiceToken || hasKnownDuration(row)) return false;
 
     row.durationSec = durationSec;
     await write(latest);

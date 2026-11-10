@@ -458,5 +458,18 @@
   "feedback.quota": "保存領域がいっぱいです。入力内容は残っています。バックアップをエクスポートするか、ブラウザーの保存領域を空けてから再試行してください。",
   "feedback.reconnect": "拡張機能を利用できません。入力内容は残っています。ページを再読み込みする前にコピーしてから、もう一度お試しください。",
   "feedback.retry": "再試行",
-  "feedback.exportStarted": "バックアップのダウンロードを開始しました。"
+  "feedback.exportStarted": "バックアップのダウンロードを開始しました。",
+  "library.more": "その他の操作",
+  "library.continue": "続きから再生",
+  "library.length": "動画の長さ",
+  "library.practice": "練習時間",
+  "library.playback": "最も進んだ再生位置",
+  "library.unknownLength": "不明",
+  "library.markComplete": "完了にする",
+  "library.removed": "ライブラリから動画を削除しました",
+  "library.undo": "元に戻す",
+  "library.dismiss": "閉じる",
+  "library.restored": "動画を復元しました",
+  "library.undoFailed": "元に戻せませんでした。もう一度お試しください。",
+  "library.undoUnavailable": "この削除は元に戻せなくなりました。"
 }

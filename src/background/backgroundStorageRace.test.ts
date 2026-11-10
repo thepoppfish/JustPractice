@@ -11,6 +11,8 @@ import { enrichLibraryItemDuration } from './backgroundDurationEnrich';
 import { handleBackgroundMessage } from './backgroundMessageHandlers';
 import { enrichLibraryItemFromOEmbed } from './backgroundOEmbed';
 import { RESTORE_RECOVERY_KEY } from '../lib/storageRecovery';
+import { LIBRARY_UNDO_KEY } from '../lib/libraryUndo';
+import type { LibraryUndoOffer } from '../lib/libraryUndo';
 
 vi.mock('./backgroundContextMenus', () => ({ rebuildContextMenusFromStorage: vi.fn() }));
 
@@ -317,7 +319,7 @@ describe('background storage concurrency', () => {
   it('serializes practice updates with backup replacement', async () => {
     const write = holdNextStorageWrite();
     const backup = emptyPersisted();
-    // This restored video remains saved, so the queued tick should still be accepted.
+    // A restored profile starts a new membership even when it contains the same video.
     backup.library = structuredClone((stored[STORAGE_KEY] as PersistedData).library);
     backup.dailySeconds[DAY] = 600;
     backup.videoSeconds[VIDEO_ID] = 600;
@@ -332,8 +334,8 @@ describe('background storage concurrency', () => {
     await Promise.all([restore, tick]);
 
     const data = await readPersisted();
-    expect(data.dailySeconds[DAY]).toBe(660);
-    expect(data.videoSeconds[VIDEO_ID]).toBe(660);
+    expect(data.dailySeconds[DAY]).toBe(600);
+    expect(data.videoSeconds[VIDEO_ID]).toBe(600);
   });
 
   it('rejects unrelated and malformed backups without writing or clearing data', async () => {
@@ -412,4 +414,165 @@ describe('background storage concurrency', () => {
     expect(data.dailySeconds[DAY]).toBe(60);
     expect(data.videoSeconds[VIDEO_ID]).toBe(60);
   });
+});
+
+async function removeOffer(videoId = VIDEO_ID): Promise<LibraryUndoOffer> {
+  const result = await handleBackgroundMessage({ type: MSG.REMOVE_LIBRARY, payload: { videoId } });
+  if (!result.ok || !('undo' in result) || !result.undo) throw new Error('Expected an undo offer');
+  return result.undo;
+}
+async function currentOffer(): Promise<LibraryUndoOffer | null> {
+  const result = await handleBackgroundMessage({ type: MSG.GET_LIBRARY_UNDO });
+  if (!result.ok || !('undo' in result)) throw new Error('Expected an undo response');
+  return result.undo;
+}
+function undoRemoval(token: string) {
+  return handleBackgroundMessage({ type: MSG.UNDO_LIBRARY_REMOVAL, payload: { token } });
+}
+
+describe('transactional library removal recovery', () => {
+  it('restores exact metadata and order while retaining practice and XP without a second award', async () => {
+    const data = stored[STORAGE_KEY] as PersistedData;
+    Object.assign(data.library[0], { title: 'עברית • 日本語', channel: 'Original channel', addedAt: NOW - 86400000,
+      difficulty: 'N3', durationSec: 1435, completedAt: NOW - 5000 });
+    data.library.push({ ...data.library[0], videoId: 'lmnopqrstuv' });
+    data.dailySeconds[DAY] = 900;
+    data.videoSeconds[VIDEO_ID] = 900;
+    data.videoPlaybackPositionSec[VIDEO_ID] = 700;
+    data.playerProgress.totalXp = 345;
+    const original = structuredClone(data);
+    const offer = await removeOffer();
+    expect((await readPersisted()).library.map((item) => item.videoId)).toEqual(['lmnopqrstuv']);
+    expect(await undoRemoval(offer.token)).toMatchObject({ ok: true });
+    const restored = await readPersisted();
+    expect(restored.library[0].practiceToken).toMatch(/^[0-9a-f-]{36}$/i);
+    delete restored.library[0].practiceToken;
+    expect(restored).toEqual(original);
+    expect(await undoRemoval(offer.token)).toMatchObject({ ok: false, code: 'undo_unavailable' });
+    expect(await currentOffer()).toBeNull();
+  });
+
+  it('leaves the video saved if session metadata cannot be stored', async () => {
+    const original = structuredClone(stored);
+    vi.mocked(chrome.storage.session.set).mockRejectedValueOnce(new Error('Session quota'));
+    await expect(removeOffer()).rejects.toThrow('Session quota');
+    expect(stored).toEqual(original);
+    for (const [values] of vi.mocked(chrome.storage.local.set).mock.calls) {
+      expect(((values as Record<string, unknown>)[STORAGE_KEY] as PersistedData).library.some((item) => item.videoId === VIDEO_ID)).toBe(true);
+    }
+  });
+
+  it('retains the previous undo if the next removal local write fails', async () => {
+    const data = stored[STORAGE_KEY] as PersistedData;
+    data.library.push({ ...data.library[0], videoId: 'lmnopqrstuv', title: 'Second' });
+    const first = await removeOffer();
+    vi.mocked(chrome.storage.local.set).mockRejectedValueOnce(new Error('Local quota'));
+    await expect(removeOffer('lmnopqrstuv')).rejects.toThrow('Local quota');
+    expect(await currentOffer()).toEqual(first);
+    expect(await undoRemoval(first.token)).toMatchObject({ ok: true });
+    expect((await readPersisted()).library.map((item) => item.videoId)).toEqual([VIDEO_ID, 'lmnopqrstuv']);
+  });
+
+  it('retains the offer after an undo write failure and can retry it', async () => {
+    const offer = await removeOffer();
+    vi.mocked(chrome.storage.local.set).mockRejectedValueOnce(new Error('Local quota'));
+    await expect(undoRemoval(offer.token)).rejects.toThrow('Local quota');
+    expect((await readPersisted()).library).toEqual([]);
+    expect(await currentOffer()).toEqual(offer);
+    expect(await undoRemoval(offer.token)).toMatchObject({ ok: true });
+  });
+
+  it('reports successful undo even when optional session cleanup fails', async () => {
+    const offer = await removeOffer();
+    vi.mocked(chrome.storage.session.remove).mockRejectedValueOnce(new Error('Cleanup failed'));
+    expect(await undoRemoval(offer.token)).toMatchObject({ ok: true });
+    expect((await readPersisted()).library).toHaveLength(1);
+    expect(await currentOffer()).toBeNull();
+    expect(await undoRemoval(offer.token)).toMatchObject({ ok: false });
+  });
+
+  it('does not overwrite a manually re-saved copy with the old metadata', async () => {
+    const offer = await removeOffer();
+    await handleBackgroundMessage({ type: MSG.ADD_OR_UPDATE_LIBRARY, payload: {
+      videoId: VIDEO_ID, title: 'New title', channel: 'New channel', difficulty: 'N2',
+    } });
+    expect(await undoRemoval(offer.token)).toMatchObject({ ok: false });
+    expect(await currentOffer()).toBeNull();
+    expect((await readPersisted()).library[0]).toMatchObject({ title: 'New title', difficulty: 'N2' });
+  });
+
+  it.each(['undo', 're-save', 'restore'] as const)('rejects old ticks after %s of the same video; accepts the current token at 2× playback', async (operation) => {
+    const oldToken = crypto.randomUUID();
+    (stored[STORAGE_KEY] as PersistedData).library[0].practiceToken = oldToken;
+    if (operation === 'restore') {
+      const backup = structuredClone(stored);
+      expect(await handleBackgroundMessage({ type: MSG.RESTORE_EXTENSION_STORAGE, payload: backup })).toMatchObject({ ok: true });
+    } else {
+      const offer = await removeOffer();
+      if (operation === 'undo') await undoRemoval(offer.token);
+      else await handleBackgroundMessage({ type: MSG.ADD_OR_UPDATE_LIBRARY, payload: { videoId: VIDEO_ID, title: 'Resaved', channel: 'Channel' } });
+    }
+    const token = (await readPersisted()).library[0].practiceToken;
+    expect(token).toBeTruthy();
+    expect(token).not.toBe(oldToken);
+    const snapshot = structuredClone(stored);
+    for (const practiceToken of [oldToken, undefined]) {
+      expect(await handleBackgroundMessage({ type: MSG.PRACTICE_TICK, payload: {
+        videoId: VIDEO_ID, deltaSeconds: 60, endedAtMs: NOW, practiceToken,
+      } })).toMatchObject({ ok: true, xpGained: 0 });
+    }
+    expect(stored).toEqual(snapshot);
+    // 60 playback seconds during a 30s flush at 2× must not be capped to wall time.
+    await handleBackgroundMessage({ type: MSG.PRACTICE_TICK, payload: {
+      videoId: VIDEO_ID, deltaSeconds: 60, endedAtMs: NOW, practiceToken: token,
+    } });
+    expect((await readPersisted()).videoSeconds[VIDEO_ID]).toBe(60);
+  });
+
+  it('keeps a newer undo when an old view dismisses its stale offer', async () => {
+    const data = stored[STORAGE_KEY] as PersistedData;
+    data.library.push({ ...data.library[0], videoId: 'lmnopqrstuv' });
+    const first = await removeOffer();
+    const second = await removeOffer('lmnopqrstuv');
+    await handleBackgroundMessage({ type: MSG.DISMISS_LIBRARY_UNDO, payload: { token: first.token } });
+    expect(await currentOffer()).toEqual(second);
+    await handleBackgroundMessage({ type: MSG.DISMISS_LIBRARY_UNDO, payload: { token: second.token } });
+    expect(await currentOffer()).toBeNull();
+  });
+
+  it('expires after 24 hours without removing practice history', async () => {
+    await practiceTick();
+    const offer = await removeOffer();
+    const snapshot = structuredClone(stored);
+    vi.mocked(Date.now).mockReturnValue(NOW + 86400000);
+    expect(await currentOffer()).toBeNull();
+    expect(await undoRemoval(offer.token)).toMatchObject({ ok: false });
+    expect(stored).toEqual(snapshot);
+  });
+
+  it.each(['clear', 'restore'] as const)('invalidates undo before replacing the profile with %s', async (action) => {
+    const offer = await removeOffer();
+    await handleBackgroundMessage(action === 'clear' ? { type: MSG.CLEAR_ALL_EXTENSION_DATA }
+      : { type: MSG.RESTORE_EXTENSION_STORAGE, payload: { [STORAGE_KEY]: emptyPersisted() } });
+    expect(sessionStored[LIBRARY_UNDO_KEY]).toBeUndefined();
+    expect(await undoRemoval(offer.token)).toMatchObject({ ok: false });
+  });
+
+  it('leaves undo intact when backup validation fails', async () => {
+    const offer = await removeOffer();
+    expect(await handleBackgroundMessage({ type: MSG.RESTORE_EXTENSION_STORAGE, payload: {} })).toMatchObject({ ok: false });
+    expect(await currentOffer()).toEqual(offer);
+  });
+});
+
+it.each(['metadata', 'duration'] as const)('ignores an old %s request after undo restores the original saved date', async (kind) => {
+  const request = holdNextFetch();
+  const enrichment = kind === 'metadata' ? enrichLibraryItemFromOEmbed(VIDEO_ID) : enrichLibraryItemDuration(VIDEO_ID);
+  await request.started;
+  const offer = await removeOffer();
+  await undoRemoval(offer.token);
+  const snapshot = structuredClone(stored);
+  request.finish(kind === 'metadata' ? metadataResponse() : new Response('"lengthSeconds":"600"'));
+  await enrichment;
+  expect(stored).toEqual(snapshot);
 });
