@@ -1,5 +1,9 @@
 # GitHub Pages — plan of action (one-shot build)
 
+> Historical implementation plan. The site now exists. Current preview,
+> verification and release instructions are in [CONTRIBUTING.md](../CONTRIBUTING.md).
+> Keep this document as history rather than a fresh deployment checklist.
+
 **Goal:** A single implementation pass that produces a public landing page for JustPractice at:
 
 **https://thepoppfish.github.io/JustPractice/**

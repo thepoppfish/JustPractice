@@ -533,9 +533,24 @@
     "source": "manifest.config.ts:9; src/background/backgroundOEmbed.ts:14; src/background/backgroundDurationEnrich.ts:14; src/lib/youtubeMeta.ts:3; src/background/index.ts:11",
     "image": "website-desktop.png",
     "size": "S",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 8,
+    "verification": "Data-flow page links local records, external services, export/reset/uninstall and each remaining permission to actual behavior. Retired alarms permission/calls removed; an actual unpacked Reload retains synthetic data.",
+    "pendingChecks": [],
+    "checks": [
+      {
+        "text": "Implementation and verification notes",
+        "href": "privacy-case-study.md"
+      },
+      {
+        "text": "Screenshots, source audit and actual upgrade checks",
+        "href": "../../output/playwright/privacy-case-study-2026-11-09/verification.html"
+      },
+      {
+        "text": "Reviewable PR and cross-platform checks",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/8"
+      }
+    ]
   },
   {
     "id": "JP-20",
@@ -550,9 +565,24 @@
     "source": "README.md; docs/PROJECT-SLIMDOWN-PLAN.md",
     "image": "10-library-populated.png",
     "size": "M",
-    "status": "open",
-    "pr": null,
-    "verification": null
+    "status": "implemented-awaiting-review",
+    "pr": 8,
+    "verification": "README leads with learner problem and current synthetic screenshots, architecture/storage-race decision, install/checks/limitations and roadmap. Contributor guide and historical-document labels make current instructions explicit.",
+    "pendingChecks": [],
+    "checks": [
+      {
+        "text": "Implementation and verification notes",
+        "href": "privacy-case-study.md"
+      },
+      {
+        "text": "Screenshots, source audit and actual upgrade checks",
+        "href": "../../output/playwright/privacy-case-study-2026-11-09/verification.html"
+      },
+      {
+        "text": "Reviewable PR and cross-platform checks",
+        "href": "https://github.com/thepoppfish/JustPractice/pull/8"
+      }
+    ]
   },
   {
     "id": "JP-21",

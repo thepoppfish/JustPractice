@@ -51,10 +51,11 @@
         <div class="badges" aria-label="Project highlights">
           <span class="badge">Chrome extension</span>
           <span class="badge">GPL-3.0</span>
-          <span class="badge">Local-only data</span>
+          <span class="badge">Local practice storage</span>
         </div>
       </header>
 
+      <main>
       <section id="features" aria-labelledby="features-title">
         <h2 class="section-title" id="features-title">Features</h2>
         <div class="feature-grid">
@@ -82,8 +83,9 @@
           <article class="feature-card">
             <h3>Private by default</h3>
             <p>
-              All data stays in <code>chrome.storage.local</code> on your device. Export or import a
-              JSON backup anytime.
+              Your practice record stays in <code>chrome.storage.local</code> in this profile.
+              YouTube metadata and thumbnails still make network requests.
+              <a href="privacy.html">Privacy and data flow</a>.
             </p>
           </article>
         </div>
@@ -91,41 +93,48 @@
 
       <section id="screenshots" class="screenshots-section" aria-labelledby="screenshots-title">
         <h2 class="section-title" id="screenshots-title">Screenshots</h2>
+        <p class="candidate-note">Source candidate 1.0.3, synthetic data, November 2026. These previews include open polish PRs; the public download may be older.</p>
         <div class="shot-showcase">
           <figure class="shot-card shot-card--stats">
-            <figcaption>Last 7 days</figcaption>
+            <figcaption>Today's practice and goals</figcaption>
             <div class="shot-media">
+              <a href="assets/candidate-statistics.png">
               <img
-                src="assets/screenshot-popup.png"
-                width="742"
-                height="432"
-                alt="JustPractice last 7 days practice chart"
+                src="assets/candidate-statistics.png"
+                width="1440"
+                height="900"
+                alt="JustPractice statistics with today's practice, goal and calendar"
                 loading="lazy"
               />
+              </a>
             </div>
           </figure>
           <figure class="shot-card shot-card--panel">
             <figcaption>YouTube watch panel</figcaption>
             <div class="shot-media">
+              <a href="assets/candidate-watch-panel.png">
               <img
-                src="assets/screenshot-panel.png"
-                width="308"
-                height="657"
+                src="assets/candidate-watch-panel.png"
+                width="300"
+                height="738"
                 alt="JustPractice panel on a YouTube watch page"
                 loading="lazy"
               />
+              </a>
             </div>
           </figure>
           <figure class="shot-card shot-card--library">
             <figcaption>Video library</figcaption>
             <div class="shot-media">
+              <a href="assets/candidate-library.png">
               <img
-                src="assets/screenshot-dashboard.png"
-                width="1024"
-                height="497"
+                src="assets/candidate-library.png"
+                width="1440"
+                height="900"
                 alt="JustPractice video library on the dashboard"
                 loading="lazy"
               />
+              </a>
             </div>
           </figure>
         </div>
@@ -158,7 +167,7 @@
             Do not choose GitHub’s automatic “Source code” archives; those require a build.
           </li>
           <li>
-            <strong>Extract</strong> the zip to a folder (e.g. <code>justpractice-1.0.0/</code>).
+            <strong>Extract</strong> the zip to a folder (e.g. <code>justpractice/</code>).
             You should see <code>manifest.json</code> at the top level.
           </li>
           <li>Open <code>chrome://extensions</code>.</li>
@@ -169,15 +178,15 @@
           </li>
         </ol>
         <div class="note-box">
-          <strong>Updates:</strong> Download a new release zip and load the new folder, or replace
-          the files in your folder and click <strong>Reload</strong> on the extension card in
-          <code>chrome://extensions</code>.
+          <strong>Updates:</strong> Export a backup first. Replace the files in your existing
+          unpacked folder and click <strong>Reload</strong> in <code>chrome://extensions</code>.
+          A new folder/profile can be a separate installation; keep your backup for restore.
         </div>
         <details class="source-build">
           <summary>Build from source instead</summary>
           <pre><code>git clone https://github.com/thepoppfish/JustPractice.git
 cd JustPractice
-npm install
+npm ci
 npm run build</code></pre>
           <p style="margin: 12px 0 0; color: var(--muted); font-size: 0.9375rem">
             Then load the <code>dist/</code> folder as an unpacked extension.
@@ -201,10 +210,12 @@ npm run build</code></pre>
         </ul>
       </section>
 
+      </main>
       <footer class="site-footer">
         <p>
-          <strong>Privacy:</strong> No accounts, no server. Practice data is stored under the key
-          <code>jpPractice</code> in Chrome local storage on your device.
+          <strong>Privacy:</strong> No JustPractice account or backend. Practice data is stored
+          locally under <code>jpPractice</code>; YouTube requests still occur.
+          <a href="privacy.html">Read storage, requests, permissions and backup guidance</a>.
         </p>
         <p>
           <strong>License:</strong>
@@ -216,6 +227,7 @@ npm run build</code></pre>
           <a href="https://github.com/thepoppfish/JustPractice">GitHub</a>
           <a href="https://github.com/thepoppfish/JustPractice/releases/latest">Releases</a>
           <a href="https://github.com/thepoppfish/JustPractice/issues">Report an issue</a>
+          <a href="privacy.html">Privacy and data flow</a>
         </nav>
       </footer>
     </div>

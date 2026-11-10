@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy and data flow — JustPractice</title>
+    <meta name="description" content="What JustPractice stores locally, when it contacts YouTube, why it requests Chrome permissions, and how to back up or remove your data." />
+    <link rel="icon" href="assets/icon-128.png" />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <main class="site-wrap document-page">
+      <nav class="footer-links" aria-label="Project"><a href="index.html">JustPractice home</a><a href="https://github.com/thepoppfish/JustPractice">Source and README</a></nav>
+      <h1>Privacy and data flow</h1>
+      <p class="document-lead">Your practice record stays in this Chrome profile. Some features still make requests to YouTube.</p>
+      <p class="note-box">Reviewed 9 November 2026 for the source candidate 1.0.3. Open polish PRs can be ahead of the public download. Older builds also request <code>alarms</code> only to cancel a retired reminder; this candidate removes that permission and the obsolete cleanup calls.</p>
+
+      <section aria-labelledby="stored"><h2 id="stored">What is stored on your device?</h2>
+        <p><code>chrome.storage.local</code>, primarily the <code>jpPractice</code> record, contains saved video IDs, titles, channels, levels, saved/completed dates and durations; daily and per-video practice totals; playback positions; goals, XP and roadmap state; language/display preferences, panel position, and optional display name and custom messages.</p>
+        <p>Temporary <code>chrome.storage.session</code> records support restore recovery and library Undo. Dashboard navigation uses page session storage; unsaved form drafts live in page memory. These temporary records are not permanent backups. The extension does not use Chrome Sync to synchronize practice data between devices.</p>
+        <p>There is no JustPractice account, application server or analytics endpoint in this source. Local storage is not a promise of encrypted storage: protect your browser profile and exported JSON files as you would other personal files.</p>
+      </section>
+
+      <section aria-labelledby="requests"><h2 id="requests">When does the browser contact other services?</h2>
+        <dl class="data-flow-list">
+          <dt>YouTube metadata — <code>www.youtube.com</code></dt>
+          <dd>Saving a video can request its title/channel through the oEmbed endpoint. Missing durations can be fetched from its watch page, including a rate-limited dashboard backfill. The requested video ID/URL identifies the video. Duration fetches explicitly omit credentials. Practice totals, goals, custom messages and your display name are not included in these metadata requests.</dd>
+          <dt>Thumbnail images — <code>i.ytimg.com</code></dt>
+          <dd>Library cards and the onboarding tutorial preview request images whose URLs contain the video ID. Viewing a saved library can therefore contact YouTube's image CDN even without playing a video.</dd>
+          <dt>YouTube viewing and tutorial</dt>
+          <dd>Opening a saved video or the onboarding tutorial visits YouTube normally. The public project website embeds a YouTube tutorial; loading/playing it can contact YouTube and its playback services. Their ordinary network, cookie and account behavior is controlled by your browser and YouTube, independently of local practice storage.</dd>
+          <dt>Project hosting and downloads — GitHub / GitHub Pages</dt>
+          <dd>Visiting the project website or repository and downloading a release contacts GitHub's hosting/download infrastructure. The static site has no project-added analytics script. It does not read your extension's practice record.</dd>
+        </dl>
+        <p>External services receive normal network information such as your IP address and request headers. “Local practice data” describes storage, not an offline guarantee or a claim that no third party receives requests. Chrome and YouTube may make their own requests beyond the extension's code.</p>
+      </section>
+
+      <section aria-labelledby="permissions"><h2 id="permissions">Why these Chrome permissions?</h2>
+        <dl class="data-flow-list">
+          <dt><code>storage</code></dt><dd>Keep the practice record and settings, plus temporary recovery/Undo records.</dd>
+          <dt><code>contextMenus</code></dt><dd>Add JustPractice save/level choices to right-click menus on YouTube pages, links and videos.</dd>
+          <dt><code>scripting</code></dt><dd>Inject the packaged watch-panel script into an already-open YouTube tab when its content script is missing, so settings/actions can reach that tab.</dd>
+          <dt>YouTube host access</dt><dd>Access is limited to HTTPS <code>www.youtube.com</code>, <code>youtube.com</code> and <code>m.youtube.com</code> pages. This supports the watch panel, playback observation, relevant tab messaging and metadata requests. It is not access to every website. Recognizing a <code>youtu.be</code> link does not grant that host permission.</dd>
+        </dl>
+        <p>The candidate does not request <code>alarms</code>, <code>history</code>, <code>cookies</code>, <code>downloads</code>, <code>notifications</code> or <code>unlimitedStorage</code> permissions. Export uses a browser file download initiated from the extension page.</p>
+      </section>
+
+      <section aria-labelledby="control"><h2 id="control">Back up, restore or remove your record</h2>
+        <p>Use <strong>Dashboard → Settings → Your data → Export JSON</strong> before uninstalling, changing profiles or replacing an unpacked installation. Keep the downloaded file somewhere safe. It contains readable local data and can reveal your saved-video choices and practice history; avoid attaching it to public bug reports.</p>
+        <p>Restore accepts recognized JustPractice exports up to 8 MB, validates their contents and previews counts before confirmation. The temporary recovery journal protects a failed/interrupted replacement while the browser session survives; it is not a durable backup across browser restart or uninstall.</p>
+        <p><strong>Clear</strong> requires confirmation and resets the local JustPractice record and pending library Undo. Removing a library video retains its historical practice totals. Uninstalling removes Chrome's local extension storage. Neither Clear nor uninstall deletes JSON files you downloaded, your YouTube history, or information already held by external services.</p>
+      </section>
+
+      <footer class="site-footer">
+        <p>Implementation: <a href="https://github.com/thepoppfish/JustPractice/blob/master/manifest.config.ts">manifest</a>, <a href="https://github.com/thepoppfish/JustPractice/tree/master/src/background">background requests and storage mutations</a>, <a href="https://github.com/thepoppfish/JustPractice/blob/master/docs/ARCHITECTURE.md">architecture</a>. The selected release/commit is the authority when versions differ.</p>
+        <p>Chrome references: <a href="https://developer.chrome.com/docs/extensions/reference/api/storage">storage lifecycle</a>, <a href="https://developer.chrome.com/docs/extensions/reference/api/contextMenus">context menus</a>, <a href="https://developer.chrome.com/docs/extensions/reference/api/scripting">script injection</a>.</p>
+        <nav class="footer-links" aria-label="Footer"><a href="index.html">Back to JustPractice</a><a href="https://github.com/thepoppfish/JustPractice/issues">Questions or corrections</a></nav>
+      </footer>
+    </main>
+  </body>
+</html>

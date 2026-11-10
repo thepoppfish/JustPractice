@@ -3,7 +3,7 @@
 *{box-sizing:border-box}body{margin:0;background:#101318;color:#ebedf2;font:16px/1.65 system-ui}main{max-width:1080px;margin:auto;padding:32px 24px}a{color:#ffc18e}a:focus-visible,summary:focus-visible{outline:3px solid #ffd08a;outline-offset:4px}h1,h2{line-height:1.25}h2{font-size:22px}article{padding:24px 0;border-bottom:1px solid #46505f;scroll-margin-top:24px}nav{display:flex;flex-wrap:wrap;gap:12px}.status{color:#b1edc0;font-weight:600}.pending{padding:12px;background:#35261b;border-left:3px solid #ffa466}details{color:#b7bdc8}summary{cursor:pointer}li{margin:8px 0}code{overflow-wrap:anywhere}.note{padding:16px;background:#202630;border-radius:8px}
 </style><main><h1>JustPractice · baseline progress</h1>
 <p>All 21 original requirements retained. Updated 2026-11-09.</p>
-<p class="note">5 Merged · 12 Implemented · PR open · 1 Implemented · verification outstanding · 3 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
+<p class="note">5 Merged · 14 Implemented · PR open · 1 Implemented · verification outstanding · 1 Open. Merges and publishing remain with the maintainer. Open PRs are not represented as merged or released.</p>
 <p><a href="../../output/playwright/baseline-2026-11-09/baseline-review.html#backlog">Original review</a> · <a href="backlog.json">Machine-readable tracker</a> · <a href="dependency-review.md">Dependency review</a></p>
 <p>Screenshot and trace links refer to local review artifacts under <code>output/playwright/</code>; they are not part of the extension or the public documentation deployment. Public PRs include the maintained code and CI artifacts.</p>
 <nav aria-label="Baseline items"><a href="#JP-01">JP-01</a><a href="#JP-02">JP-02</a><a href="#JP-03">JP-03</a><a href="#JP-04">JP-04</a><a href="#JP-05">JP-05</a><a href="#JP-06">JP-06</a><a href="#JP-07">JP-07</a><a href="#JP-08">JP-08</a><a href="#JP-09">JP-09</a><a href="#JP-10">JP-10</a><a href="#JP-11">JP-11</a><a href="#JP-12">JP-12</a><a href="#JP-13">JP-13</a><a href="#JP-14">JP-14</a><a href="#JP-15">JP-15</a><a href="#JP-16">JP-16</a><a href="#JP-17">JP-17</a><a href="#JP-18">JP-18</a><a href="#JP-19">JP-19</a><a href="#JP-20">JP-20</a><a href="#JP-21">JP-21</a></nav>
@@ -189,22 +189,22 @@
 </article>
 <article id="JP-19">
 <h2>JP-19 · Explain local storage, network requests, and permissions precisely</h2>
-<p class="status">Open</p>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/8">PR #8</a></p>
 <p>Add a concise privacy/data-flow page, explain each permission, state what uninstalling loses, recommend backups, and review whether the legacy alarms permission still needs to ship.</p>
 <p><strong>Acceptance:</strong> The public docs list contacted services and the purpose of each permission, match actual behavior, and link clearly from the README and site.</p>
+<p><strong>Verification:</strong> Data-flow page links local records, external services, export/reset/uninstall and each remaining permission to actual behavior. Retired alarms permission/calls removed; an actual unpacked Reload retains synthetic data.</p>
 
-
-
+<ul><li><a href="privacy-case-study.md">Implementation and verification notes</a></li><li><a href="../../output/playwright/privacy-case-study-2026-11-09/verification.html">Screenshots, source audit and actual upgrade checks</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/8">Reviewable PR and cross-platform checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>Practice data is stored locally. The app also requests YouTube metadata/watch pages and thumbnail images, and the site embeds a YouTube tutorial. The manifest requests storage, contextMenus, alarms, and scripting; alarms is currently used only to clear a retired reminder alarm.</p><a href="../../output/playwright/baseline-2026-11-09/website-desktop.png">Original screenshot</a></details>
 </article>
 <article id="JP-20">
 <h2>JP-20 · Turn the repository into a clear project case study</h2>
-<p class="status">Open</p>
+<p class="status">Implemented · PR open · <a href="https://github.com/thepoppfish/JustPractice/pull/8">PR #8</a></p>
 <p>Lead with the user problem and a current screenshot/GIF; include a verified install path, concise architecture, local-data design, storage-race solution, checks, limitations, and a short roadmap. Archive or refresh stale audits; keep the tests.</p>
 <p><strong>Acceptance:</strong> In under two minutes a reviewer can understand the problem, see the product, run it, locate the tests, and discuss one meaningful engineering decision.</p>
+<p><strong>Verification:</strong> README leads with learner problem and current synthetic screenshots, architecture/storage-race decision, install/checks/limitations and roadmap. Contributor guide and historical-document labels make current instructions explicit.</p>
 
-
-
+<ul><li><a href="privacy-case-study.md">Implementation and verification notes</a></li><li><a href="../../output/playwright/privacy-case-study-2026-11-09/verification.html">Screenshots, source audit and actual upgrade checks</a></li><li><a href="https://github.com/thepoppfish/JustPractice/pull/8">Reviewable PR and cross-platform checks</a></li></ul>
 <details><summary>Original baseline evidence</summary><p>The README explains installation and features but has no embedded screenshots, architecture overview, test command/results, design tradeoffs, known limitations, or maintainer-oriented contribution path. Several internal slimdown/audit documents are stale snapshots.</p><a href="../../output/playwright/baseline-2026-11-09/10-library-populated.png">Original screenshot</a></details>
 </article>
 <article id="JP-21">
